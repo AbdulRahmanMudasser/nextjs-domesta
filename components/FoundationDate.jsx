@@ -2,7 +2,7 @@
 'use client'
 
 import { useEffect, useState } from "react";
-import InputRange from "react-input-range";
+// import InputRange from "react-input-range";
 import { useDispatch, useSelector } from "react-redux";
 import { addFoundationDate } from "@/features/filter/employerFilterSlice";
 
@@ -26,13 +26,13 @@ const FoundationDate = () => {
 
     return (
         <div className="range-slider-one salary-range">
-            <InputRange
+            {/* <InputRange
                 formatLabel={(value) => ``}
                 minValue={1900}
                 maxValue={2028}
                 value={foundationDate}
                 onChange={(value) => handleOnChange(value)}
-            />
+            /> */}
             <div className="input-outer">
                 <div className="amount-outer">
                     <span className="d-inline-flex align-items-center">
