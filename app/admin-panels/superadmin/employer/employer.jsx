@@ -3,7 +3,7 @@
 import React from "react";
 import DsPageOuter from "@/templates/layouts/ds-page-outer";
 import { ProfileTypes } from "@/data/globalKeys";
-import FancyTable from "@/templates/tables/fancy-table";
+import FancyTableV2 from "@/templates/tables/fancy-table-v2";
 import employerProfile from "@/data/employer-profile";
 
 export const metadata = {
@@ -66,7 +66,7 @@ const EmployerList = () => {
       title="Employers List!"
       subtitle="Manage Your Business Clients"
     >
-      <FancyTable
+      <FancyTableV2
         fields={employerFields}
         data={employers}
         title="Employers"
