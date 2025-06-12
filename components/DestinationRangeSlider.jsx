@@ -2,7 +2,7 @@
 'use client'
 
 import { useEffect, useState } from "react";
-import InputRange from "react-input-range";
+// import InputRange from "react-input-range";
 import { useDispatch, useSelector } from "react-redux";
 import { addDestination } from "@/features/filter/candidateFilterSlice";
 
@@ -27,13 +27,13 @@ const DestinationRangeSlider = () => {
 
     return (
         <div className="range-slider-one">
-            <InputRange
+            {/* <InputRange
                 formatLabel={(value) => ``}
                 minValue={0}
                 maxValue={100}
                 value={getDestination}
                 onChange={(value) => handleOnChange(value)}
-            />
+            /> */}
             <div className="input-outer">
                 <div className="amount-outer">
                     <span className="area-amount">{getDestination.max}</span>
