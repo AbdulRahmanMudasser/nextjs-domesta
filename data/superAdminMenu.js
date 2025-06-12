@@ -55,7 +55,7 @@ module.exports = [
     id: 8,
     name: "Report",
     icon: "la-chart-bar",
-    routePath: "/superadmin/report",
+    routePath: "/panels/superadmin/report",
     active: "",
   },
 

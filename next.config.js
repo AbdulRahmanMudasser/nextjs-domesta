@@ -28,6 +28,10 @@ const nextConfig = {
         source: "/panels/superadmin/agents",
         destination: "/admin-panels/superadmin/agents",
       },
+      {
+        source: "/panels/superadmin/report",
+        destination: "/admin-panels/superadmin/report",
+      },
 
       // Employees / Candidates
       {
@@ -86,36 +90,37 @@ const nextConfig = {
       {
         source: "/panels/agency/interviews",
         destination: "/admin-panels/agency/interviews",
-      },   
-        //website routes
-        {
-          source: "/home",
-          destination: "/website/home",
-        }, 
-        {
-          source: "/about",
-          destination: "/website/about",
-        }, 
-        {
-          source: "/contact",
-          destination: "/website/contact",
-        }, 
-        {
-          source: "/faq",
-          destination: "/website/faq",
-        }, 
-        {
-          source: "/terms",
-          destination: "/website/terms",
-        }, 
-        {
-          source: "/employees",
-          destination: "/website/employees",
-        }, 
-        {
-          source: "/employers",
-          destination: "/website/employers",
-        }, 
+      },
+
+      // Website Routes
+      {
+        source: "/home",
+        destination: "/website/home",
+      },
+      {
+        source: "/about",
+        destination: "/website/about",
+      },
+      {
+        source: "/contact",
+        destination: "/website/contact",
+      },
+      {
+        source: "/faq",
+        destination: "/website/faq",
+      },
+      {
+        source: "/terms",
+        destination: "/website/terms",
+      },
+      {
+        source: "/employees",
+        destination: "/website/employees",
+      },
+      {
+        source: "/employers",
+        destination: "/website/employers",
+      },
     ];
   },
 

@@ -1,14 +1,15 @@
 import dynamic from "next/dynamic";
+import ReportsReport from "./report";
 
 export const metadata = {
-  title: "Report || Domesta  - Listing Board",
+  title: "SuperAdmin Dashboard || Domesta  - Listing Board",
   description: "Domesta  - Listing Board",
 };
 
 const index = () => {
   return (
     <>
-      <h2>Report Page</h2>
+      <ReportsReport />
     </>
   );
 };
