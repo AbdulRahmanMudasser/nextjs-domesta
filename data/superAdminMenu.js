@@ -34,7 +34,7 @@ module.exports = [
     routePath: "/panels/superadmin/agents",
     active: "",
   },
-  
+
   {
     id: 6,
     name: "Interviews",
@@ -50,7 +50,6 @@ module.exports = [
     routePath: "/panels/superadmin/hirings",
     active: "",
   },
-
   {
     id: 8,
     name: "Report",
@@ -58,8 +57,15 @@ module.exports = [
     routePath: "/panels/superadmin/report",
     active: "",
   },
+  {
+    id: 8,
+    name: "Services",
+    icon: "la-hand-holding-heart",
+    routePath: "/panels/superadmin/services",
+    active: "",
+  },
 
- 
+
   // {
   //   id: 9,
   //   name: "Logout",
