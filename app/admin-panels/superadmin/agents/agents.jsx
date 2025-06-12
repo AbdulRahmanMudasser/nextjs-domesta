@@ -85,6 +85,7 @@ const Agents = () => {
         fields={agentFields}
         data={agents}
         title="Manage Agencies"
+        subtitle="Manage Your Agency Partners."
         filterOptions={filterOptions}
       />
     </DsPageOuter>

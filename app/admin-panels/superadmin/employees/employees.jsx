@@ -90,6 +90,7 @@ const EmployeesList = () => {
         fields={profileFields}
         data={employees}
         title="Manage Employees"
+        subtitle="Keep Your Employee Crew Connected."
         filterOptions={filterOptions}
       />
     </DsPageOuter>

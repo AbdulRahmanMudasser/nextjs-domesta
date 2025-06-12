@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import Link from "next/link";
-import Image from "next/image";
 
-const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml }) => {
+const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptionsHtml }) => {
   // State for filter values
   const [filters, setFilters] = useState(
     filterOptions.reduce((acc, option) => {
@@ -151,81 +149,84 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml }) 
 
   return (
     <div style={{ backgroundColor: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-        <h4 style={{ fontSize: "1.5rem", color: "#333", margin: 0 }}>
-          {title}
-        </h4>
-        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          <div dangerouslySetInnerHTML={{ __html: rightOptionsHtml }} />
-          <button
-            onClick={handleClearFilters}
-            title="Clear Filters"
-            style={{
-              background: "#fff",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              padding: "0.5rem",
-              cursor: "pointer",
-              color: "#333",
-              fontSize: "1.25rem",
-              display: "flex",
-              alignItems: "center",
-              width: "36px",
-              height: "36px",
-              justifyContent: "center",
-            }}
-          >
-            <span className="la la-refresh"></span>
-          </button>
-          <button
-            onClick={handleBulkDelete}
-            disabled={selectedRows.length === 0}
-            style={{
-              backgroundColor: selectedRows.length === 0 ? "#676767" : "#000000",
-              color: "#fff",
-              padding: "0.3rem 1rem",
-              border: "none",
-              borderRadius: "4px",
-              cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
-              fontSize: "0.875rem",
-            }}
-          >
-            Bulk Delete ({selectedRows.length})
-          </button>
-          <button
-            onClick={handleMarkAsPaid}
-            disabled={selectedRows.length === 0}
-            style={{
-              backgroundColor: selectedRows.length === 0 ? "#676767" : "#000000",
-              color: "#fff",
-              padding: "0.3rem 1rem",
-              border: "none",
-              borderRadius: "4px",
-              cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
-              fontSize: "0.875rem",
-            }}
-          >
-            Mark as Paid ({selectedRows.length})
-          </button>
-          <select
-            onChange={handleStatusChange}
-            disabled={selectedRows.length === 0}
-            style={{
-              padding: "0.5rem",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              fontSize: "0.875rem",
-              color: selectedRows.length === 0 ? "#aaa" : "#333",
-              backgroundColor: "#f9f9f9",
-              cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
-            }}
-          >
-            <option value="">Change Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="pending">Pending</option>
-          </select>
-        </div>
+      <h2 style={{ fontSize: "1.5rem", fontWeight: "600", color: "#333", margin: 0 }}>
+        {title}
+      </h2>
+      {subtitle && (
+        <p style={{ fontSize: "1rem", color: "#555", margin: "0.25rem 0 1rem" }}>
+          {subtitle}
+        </p>
+      )}
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", alignItems: "center", marginBottom: "1rem" }}>
+        <div dangerouslySetInnerHTML={{ __html: rightOptionsHtml }} />
+        <button
+          onClick={handleClearFilters}
+          title="Clear Filters"
+          style={{
+            background: "#fff",
+            border: "1px solid #ddd",
+            borderRadius: "4px",
+            padding: "0.5rem",
+            cursor: "pointer",
+            color: "#333",
+            fontSize: "1.25rem",
+            display: "flex",
+            alignItems: "center",
+            width: "36px",
+            height: "36px",
+            justifyContent: "center",
+          }}
+        >
+          <span className="la la-refresh"></span>
+        </button>
+        <button
+          onClick={handleBulkDelete}
+          disabled={selectedRows.length === 0}
+          style={{
+            backgroundColor: selectedRows.length === 0 ? "#676767" : "#000000",
+            color: "#fff",
+            padding: "0.3rem 1rem",
+            border: "none",
+            borderRadius: "4px",
+            cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
+            fontSize: "0.875rem",
+          }}
+        >
+          Bulk Delete ({selectedRows.length})
+        </button>
+        <button
+          onClick={handleMarkAsPaid}
+          disabled={selectedRows.length === 0}
+          style={{
+            backgroundColor: selectedRows.length === 0 ? "#676767" : "#000000",
+            color: "#fff",
+            padding: "0.3rem 1rem",
+            border: "none",
+            borderRadius: "4px",
+            cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
+            fontSize: "0.875rem",
+          }}
+        >
+          Mark as Paid ({selectedRows.length})
+        </button>
+        <select
+          onChange={handleStatusChange}
+          disabled={selectedRows.length === 0}
+          style={{
+            padding: "0.5rem",
+            border: "1px solid #ddd",
+            borderRadius: "4px",
+            fontSize: "0.875rem",
+            color: selectedRows.length === 0 ? "#aaa" : "#333",
+            backgroundColor: "#f9f9f9",
+            cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
+          }}
+        >
+          <option value="">Change Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="pending">Pending</option>
+        </select>
       </div>
 
       {/* Filter Inputs */}
@@ -293,8 +294,8 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml }) 
             borderSpacing: 0,
             backgroundColor: "#fff",
             fontSize: "0.875rem",
-            borderRadius: "8px", // Rounded table corners
-            overflow: "hidden", // Ensure corners are clipped
+            borderRadius: "8px",
+            overflow: "hidden",
           }}
         >
           <thead>
@@ -303,15 +304,10 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml }) 
                 <th
                   key={index}
                   style={{
-                    padding: "1rem 1rem",
+                    padding: "1rem",
                     textAlign: "left",
-                    borderBottom: "2px solid #ddd",
                     color: "#333",
                     fontWeight: "600",
-                    backgroundColor: "#f7f7f7",
-                    minWidth: field.key === "checkbox" || field.key === "profileIcon" ? "60px" : "150px",
-                    ...(index === 0 ? { borderTopLeftRadius: "8px" } : {}), // Round top-left corner
-                    ...(index === allFields.length ? { borderTopRightRadius: "8px" } : {}), // Round top-right corner
                   }}
                 >
                   {field.label}
@@ -319,14 +315,10 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml }) 
               ))}
               <th
                 style={{
-                  padding: "1rem 1rem",
+                  padding: "1rem",
                   textAlign: "left",
-                  borderBottom: "2px solid #ddd",
                   color: "#333",
                   fontWeight: "600",
-                  backgroundColor: "#f7f7f7",
-                  minWidth: "120px",
-                  borderTopRightRadius: "8px", // Round top-right corner for Action column
                 }}
               >
                 Action
@@ -348,14 +340,14 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml }) 
                       key={colIndex}
                       className={field.className}
                       style={{
-                        padding: "1rem 1rem",
+                        padding: "1rem",
                         color: "#555",
                       }}
                     >
                       {field.render ? field.render(row, row) : row[field.key]}
                     </td>
                   ))}
-                  <td style={{ padding: "1rem 1rem" }}>
+                  <td style={{ padding: "1rem" }}>
                     <div style={{ display: "flex", gap: "0.75rem" }}>
                       <button
                         title="View Application"
@@ -496,6 +488,7 @@ FancyTableV2.propTypes = {
   ).isRequired,
   data: PropTypes.arrayOf(PropTypes.object).isRequired,
   title: PropTypes.string.isRequired,
+  subtitle: PropTypes.string,
   filterOptions: PropTypes.arrayOf(
     PropTypes.shape({
       key: PropTypes.string.isRequired,
@@ -510,6 +503,11 @@ FancyTableV2.propTypes = {
     })
   ).isRequired,
   rightOptionsHtml: PropTypes.string,
+};
+
+FancyTableV2.defaultProps = {
+  subtitle: "",
+  rightOptionsHtml: "",
 };
 
 export default FancyTableV2;
