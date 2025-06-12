@@ -55,7 +55,7 @@ const EmployeesList = () => {
   const filterOptions = [
     {
       key: "fullName",
-      label: "Full Name",
+      label: "Name",
       type: "text",
     },
     {
