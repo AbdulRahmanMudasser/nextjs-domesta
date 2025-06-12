@@ -1,31 +1,41 @@
+'use client'
+
+import employeeProfile from '@/data/employee-profile';
+import agentData from "@/data/agent-profile";
+import employerProfile from "@/data/employer-profile";
+
 const TopCardBlock = () => {
+  const totalEmployees = employeeProfile.length;
+  const totalAgencies = agentData.length;
+  const totalEmployers = employerProfile.length;
+
   const cardContent = [
     {
       id: 1,
-      icon: "flaticon-briefcase",
-      countNumber: "22",
-      metaName: "Posted Listing",
+      icon: "la-users",
+      countNumber: totalEmployees.toString(),
+      metaName: "Total Employees",
       uiClass: "ui-blue",
     },
     {
       id: 2,
-      icon: "la-file-invoice",
-      countNumber: "9382",
-      metaName: "Application",
+      icon: "la-building",
+      countNumber: totalAgencies.toString(),
+      metaName: "Total Agencies",
       uiClass: "ui-red",
     },
     {
       id: 3,
-      icon: "la-comment-o",
-      countNumber: "74",
-      metaName: "Messages",
+      icon: "la-user ",
+      countNumber: totalEmployers.toString(),
+      metaName: "Total Employers",
       uiClass: "ui-yellow",
     },
     {
       id: 4,
-      icon: "la-bookmark-o",
-      countNumber: "32",
-      metaName: "Shortlist",
+      icon: "la-handshake",
+      countNumber: "3",
+      metaName: "Total Hiring",
       uiClass: "ui-green",
     },
   ];
