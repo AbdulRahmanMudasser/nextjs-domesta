@@ -51,26 +51,41 @@ const Agents = () => {
     return row;
   });
 
-  // Handle Contact and Remove actions (kept for future use)
-  const handleContact = (id) => {
-    console.log(`Contact agent with ID: ${id}`);
-  };
-
-  const handleRemove = (id) => {
-    console.log(`Remove agent with ID: ${id}`);
-  };
+  // Define filter options
+  const filterOptions = [
+    {
+      key: "agencyName",
+      label: "Agency Name",
+      type: "text",
+    },
+    {
+      key: "country",
+      label: "Country",
+      type: "text",
+    },
+    {
+      key: "phoneNumber",
+      label: "Phone Number",
+      type: "text",
+    },
+    {
+      key: "officeAddress",
+      label: "Office Address",
+      type: "text",
+    },
+  ];
 
   return (
     <DsPageOuter
       headerType={ProfileTypes.SUPERADMIN}
-      title="Agency"
-      subtitle="Manage Your Agencies!"
+      // title="Agency"
+      // subtitle="Manage Your Agencies!"
     >
       <FancyTableV2
         fields={agentFields}
         data={agents}
-        title="Agency"
-        filterOptions={[]}
+        title="Manage Agencies"
+        filterOptions={filterOptions}
       />
     </DsPageOuter>
   );

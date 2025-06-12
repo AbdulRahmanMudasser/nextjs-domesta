@@ -51,26 +51,59 @@ const EmployerList = () => {
     return row;
   });
 
-  // Handle Contact and Remove actions (kept for future use)
-  const handleContact = (id) => {
-    console.log(`Contact employer with ID: ${id}`);
-  };
-
-  const handleRemove = (id) => {
-    console.log(`Remove employer with ID: ${id}`);
-  };
+  // Define filter options
+  const filterOptions = [
+    {
+      key: "gender",
+      label: "Gender",
+      type: "select",
+      options: [
+        { value: "male", label: "Male" },
+        { value: "female", label: "Female" },
+        { value: "other", label: "Other" },
+      ],
+    },
+    {
+      key: "nationality",
+      label: "Nationality",
+      type: "text",
+    },
+    {
+      key: "householdType",
+      label: "Household Type",
+      type: "text",
+    },
+    {
+      key: "elderlyDependents",
+      label: "Elderly Dependents",
+      type: "select",
+      options: [
+        { value: "yes", label: "Yes" },
+        { value: "no", label: "No" },
+      ],
+    },
+    {
+      key: "specialNeedsCare",
+      label: "Special Needs Care",
+      type: "select",
+      options: [
+        { value: "yes", label: "Yes" },
+        { value: "no", label: "No" },
+      ],
+    },
+  ];
 
   return (
     <DsPageOuter
       headerType={ProfileTypes.SUPERADMIN}
-      title="Employers List!"
-      subtitle="Manage Your Business Clients"
+      // title="Employers List!"
+      // subtitle="Manage Your Business Clients"
     >
       <FancyTableV2
         fields={employerFields}
         data={employers}
-        title="Employers"
-        filterOptions={[]}
+        title="Manage Employers"
+        filterOptions={filterOptions}
       />
     </DsPageOuter>
   );

@@ -51,26 +51,46 @@ const EmployeesList = () => {
     return row;
   });
 
-  // Handle Contact and Remove actions (kept for future use)
-  const handleContact = (id) => {
-    console.log(`Contact employee with ID: ${id}`);
-  };
-
-  const handleRemove = (id) => {
-    console.log(`Remove employee with ID: ${id}`);
-  };
+  // Define filter options
+  const filterOptions = [
+    {
+      key: "fullName",
+      label: "Full Name",
+      type: "text",
+    },
+    {
+      key: "role",
+      label: "Role",
+      type: "text",
+    },
+    {
+      key: "gender",
+      label: "Gender",
+      type: "select",
+      options: [
+        { value: "male", label: "Male" },
+        { value: "female", label: "Female" },
+        { value: "other", label: "Other" },
+      ],
+    },
+    {
+      key: "nationality",
+      label: "Nationality",
+      type: "text",
+    },
+  ];
 
   return (
     <DsPageOuter
       headerType={ProfileTypes.SUPERADMIN}
-      title="Employees List!"
-      subtitle="Keep Your Crew Connected"
+      // title="Employees List!"
+      // subtitle="Keep Your Crew Connected"
     >
       <FancyTableV2
         fields={profileFields}
         data={employees}
-        title="Employees"
-        filterOptions={[]}
+        title="Manage Employees"
+        filterOptions={filterOptions}
       />
     </DsPageOuter>
   );
