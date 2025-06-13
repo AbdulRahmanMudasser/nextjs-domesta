@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
+import Link from "next/link";
 
 const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptionsHtml, handleBulkDelete }) => {
   // State for filter values
@@ -333,17 +334,37 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
                     <div className="option-box">
                       <ul className="option-list">
                         <li>
-                          <button data-text="View Application">
+                          <Link
+                            href={`/website/employees/profile/${row.id}`}
+                            title="View Profile"
+                            data-text="View Profile"
+                          >
                             <span className="la la-eye"></span>
-                          </button>
+                          </Link>
                         </li>
                         <li>
-                          <button data-text="Edit Application">
+                          <Link
+                            href={`/website/employees/profile/${row.id}`}
+                            title="Edit Profile"
+                            data-text="Edit Profile"
+                          >
                             <span className="la la-pencil"></span>
-                          </button>
+                          </Link>
                         </li>
                         <li>
-                          <button data-text="Delete Application">
+                          <Link
+                            href={`/website/employees/documents/${row.id}`}
+                            title="View Documents"
+                            data-text="View Documents"
+                          >
+                            <span className="la la-file-alt"></span>
+                          </Link>
+                        </li>
+                        <li>
+                          <button
+                            title="Delete Record"
+                            data-text="Delete Record"
+                          >
                             <span className="la la-trash"></span>
                           </button>
                         </li>
