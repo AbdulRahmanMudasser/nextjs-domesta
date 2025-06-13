@@ -58,10 +58,17 @@ module.exports = [
     active: "",
   },
   {
-    id: 8,
+    id: 9,
     name: "Services",
     icon: "la-hand-holding-heart",
     routePath: "/panels/superadmin/services",
+    active: "",
+  },
+  {
+    id: 10,
+    name: "Settings",
+    icon: "la-cog",
+    routePath: "/panels/superadmin/settings",
     active: "",
   },
 
