@@ -36,6 +36,10 @@ const nextConfig = {
         source: "/panels/superadmin/services",
         destination: "/admin-panels/superadmin/services",
       },
+      {
+        source: "/panels/superadmin/settings",
+        destination: "/admin-panels/superadmin/settings",
+      },
 
       // Employees / Candidates
       {

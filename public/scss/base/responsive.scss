@@ -1,12 +1,12 @@
 /* Superio | Just another HTML Template  */
 
 @media only screen and (max-width: 1600px) {
-  
-  .main-menu .navigation > li {
+
+  .main-menu .navigation>li {
     margin-right: 35px;
   }
 
-  .header-style-two .main-menu .navigation > li {
+  .header-style-two .main-menu .navigation>li {
     margin-left: 40px;
   }
 
@@ -15,6 +15,7 @@
   }
 
   .banner-section {
+
     .info_block,
     .info_block_two,
     .info_block_three,
@@ -61,7 +62,7 @@
     margin-right: -100px;
   }
 
-  .header-style-five .main-menu .navigation > li {
+  .header-style-five .main-menu .navigation>li {
     margin-right: 20px;
   }
 
@@ -169,6 +170,7 @@
   .header-style-five .outer-box {
     padding: 22px 0;
   }
+
   .card-footer .form-group button {
     padding: 8px 20px;
     font-size: 14px;
@@ -204,7 +206,7 @@
     padding: 0 15px;
   }
 
-  .header-style-five .main-menu .navigation > li {
+  .header-style-five .main-menu .navigation>li {
     margin-right: 50px;
   }
 
@@ -694,6 +696,7 @@
   .user-sidebar {
     transform: translateX(-100%);
   }
+
   .user-sidebar.sidebar_open {
     transform: translateX(0);
   }
@@ -771,9 +774,10 @@
 }
 
 @media only screen and (min-width: 768px) {
-  .main-menu .navigation > li > ul,
-  .main-menu .navigation > li > ul > li > ul,
-  .main-menu .navigation > li > .mega-menu {
+
+  .main-menu .navigation>li>ul,
+  .main-menu .navigation>li>ul>li>ul,
+  .main-menu .navigation>li>.mega-menu {
     display: block !important;
     visibility: hidden;
     opacity: 0;
@@ -1297,6 +1301,7 @@
   .job-search-form {
     min-width: auto;
   }
+
   .news-block-two {
     .inner-box {
       display: block;
@@ -1307,11 +1312,13 @@
       img {
         width: 100%;
       }
+
       .image {
         min-width: 100%;
       }
     }
   }
+
   .banner-section .image-column {
     padding-top: 0;
   }
@@ -1644,6 +1651,7 @@
 }
 
 @media only screen and (max-width: 599px) {
+
   .banner-section-six,
   .banner-section-five,
   .banner-section-two,
