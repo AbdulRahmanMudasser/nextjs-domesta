@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
-const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptionsHtml }) => {
+const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptionsHtml, handleBulkDelete }) => {
   // State for filter values
   const [filters, setFilters] = useState(
     filterOptions.reduce((acc, option) => {
@@ -20,7 +20,7 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
   // Handle filter input changes
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
-    setCurrentPage(1); // Reset to first page on filter change
+    setCurrentPage(1);
   };
 
   // Clear all filters
@@ -52,17 +52,9 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
     }
   };
 
-  // Handle bulk delete
-  const handleBulkDelete = () => {
-    console.log(`Deleting records: ${selectedRows.join(", ")}`);
-    // Implement actual delete logic here (e.g., API call)
-    setSelectedRows([]);
-  };
-
   // Handle mark as paid
   const handleMarkAsPaid = () => {
     console.log(`Marking as paid: ${selectedRows.join(", ")}`);
-    // Implement actual mark as paid logic here
     setSelectedRows([]);
   };
 
@@ -70,14 +62,13 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
   const handleStatusChange = (e) => {
     const status = e.target.value;
     console.log(`Changing status to ${status} for records: ${selectedRows.join(", ")}`);
-    // Implement actual status change logic here
     setSelectedRows([]);
   };
 
   // Filter data based on all active filters
   const filteredData = data.filter((row) =>
     Object.keys(filters).every((key) => {
-      if (!filters[key]) return true; // Skip empty filters
+      if (!filters[key]) return true;
       const filterOption = filterOptions.find((opt) => opt.key === key);
       const cellValue = row[key]?.toString().toLowerCase() || "";
       if (filterOption.type === "text") {
@@ -118,10 +109,10 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
           cursor: "pointer",
           width: "16px",
           height: "16px",
-          accentColor: "#000",
-          backgroundColor: selectedRows.length === filteredData.length && filteredData.length > 0 ? "#000" : "#fff",
+          accentColor: "#747c4d",
+          backgroundColor: selectedRows.length === filteredData.length && filteredData.length > 0 ? "#747c4d" : "#fff",
           border: "1px solid #ddd",
-          borderRadius: "5px", // Rounded corners
+          borderRadius: "5px",
         }}
       />
     ),
@@ -135,10 +126,10 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
           cursor: "pointer",
           width: "16px",
           height: "16px",
-          accentColor: "#000",
-          backgroundColor: selectedRows.includes(row.id) ? "#000" : "#fff",
+          accentColor: "#747c4d",
+          backgroundColor: selectedRows.includes(row.id) ? "#747c4d" : "#fff",
           border: "1px solid #ddd",
-          borderRadius: "5px", // Rounded corners
+          borderRadius: "5px",
         }}
       />
     ),
@@ -180,10 +171,10 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
           <span className="la la-refresh"></span>
         </button>
         <button
-          onClick={handleBulkDelete}
+          onClick={() => handleBulkDelete(selectedRows)}
           disabled={selectedRows.length === 0}
           style={{
-            backgroundColor: selectedRows.length === 0 ? "#676767" : "#000000",
+            backgroundColor: selectedRows.length === 0 ? "#dc3545" : "#dc3545",
             color: "#fff",
             padding: "0.3rem 1rem",
             border: "none",
@@ -286,27 +277,18 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
       </div>
 
       {/* Table */}
-      <div style={{ overflowX: "auto" }}>
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "separate",
-            borderSpacing: 0,
-            backgroundColor: "#fff",
-            fontSize: "0.875rem",
-            borderRadius: "8px",
-            overflow: "hidden",
-          }}
-        >
+      <div className="table-outer">
+        <table className="default-table manage-job-table">
           <thead>
             <tr>
               {allFields.map((field, index) => (
                 <th
                   key={index}
+                  className={field.className}
                   style={{
                     padding: "1rem",
                     textAlign: "left",
-                    color: "#333",
+                    color: "#747c4d",
                     fontWeight: "600",
                   }}
                 >
@@ -317,7 +299,7 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
                 style={{
                   padding: "1rem",
                   textAlign: "left",
-                  color: "#333",
+                  color: "#747c4d",
                   fontWeight: "600",
                 }}
               >
@@ -348,43 +330,24 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
                     </td>
                   ))}
                   <td style={{ padding: "1rem" }}>
-                    <div style={{ display: "flex", gap: "0.75rem" }}>
-                      <button
-                        title="View Application"
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "#333",
-                          fontSize: "1rem",
-                        }}
-                      >
-                        <span className="la la-eye"></span>
-                      </button>
-                      <button
-                        title="Edit Application"
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "#333",
-                          fontSize: "1rem",
-                        }}
-                      >
-                        <span className="la la-pencil"></span>
-                      </button>
-                      <button
-                        title="Delete Application"
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "#333",
-                          fontSize: "1rem",
-                        }}
-                      >
-                        <span className="la la-trash"></span>
-                      </button>
+                    <div className="option-box">
+                      <ul className="option-list">
+                        <li>
+                          <button data-text="View Application">
+                            <span className="la la-eye"></span>
+                          </button>
+                        </li>
+                        <li>
+                          <button data-text="Edit Application">
+                            <span className="la la-pencil"></span>
+                          </button>
+                        </li>
+                        <li>
+                          <button data-text="Delete Application">
+                            <span className="la la-trash"></span>
+                          </button>
+                        </li>
+                      </ul>
                     </div>
                   </td>
                 </tr>
@@ -503,6 +466,7 @@ FancyTableV2.propTypes = {
     })
   ).isRequired,
   rightOptionsHtml: PropTypes.string,
+  handleBulkDelete: PropTypes.func,
 };
 
 FancyTableV2.defaultProps = {
