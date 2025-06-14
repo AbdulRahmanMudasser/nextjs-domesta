@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 import Link from "next/link";
 
 const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptionsHtml, handleBulkDelete }) => {
-  // State for filter values
   const [filters, setFilters] = useState(
     filterOptions.reduce((acc, option) => {
       acc[option.key] = "";
@@ -11,20 +10,15 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
     }, {})
   );
 
-  // State for selected rows
   const [selectedRows, setSelectedRows] = useState([]);
-
-  // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Handle filter input changes
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setCurrentPage(1);
   };
 
-  // Clear all filters
   const handleClearFilters = () => {
     setFilters(
       filterOptions.reduce((acc, option) => {
@@ -35,7 +29,6 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
     setCurrentPage(1);
   };
 
-  // Handle row selection
   const handleRowSelect = (id) => {
     setSelectedRows((prev) =>
       prev.includes(id)
@@ -44,7 +37,6 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
     );
   };
 
-  // Handle select all
   const handleSelectAll = () => {
     if (selectedRows.length === filteredData.length) {
       setSelectedRows([]);
@@ -53,20 +45,12 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
     }
   };
 
-  // Handle mark as paid
-  const handleMarkAsPaid = () => {
-    console.log(`Marking as paid: ${selectedRows.join(", ")}`);
-    setSelectedRows([]);
-  };
-
-  // Handle status change
   const handleStatusChange = (e) => {
     const status = e.target.value;
     console.log(`Changing status to ${status} for records: ${selectedRows.join(", ")}`);
     setSelectedRows([]);
   };
 
-  // Filter data based on all active filters
   const filteredData = data.filter((row) =>
     Object.keys(filters).every((key) => {
       if (!filters[key]) return true;
@@ -81,14 +65,12 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
     })
   );
 
-  // Pagination logic
   const totalPages = Math.ceil(filteredData.length / pageSize);
   const paginatedData = filteredData.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
-  // Define profile icon column
   const profileColumn = {
     key: "profileIcon",
     label: "Profile",
@@ -98,7 +80,6 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
     ),
   };
 
-  // Define checkbox column
   const checkboxColumn = {
     key: "checkbox",
     label: (
@@ -108,12 +89,12 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
         onChange={handleSelectAll}
         style={{
           cursor: "pointer",
-          width: "16px",
-          height: "16px",
+          width: "14px",
+          height: "14px",
           accentColor: "#747c4d",
           backgroundColor: selectedRows.length === filteredData.length && filteredData.length > 0 ? "#747c4d" : "#fff",
           border: "1px solid #ddd",
-          borderRadius: "5px",
+          borderRadius: "4px",
         }}
       />
     ),
@@ -125,18 +106,17 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
         onChange={() => handleRowSelect(row.id)}
         style={{
           cursor: "pointer",
-          width: "16px",
-          height: "16px",
+          width: "14px",
+          height: "14px",
           accentColor: "#747c4d",
           backgroundColor: selectedRows.includes(row.id) ? "#747c4d" : "#fff",
           border: "1px solid #ddd",
-          borderRadius: "5px",
+          borderRadius: "4px",
         }}
       />
     ),
   };
 
-  // Combine columns
   const allFields = [checkboxColumn, profileColumn, ...fields];
 
   return (
@@ -186,21 +166,6 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
         >
           Bulk Delete ({selectedRows.length})
         </button>
-        <button
-          onClick={handleMarkAsPaid}
-          disabled={selectedRows.length === 0}
-          style={{
-            backgroundColor: selectedRows.length === 0 ? "#676767" : "#000000",
-            color: "#fff",
-            padding: "0.3rem 1rem",
-            border: "none",
-            borderRadius: "4px",
-            cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
-            fontSize: "0.875rem",
-          }}
-        >
-          Mark as Paid ({selectedRows.length})
-        </button>
         <select
           onChange={handleStatusChange}
           disabled={selectedRows.length === 0}
@@ -221,10 +186,9 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
         </select>
       </div>
 
-      {/* Filter Inputs */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
         {filterOptions.map((option, index) => (
-          <div key={index} style={{ flex: "1 1 200px" }}>
+          <div key={index} style={{ flex: "0 1 200px", maxWidth: "300px" }}>
             <label
               style={{
                 display: "block",
@@ -243,13 +207,15 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
                 placeholder={`Filter by ${option.label}`}
                 style={{
                   width: "100%",
-                  padding: "0.5rem",
+                  padding: "0.4rem 0.5rem",
+                  height: "34px",
                   border: "1px solid #ddd",
                   borderRadius: "4px",
                   fontSize: "0.875rem",
                   color: "#333",
-                  backgroundColor: "#f9f9f9",
+                  backgroundColor: "#f5f7fc",
                 }}
+                className="light-placeholder"
               />
             ) : option.type === "select" ? (
               <select
@@ -257,15 +223,18 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
                 onChange={(e) => handleFilterChange(option.key, e.target.value)}
                 style={{
                   width: "100%",
-                  padding: "0.5rem",
+                  padding: "0.4rem 0.5rem",
+                  height: "34px",
                   border: "1px solid #ddd",
                   borderRadius: "4px",
                   fontSize: "0.875rem",
                   color: "#333",
-                  backgroundColor: "#f9f9f9",
+                  backgroundColor: "#f5f7fc",
                 }}
               >
-                <option value="">-All {option.label}-</option>
+                <option value="" style={{ color: "#bbb" }}>
+                  All {option.label}
+                </option>
                 {option.options.map((opt, idx) => (
                   <option key={idx} value={opt.value}>
                     {opt.label}
@@ -277,8 +246,13 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
         ))}
       </div>
 
-      {/* Table */}
-      <div className="table-outer">
+      <style jsx>{`
+        .light-placeholder::placeholder {
+          color: #bbb;
+        }
+      `}</style>
+
+      <div className="table-outer" style={{ overflowX: "hidden" }}>
         <table className="default-table manage-job-table">
           <thead>
             <tr>
@@ -290,7 +264,7 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
                     padding: "1rem",
                     textAlign: "left",
                     color: "#747c4d",
-                    fontWeight: "600",
+                    fontWeight: "500",
                   }}
                 >
                   {field.label}
@@ -301,7 +275,8 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
                   padding: "1rem",
                   textAlign: "left",
                   color: "#747c4d",
-                  fontWeight: "600",
+                  fontWeight: "500",
+                  whiteSpace: "nowrap",
                 }}
               >
                 Action
@@ -344,7 +319,7 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
                         </li>
                         <li>
                           <Link
-                            href={`/website/employees/profile/${row.id}`}
+                            href={`/website/employees/edit/${row.id}`}
                             title="Edit Profile"
                             data-text="Edit Profile"
                           >
@@ -361,10 +336,7 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
                           </Link>
                         </li>
                         <li>
-                          <button
-                            title="Delete Record"
-                            data-text="Delete Record"
-                          >
+                          <button title="Delete Record" data-text="Delete Record">
                             <span className="la la-trash"></span>
                           </button>
                         </li>
@@ -391,7 +363,6 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
         </table>
       </div>
 
-      {/* Pagination */}
       <div
         style={{
           display: "flex",
@@ -404,7 +375,8 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
       >
         <div>
           Showing {(currentPage - 1) * pageSize + 1} to{" "}
-          {Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length} records
+          {Math.min(currentPage * pageSize, filteredData.length)} of{" "}
+          {filteredData.length} records
         </div>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <label style={{ marginRight: "0.5rem" }}>Rows per page:</label>
@@ -415,10 +387,12 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
               setCurrentPage(1);
             }}
             style={{
-              padding: "0.25rem",
+              padding: "0.5rem",
               border: "1px solid #ddd",
               borderRadius: "4px",
               backgroundColor: "#f9f9f9",
+              height: "36px",
+              fontSize: "0.875rem",
             }}
           >
             <option value={5}>5</option>
@@ -430,11 +404,16 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
             style={{
-              padding: "0.25rem 0.75rem",
+              padding: "0 0.75rem",
               border: "1px solid #ddd",
               borderRadius: "4px",
               backgroundColor: currentPage === 1 ? "#f0f0f0" : "#fff",
               cursor: currentPage === 1 ? "not-allowed" : "pointer",
+              height: "36px",
+              fontSize: "0.875rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             Previous
@@ -446,11 +425,16 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
             style={{
-              padding: "0.25rem 0.75rem",
+              padding: "0 0.75rem",
               border: "1px solid #ddd",
               borderRadius: "4px",
               backgroundColor: currentPage === totalPages ? "#f0f0f0" : "#fff",
               cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+              height: "36px",
+              fontSize: "0.875rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             Next

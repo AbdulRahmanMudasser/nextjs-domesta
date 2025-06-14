@@ -41,54 +41,6 @@ const SettingsList = () => {
         }
     }, [settings.favicon]);
 
-    // Format field names for display
-    const formatFieldName = (fieldName) => {
-        if (!fieldName || typeof fieldName !== 'string') return 'Unknown Field';
-        let formatted = fieldName.replace(/([A-Z])/g, ' $1').trim();
-        return formatted
-            .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
-    };
-
-    // Define table fields (exclude logo and favicon binary data)
-    const settingsFields = [
-        { key: "homeTitle", label: "Home Title" },
-        { key: "emailAddress", label: "Email Address" },
-        { key: "address", label: "Address" },
-        { key: "footerContent", label: "Footer Content" },
-        { key: "facebookLink", label: "Facebook Link" },
-        { key: "twitterLink", label: "Twitter Link" },
-        { key: "linkedinLink", label: "LinkedIn Link" },
-        { key: "instagramLink", label: "Instagram Link" },
-        {
-            key: "logo",
-            label: "Logo",
-            render: () => (settings.logo ? settings.logo.name : "No Logo Uploaded"),
-        },
-        {
-            key: "favicon",
-            label: "Favicon",
-            render: () => (settings.favicon ? settings.favicon.name : "No Favicon Uploaded"),
-        },
-    ];
-
-    // Define filter options for table
-    const filterOptions = [
-        {
-            key: "label",
-            label: "Field Name",
-            type: "text",
-        },
-    ];
-
-    // Map settings to table data
-    const settingsData = settingsFields.map((field, index) => ({
-        id: index + 1,
-        label: field.label,
-        value: field.render ? field.render() : settings[field.key] || "N/A",
-    }));
-
     // Validate form inputs
     const validateForm = () => {
         const newErrors = {};
@@ -142,15 +94,12 @@ const SettingsList = () => {
     return (
         <DsPageOuter
             headerType={ProfileTypes.SUPERADMIN}
-        //   title="Domesta Settings"
-        //   subtitle="Manage Your Website Configuration"
         >
             <div style={{ backgroundColor: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", marginBottom: "2rem" }}>
                 <h2 style={{ fontSize: "1.5rem", fontWeight: "600", color: "#333", margin: "0 0 1rem" }}>
                     Domesta Settings
                 </h2>
-                <form onSubmit={handleSubmit} style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
-                    {/* Text Inputs */}
+                <form onSubmit={handleSubmit} style={{ display: "flex", flexWrap: "wrap", gap: "1.5rem" }}>
                     {[
                         { name: "homeTitle", label: "Home Title", type: "text" },
                         { name: "emailAddress", label: "Email Address", type: "email" },
@@ -167,7 +116,7 @@ const SettingsList = () => {
                                     display: "block",
                                     fontSize: "0.875rem",
                                     color: "#555",
-                                    marginBottom: "0.25rem",
+                                    marginBottom: "0.5rem",
                                 }}
                             >
                                 {field.label}
@@ -183,11 +132,12 @@ const SettingsList = () => {
                                         border: `1px solid ${errors[field.name] ? "#ff0000" : "#ddd"}`,
                                         borderRadius: "4px",
                                         fontSize: "0.875rem",
-                                        color: "#333",
+                                        color: "#555",
                                         backgroundColor: "#f9f9f9",
                                         resize: "vertical",
-                                        minHeight: "100px",
+                                        minHeight: "80px",
                                     }}
+                                    className="light-placeholder"
                                 />
                             ) : (
                                 <input
@@ -195,26 +145,28 @@ const SettingsList = () => {
                                     name={field.name}
                                     value={formData[field.name] || ""}
                                     onChange={handleInputChange}
+                                    placeholder={`Enter ${field.label}`}
                                     style={{
                                         width: "100%",
-                                        padding: "0.5rem",
+                                        padding: "0.4rem 0.5rem",
+                                        height: "32px",
                                         border: `1px solid ${errors[field.name] ? "#ff0000" : "#ddd"}`,
                                         borderRadius: "4px",
                                         fontSize: "0.875rem",
-                                        color: "#333",
+                                        color: "#555",
                                         backgroundColor: "#f9f9f9",
                                     }}
+                                    className="light-placeholder"
                                 />
                             )}
                             {errors[field.name] && (
-                                <p style={{ color: "#ff0000", fontSize: "0.75rem", marginTop: "0.25rem" }}>
+                                <p style={{ color: "#ff0000", fontSize: "0.75rem", marginTop: "0.5rem" }}>
                                     {errors[field.name]}
                                 </p>
                             )}
                         </div>
                     ))}
 
-                    {/* File Inputs */}
                     {[
                         { name: "logo", label: "Logo", accept: "image/png,image/jpeg,image/svg+xml" },
                         { name: "favicon", label: "Favicon", accept: "image/x-icon,image/png,image/jpeg" },
@@ -225,7 +177,7 @@ const SettingsList = () => {
                                     display: "block",
                                     fontSize: "0.875rem",
                                     color: "#555",
-                                    marginBottom: "0.25rem",
+                                    marginBottom: "0.5rem",
                                 }}
                             >
                                 {field.label}
@@ -237,11 +189,11 @@ const SettingsList = () => {
                                 onChange={handleFileChange}
                                 style={{
                                     width: "100%",
-                                    padding: "0.5rem",
+                                    padding: "0.4rem",
                                     border: `1px solid ${errors[field.name] ? "#ff0000" : "#ddd"}`,
                                     borderRadius: "4px",
                                     fontSize: "0.875rem",
-                                    color: "#333",
+                                    color: "#555",
                                     backgroundColor: "#f9f9f9",
                                 }}
                             />
@@ -258,8 +210,7 @@ const SettingsList = () => {
                         </div>
                     ))}
 
-                    {/* Submit Button */}
-                    <div style={{ flex: "1 1 100%", textAlign: "right" }}>
+                    <div style={{ flex: "1 1 100%", textAlign: "right", marginTop: "1rem" }}>
                         <button
                             type="submit"
                             style={{
@@ -277,17 +228,6 @@ const SettingsList = () => {
                     </div>
                 </form>
             </div>
-
-            <FancyTableV2
-                fields={[
-                    { key: "label", label: "Field" },
-                    { key: "value", label: "Value" },
-                ]}
-                data={settingsData}
-                title="Current Settings"
-                subtitle="View and Manage Website Configuration"
-                filterOptions={filterOptions}
-            />
         </DsPageOuter>
     );
 };
@@ -298,3 +238,9 @@ export const metadata = {
 };
 
 export default SettingsList;
+
+<style jsx>{`
+  .light-placeholder::placeholder {
+    color: #ccc;
+  }
+`}</style>
