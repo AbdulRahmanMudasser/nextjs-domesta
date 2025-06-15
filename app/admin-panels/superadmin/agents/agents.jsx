@@ -1,10 +1,12 @@
+
 'use client'
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import DsPageOuter from "@/templates/layouts/ds-page-outer";
 import { ProfileTypes } from "@/data/globalKeys";
 import FancyTableV2 from "@/templates/tables/fancy-table-v2";
 import agentData from "@/data/agent-profile";
+import Shimmer from "@/templates/misc/Shimmer";
 
 export const metadata = {
   title: "Agency || Domesta - Listing Board",
@@ -12,6 +14,15 @@ export const metadata = {
 };
 
 const Agents = () => {
+  const [agentsData, setAgentsData] = useState(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAgentsData(agentData || []);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Helper to format field names
   const formatFieldName = (fieldName) => {
     if (!fieldName || typeof fieldName !== 'string') return 'Unknown Field';
@@ -35,21 +46,21 @@ const Agents = () => {
   };
 
   // Get all Agent Profile fields dynamically
-  const agentFields = agentData[0]?.keys
-    .find((k) => k.key === "Agent Profile")
+  const agentFields = agentsData?.[0]?.keys
+    ?.find((k) => k.key === "Agent Profile")
     ?.value.map((field) => ({
       key: field.key,
       label: formatFieldName(field.key),
     })) || [];
 
   // Map agentData to table data
-  const agents = agentData.map((agent) => {
+  const agents = agentsData?.map((agent) => {
     const row = { id: agent.id };
     agentFields.forEach((field) => {
       row[field.key] = findKeyValue(agent.keys, "Agent Profile", field.key, "N/A");
     });
     return row;
-  });
+  }) || [];
 
   // Define filter options
   const filterOptions = [
@@ -75,12 +86,29 @@ const Agents = () => {
     },
   ];
 
+  if (!agentsData) {
+    return (
+      <DsPageOuter headerType={ProfileTypes.SUPERADMIN}>
+        <div style={{ padding: "1.5rem", backgroundColor: "#fff", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+          <Shimmer width="200px" height="24px" style={{ marginBottom: "0.5rem" }} />
+          <Shimmer width="300px" height="16px" style={{ marginBottom: "1rem" }} />
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
+            {[...Array(4)].map((_, i) => (
+              <Shimmer key={i} width="150px" height="32px" />
+            ))}
+          </div>
+          <div style={{ display: "grid", gap: "0.5rem" }}>
+            {[...Array(5)].map((_, i) => (
+              <Shimmer key={i} width="100%" height="40px" />
+            ))}
+          </div>
+        </div>
+      </DsPageOuter>
+    );
+  }
+
   return (
-    <DsPageOuter
-      headerType={ProfileTypes.SUPERADMIN}
-      // title="Agency"
-      // subtitle="Manage Your Agencies!"
-    >
+    <DsPageOuter headerType={ProfileTypes.SUPERADMIN}>
       <FancyTableV2
         fields={agentFields}
         data={agents}

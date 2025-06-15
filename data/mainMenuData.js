@@ -302,67 +302,45 @@ export const blogItems = [
 ];
 
 export const pageItems = [
-   {
+  {
     name: "Search",
-    routePath: "#",
+    routePath: "/website/search",
   },
-  
   {
     name: "How it Works",
-    routePath: "#",
+    routePath: "/website/how-it-works",
   },
-   {
+
+  {
     name: "Pricing",
     routePath: "/website/pricing",
   },
+
   {
     name: "About Us",
     routePath: "/website/about",
   },
+
   {
     name: "Services",
     routePath: "#",
   },
-  // {
-  //   name: "Pricing",
-  //   routePath: "/pricing",
-  // },
+
   {
     name: "FAQ's",
     routePath: "/website/faq",
   },
+
   {
     name: "Terms",
     routePath: "/website/terms",
   },
-  // {
-  //   name: "Invoice",
-  //   routePath: "/invoice",
-  // },
+
   {
     name: "Contact Us",
     routePath: "/website/contact",
   },
-  // {
-  //   name: "Employees",
-  //   routePath: "/website/employees",
-  // },
-  // {
-  //   name: "Employers",
-  //   routePath: "/website/employers",
-  // },
-  // {
-  //   name: "Agents",
-  //   routePath: "/website/agents",
-  // },
-  // {
-  //   name: "Agencies",
-  //   routePath: "/",
-  // },
-  // {
-  //   name: "404",
-  //   routePath: "/404",
-  // },
+
 ];
 
 export const shopItems = [

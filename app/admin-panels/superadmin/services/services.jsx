@@ -1,14 +1,16 @@
+
 'use client'
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import DsPageOuter from "@/templates/layouts/ds-page-outer";
 import { ProfileTypes } from "@/data/globalKeys";
 import ListingCategories from "@/app/website/home/Listingcategories/ListingCategories";
 import jobCatContent from "@/data/job-catergories";
+import Shimmer from "@/templates/misc/Shimmer";
 
 const ServicesList = () => {
-  const [categories, setCategories] = useState(jobCatContent);
+  const [categories, setCategories] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentEntry, setCurrentEntry] = useState({
@@ -18,6 +20,13 @@ const ServicesList = () => {
     jobNumber: "",
     icon: "",
   });
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCategories(jobCatContent || []);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const buttonStyle = {
     padding: "0.5rem 1rem",
@@ -44,6 +53,7 @@ const ServicesList = () => {
   };
 
   const saveCategory = () => {
+    if (!categories) return;
     if (isEditing) {
       setCategories(
         categories.map((cat) =>
@@ -65,6 +75,7 @@ const ServicesList = () => {
   };
 
   const deleteCategory = (id) => {
+    if (!categories) return;
     setCategories(categories.filter((cat) => cat.id !== id));
   };
 
@@ -115,6 +126,31 @@ const ServicesList = () => {
       required: true,
     },
   ];
+
+  if (!categories) {
+    return (
+      <DsPageOuter headerType={ProfileTypes.SUPERADMIN}>
+        <div style={{ backgroundColor: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+            <div>
+              <Shimmer width="200px" height="24px" style={{ marginBottom: "0.5rem" }} />
+              <Shimmer width="300px" height="16px" />
+            </div>
+            <Shimmer width="120px" height="32px" />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
+            {[...Array(6)].map((_, i) => (
+              <div key={i} style={{ padding: "1rem" }}>
+                <Shimmer width="100%" height="100px" />
+                <Shimmer width="150px" height="20px" style={{ marginTop: "0.5rem" }} />
+                <Shimmer width="100px" height="16px" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </DsPageOuter>
+    );
+  }
 
   return (
     <DsPageOuter headerType={ProfileTypes.SUPERADMIN}>
@@ -243,11 +279,17 @@ const ServicesList = () => {
             data-aos="fade-up"
             data-aos-anchor-placement="top-bottom"
           >
-            <ListingCategories
-              categories={categories}
-              editAction={editCategory}
-              deleteAction={deleteCategory}
-            />
+            {categories.length > 0 ? (
+              <ListingCategories
+                categories={categories}
+                editAction={editCategory}
+                deleteAction={deleteCategory}
+              />
+            ) : (
+              <p style={{ color: "#555", fontSize: "1rem", textAlign: "center" }}>
+                No service categories available.
+              </p>
+            )}
           </div>
         </div>
       </div>

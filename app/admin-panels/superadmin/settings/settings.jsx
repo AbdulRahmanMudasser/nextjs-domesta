@@ -3,13 +3,12 @@
 import React, { useState, useEffect } from "react";
 import DsPageOuter from "@/templates/layouts/ds-page-outer";
 import { ProfileTypes } from "@/data/globalKeys";
-import FancyTableV2 from "@/templates/tables/fancy-table-v2";
+import Shimmer from "@/templates/misc/Shimmer";
 
-// Mock initial settings data (replace with API fetch in production)
 const initialSettings = {
     id: 1,
-    logo: null, // File object or URL
-    favicon: null, // File object or URL
+    logo: null,
+    favicon: null,
     homeTitle: "Domesta - Listing Board",
     emailAddress: "contact@domesta.com",
     address: "123 Listing St, Board City, BC 45678",
@@ -21,16 +20,21 @@ const initialSettings = {
 };
 
 const SettingsList = () => {
-    // State for settings
-    const [settings, setSettings] = useState(initialSettings);
-    // State for form inputs
-    const [formData, setFormData] = useState({ ...initialSettings });
-    // State for form errors
+    const [settings, setSettings] = useState(null);
+    const [formData, setFormData] = useState(null);
     const [errors, setErrors] = useState({});
 
-    // Update favicon in <head> when favicon changes
     useEffect(() => {
-        if (settings.favicon) {
+        // Simulate data loading
+        const timer = setTimeout(() => {
+            setSettings(initialSettings);
+            setFormData({ ...initialSettings });
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        if (settings?.favicon) {
             const faviconLink = document.querySelector('link[rel="icon"]') || document.createElement('link');
             faviconLink.rel = 'icon';
             faviconLink.type = settings.favicon.type || 'image/x-icon';
@@ -39,9 +43,8 @@ const SettingsList = () => {
                 document.head.appendChild(faviconLink);
             }
         }
-    }, [settings.favicon]);
+    }, [settings?.favicon]);
 
-    // Validate form inputs
     const validateForm = () => {
         const newErrors = {};
         if (!formData.homeTitle) newErrors.homeTitle = "Home Title is required";
@@ -50,7 +53,6 @@ const SettingsList = () => {
         if (!formData.address) newErrors.address = "Address is required";
         if (!formData.footerContent) newErrors.footerContent = "Footer Content is required";
 
-        // Validate social media links as URLs (optional)
         const urlRegex = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/;
         if (formData.facebookLink && !urlRegex.test(formData.facebookLink))
             newErrors.facebookLink = "Invalid Facebook URL";
@@ -65,13 +67,11 @@ const SettingsList = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Handle text input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    // Handle file input changes
     const handleFileChange = (e) => {
         const { name, files } = e.target;
         if (files[0]) {
@@ -79,17 +79,47 @@ const SettingsList = () => {
         }
     };
 
-    // Handle form submission
     const handleSubmit = (e) => {
         e.preventDefault();
         if (validateForm()) {
-            // Update settings state (replace with API call in production)
             setSettings({ ...formData, id: 1 });
             console.log("Settings updated:", formData);
-            // Reset errors
             setErrors({});
         }
     };
+
+    if (!settings || !formData) {
+        return (
+            <DsPageOuter headerType={ProfileTypes.SUPERADMIN}>
+                <div style={{ backgroundColor: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", marginBottom: "2rem" }}>
+                    <Shimmer width="200px" height="24px" style={{ marginBottom: "1rem" }} />
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "1.5rem" }}>
+                        {[...Array(7)].map((_, i) => (
+                            <div key={i} style={{ flex: "1 1 300px" }}>
+                                <Shimmer width="100px" height="14px" style={{ marginBottom: "0.5rem" }} />
+                                <Shimmer width="100%" height="32px" />
+                            </div>
+                        ))}
+                        <div style={{ flex: "1 1 300px" }}>
+                            <Shimmer width="100px" height="14px" style={{ marginBottom: "0.5rem" }} />
+                            <Shimmer width="100%" height="32px" />
+                        </div>
+                        <div style={{ flex: "1 1 300px" }}>
+                            <Shimmer width="100px" height="14px" style={{ marginBottom: "0.5rem" }} />
+                            <Shimmer width="100%" height="32px" />
+                        </div>
+                        <div style={{ flex: "1 1 100%" }}>
+                            <Shimmer width="100px" height="14px" style={{ marginBottom: "0.5rem" }} />
+                            <Shimmer width="100%" height="80px" />
+                        </div>
+                        <div style={{ flex: "1 1 100%", textAlign: "right" }}>
+                            <Shimmer width="120px" height="32px" />
+                        </div>
+                    </div>
+                </div>
+            </DsPageOuter>
+        );
+    }
 
     return (
         <DsPageOuter
@@ -104,7 +134,6 @@ const SettingsList = () => {
                         { name: "homeTitle", label: "Home Title", type: "text" },
                         { name: "emailAddress", label: "Email Address", type: "email" },
                         { name: "address", label: "Address", type: "text" },
-                        { name: "footerContent", label: "Footer Content", type: "textarea" },
                         { name: "facebookLink", label: "Facebook Link", type: "url" },
                         { name: "twitterLink", label: "Twitter Link", type: "url" },
                         { name: "linkedinLink", label: "LinkedIn Link", type: "url" },
@@ -121,44 +150,24 @@ const SettingsList = () => {
                             >
                                 {field.label}
                             </label>
-                            {field.type === "textarea" ? (
-                                <textarea
-                                    name={field.name}
-                                    value={formData[field.name] || ""}
-                                    onChange={handleInputChange}
-                                    style={{
-                                        width: "100%",
-                                        padding: "0.5rem",
-                                        border: `1px solid ${errors[field.name] ? "#ff0000" : "#ddd"}`,
-                                        borderRadius: "4px",
-                                        fontSize: "0.875rem",
-                                        color: "#555",
-                                        backgroundColor: "#f9f9f9",
-                                        resize: "vertical",
-                                        minHeight: "80px",
-                                    }}
-                                    className="light-placeholder"
-                                />
-                            ) : (
-                                <input
-                                    type={field.type}
-                                    name={field.name}
-                                    value={formData[field.name] || ""}
-                                    onChange={handleInputChange}
-                                    placeholder={`Enter ${field.label}`}
-                                    style={{
-                                        width: "100%",
-                                        padding: "0.4rem 0.5rem",
-                                        height: "32px",
-                                        border: `1px solid ${errors[field.name] ? "#ff0000" : "#ddd"}`,
-                                        borderRadius: "4px",
-                                        fontSize: "0.875rem",
-                                        color: "#555",
-                                        backgroundColor: "#f9f9f9",
-                                    }}
-                                    className="light-placeholder"
-                                />
-                            )}
+                            <input
+                                type={field.type}
+                                name={field.name}
+                                value={formData[field.name] || ""}
+                                onChange={handleInputChange}
+                                placeholder={`Enter ${field.label}`}
+                                style={{
+                                    width: "100%",
+                                    padding: "0.4rem 0.5rem",
+                                    height: "32px",
+                                    border: `1px solid ${errors[field.name] ? "#ff0000" : "#ddd"}`,
+                                    borderRadius: "4px",
+                                    fontSize: "0.875rem",
+                                    color: "#555",
+                                    backgroundColor: "#f9f9f9",
+                                }}
+                                className="light-placeholder"
+                            />
                             {errors[field.name] && (
                                 <p style={{ color: "#ff0000", fontSize: "0.75rem", marginTop: "0.5rem" }}>
                                     {errors[field.name]}
@@ -210,11 +219,46 @@ const SettingsList = () => {
                         </div>
                     ))}
 
+                    <div style={{ flex: "1 1 100%" }}>
+                        <label
+                            style={{
+                                display: "block",
+                                fontSize: "0.875rem",
+                                color: "#555",
+                                marginBottom: "0.5rem",
+                            }}
+                        >
+                            Footer Content
+                        </label>
+                        <textarea
+                            name="footerContent"
+                            value={formData.footerContent || ""}
+                            onChange={handleInputChange}
+                            style={{
+                                width: "100%",
+                                padding: "0.5rem",
+                                border: `1px solid ${errors.footerContent ? "#ff0000" : "#ddd"}`,
+                                borderRadius: "4px",
+                                fontSize: "0.875rem",
+                                color: "#555",
+                                backgroundColor: "#f9f9f9",
+                                resize: "vertical",
+                                minHeight: "80px",
+                            }}
+                            className="light-placeholder"
+                        />
+                        {errors.footerContent && (
+                            <p style={{ color: "#ff0000", fontSize: "0.75rem", marginTop: "0.5rem" }}>
+                                {errors.footerContent}
+                            </p>
+                        )}
+                    </div>
+
                     <div style={{ flex: "1 1 100%", textAlign: "right", marginTop: "1rem" }}>
                         <button
                             type="submit"
                             style={{
-                                backgroundColor: "#000000",
+                                backgroundColor: "#8c956b",
                                 color: "#fff",
                                 padding: "0.5rem 1rem",
                                 border: "none",
@@ -230,11 +274,6 @@ const SettingsList = () => {
             </div>
         </DsPageOuter>
     );
-};
-
-export const metadata = {
-    title: "Domesta Settings || Domesta - Listing Board",
-    description: "Manage website configuration for Domesta - Listing Board",
 };
 
 export default SettingsList;
