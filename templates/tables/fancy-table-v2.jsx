@@ -1,43 +1,15 @@
-
-'use client'
-
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import Link from "next/link";
-import InputField from "@/templates/inputs/input-field";
-import SelectField from "@/templates/inputs/select-field";
-
-const inputStyle = {
-  width: "100%",
-  padding: "0.75rem",
-  borderRadius: "0.25rem",
-  backgroundColor: "#F0F5F7",
-  boxSizing: "border-box",
-  height: "41.5px",
-  minHeight: "41.5px",
-  border: "1px solid #ddd",
-  fontSize: "0.875rem",
-  color: "#333",
-};
-
-const selectStyle = {
-  width: "100%",
-  borderRadius: "0.5rem",
-  backgroundColor: "#f0f5f7",
-  height: "41.5px",
-  minHeight: "41.5px",
-  border: "1px solid #ddd",
-  fontSize: "0.875rem",
-  color: "#333",
-};
 
 const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, handleBulkDelete, customActions }) => {
   const [filters, setFilters] = useState(
     filterOptions.reduce((acc, option) => {
-      acc[option.key] = option.type === "select" && option.isMulti ? [] : "";
+      acc[option.key] = "";
       return acc;
     }, {})
   );
+
   const [selectedRows, setSelectedRows] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -50,7 +22,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
   const handleClearFilters = () => {
     setFilters(
       filterOptions.reduce((acc, option) => {
-        acc[option.key] = option.type === "select" && option.isMulti ? [] : "";
+        acc[option.key] = "";
         return acc;
       }, {})
     );
@@ -81,16 +53,13 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
 
   const filteredData = data.filter((row) =>
     Object.keys(filters).every((key) => {
-      if (!filters[key] && filters[key] !== 0) return true;
+      if (!filters[key]) return true;
       const filterOption = filterOptions.find((opt) => opt.key === key);
       const cellValue = row[key]?.toString().toLowerCase() || "";
       if (filterOption.type === "text") {
         return cellValue.includes(filters[key].toLowerCase());
       } else if (filterOption.type === "select") {
-        if (filterOption.isMulti && Array.isArray(filters[key])) {
-          return filters[key].length === 0 || filters[key].includes(cellValue);
-        }
-        return filters[key] === "" || cellValue === filters[key].toLowerCase();
+        return cellValue === filters[key].toLowerCase();
       }
       return true;
     })
@@ -162,7 +131,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
     label: "Action",
     render: (row) => (
       <div className="option-box">
-        <ul className="option-list" style={{ display: "flex", gap: "0.5rem" }}>
+        <ul className="option-list" style={{ display: "flex", gap: "" }}>
           <li>
             <Link
               href={`/website/employees/profile/${row.id}`}
@@ -209,7 +178,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
     label: "Action",
     render: (row) => (
       <div className="option-box">
-        <ul className="option-list" style={{ display: "flex", gap: "0.5rem" }}>
+        <ul className="option-list" style={{ display: "flex", gap: "" }}>
           <li>
             <Link
               href={`/website/employees/profile/${row.id}`}
@@ -272,7 +241,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
             >
               <span className="la la-exchange-alt"></span>
             </button>
-            </li>
+          </li>
         </ul>
       </div>
     ),
@@ -284,15 +253,6 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
     ...fields,
     customActions ? interviewActionColumn : defaultActionColumn,
   ];
-
-  const getColClass = (filterCount) => {
-    if (filterCount <= 1) return "col-lg-12";
-    if (filterCount === 2) return "col-lg-6";
-    if (filterCount === 3) return "col-lg-4";
-    if (filterCount === 4) return "col-lg-3";
-    if (filterCount <= 6) return "col-lg-2";
-    return "col-lg-2";
-  };
 
   return (
     <div style={{ backgroundColor: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
@@ -326,7 +286,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
             onClick={() => handleBulkDelete(selectedRows)}
             disabled={selectedRows.length === 0}
             style={{
-              backgroundColor: selectedRows.length === 0 ? "#dc354580" : "#dc3545",
+              backgroundColor: selectedRows.length === 0 ? "#dc3545" : "#dc3545",
               color: "#fff",
               padding: "0.3rem 1rem",
               border: "none",
@@ -348,7 +308,6 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
               color: selectedRows.length === 0 ? "#aaa" : "#333",
               backgroundColor: "#f9f9f9",
               cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
-              height: "36px",
             }}
           >
             <option value="">Change Status</option>
@@ -359,9 +318,9 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
         </div>
       </div>
 
-      <div className="row" style={{ marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
         {filterOptions.map((option, index) => (
-          <div key={index} className={`form-group ${getColClass(filterOptions.length)} col-md-6 col-sm-12 mb-3`}>
+          <div key={index} style={{ flex: "0 1 200px", maxWidth: "300px" }}>
             <label
               style={{
                 display: "block",
@@ -373,28 +332,47 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
               {option.label}
             </label>
             {option.type === "text" ? (
-              <InputField
-                field={{
-                  type: "text",
-                  name: option.key,
-                  placeholder: `Filter by ${option.label}`,
-                  style: inputStyle,
-                }}
+              <input
+                type="text"
                 value={filters[option.key] || ""}
-                handleChange={(value) => handleFilterChange(option.key, value)}
+                onChange={(e) => handleFilterChange(option.key, e.target.value)}
+                placeholder={`Filter by ${option.label}`}
+                style={{
+                  width: "100%",
+                  padding: "0.4rem 0.5rem",
+                  height: "34px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  fontSize: "0.875rem",
+                  color: "#333",
+                  backgroundColor: "#f5f7fc",
+                }}
+                className="light-placeholder"
               />
             ) : option.type === "select" ? (
-              <SelectField
-                field={{
-                  name: option.key,
-                  options: option.options || [{ value: "", label: `All ${option.label}` }],
-                  placeholder: `Filter by ${option.label}`,
-                  isMulti: option.isMulti || false,
-                  style: selectStyle,
+              <select
+                value={filters[option.key] || ""}
+                onChange={(e) => handleFilterChange(option.key, e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "0.4rem 0.5rem",
+                  height: "34px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  fontSize: "0.875rem",
+                  color: "#333",
+                  backgroundColor: "#f5f7fc",
                 }}
-                value={filters[option.key] || (option.isMulti ? [] : "")}
-                handleSelectChange={(value) => handleFilterChange(option.key, value)}
-              />
+              >
+                <option value="" style={{ color: "#bbb" }}>
+                  All {option.label}
+                </option>
+                {option.options.map((opt, idx) => (
+                  <option key={idx} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             ) : null}
           </div>
         ))}
@@ -403,27 +381,6 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
       <style jsx>{`
         .light-placeholder::placeholder {
           color: #bbb;
-        }
-        .react-select__control {
-          height: 60px !important;
-          min-height: 60px !important;
-          border-radius: 0.5rem !important;
-          background-color: #F0F5F7 !important;
-          border: 1px solid #ddd !important;
-          font-size: 0.875rem !important;
-          color: #333 !important;
-        }
-        .react-select__value-container {
-          padding: 0.75rem !important;
-        }
-        .react-select__menu {
-          border-radius: 0.5rem !important;
-          background-color: #fff !important;
-          border: 1px solid #ddd !important;
-        }
-        .react-select__option {
-          font-size: 0.875rem !important;
-          color: #333 !important;
         }
       `}</style>
 
@@ -466,7 +423,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
                         color: "#555",
                       }}
                     >
-                      {field.render ? field.render(row) : row[field.key]}
+                      {field.render ? field.render(row, row) : row[field.key]}
                     </td>
                   ))}
                 </tr>
@@ -593,7 +550,6 @@ FancyTableV2.propTypes = {
           label: PropTypes.string.isRequired,
         })
       ),
-      isMulti: PropTypes.bool,
     })
   ).isRequired,
   rightOptionsHtml: PropTypes.string,
