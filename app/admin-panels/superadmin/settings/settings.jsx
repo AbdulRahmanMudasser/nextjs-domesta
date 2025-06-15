@@ -5,11 +5,10 @@ import DsPageOuter from "@/templates/layouts/ds-page-outer";
 import { ProfileTypes } from "@/data/globalKeys";
 import FancyTableV2 from "@/templates/tables/fancy-table-v2";
 
-// Mock initial settings data (replace with API fetch in production)
 const initialSettings = {
     id: 1,
-    logo: null, // File object or URL
-    favicon: null, // File object or URL
+    logo: null,
+    favicon: null,
     homeTitle: "Domesta - Listing Board",
     emailAddress: "contact@domesta.com",
     address: "123 Listing St, Board City, BC 45678",
@@ -21,14 +20,10 @@ const initialSettings = {
 };
 
 const SettingsList = () => {
-    // State for settings
     const [settings, setSettings] = useState(initialSettings);
-    // State for form inputs
     const [formData, setFormData] = useState({ ...initialSettings });
-    // State for form errors
     const [errors, setErrors] = useState({});
 
-    // Update favicon in <head> when favicon changes
     useEffect(() => {
         if (settings.favicon) {
             const faviconLink = document.querySelector('link[rel="icon"]') || document.createElement('link');
@@ -41,7 +36,6 @@ const SettingsList = () => {
         }
     }, [settings.favicon]);
 
-    // Validate form inputs
     const validateForm = () => {
         const newErrors = {};
         if (!formData.homeTitle) newErrors.homeTitle = "Home Title is required";
@@ -50,7 +44,6 @@ const SettingsList = () => {
         if (!formData.address) newErrors.address = "Address is required";
         if (!formData.footerContent) newErrors.footerContent = "Footer Content is required";
 
-        // Validate social media links as URLs (optional)
         const urlRegex = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/;
         if (formData.facebookLink && !urlRegex.test(formData.facebookLink))
             newErrors.facebookLink = "Invalid Facebook URL";
@@ -65,13 +58,11 @@ const SettingsList = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Handle text input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    // Handle file input changes
     const handleFileChange = (e) => {
         const { name, files } = e.target;
         if (files[0]) {
@@ -79,14 +70,11 @@ const SettingsList = () => {
         }
     };
 
-    // Handle form submission
     const handleSubmit = (e) => {
         e.preventDefault();
         if (validateForm()) {
-            // Update settings state (replace with API call in production)
             setSettings({ ...formData, id: 1 });
             console.log("Settings updated:", formData);
-            // Reset errors
             setErrors({});
         }
     };
@@ -104,7 +92,6 @@ const SettingsList = () => {
                         { name: "homeTitle", label: "Home Title", type: "text" },
                         { name: "emailAddress", label: "Email Address", type: "email" },
                         { name: "address", label: "Address", type: "text" },
-                        { name: "footerContent", label: "Footer Content", type: "textarea" },
                         { name: "facebookLink", label: "Facebook Link", type: "url" },
                         { name: "twitterLink", label: "Twitter Link", type: "url" },
                         { name: "linkedinLink", label: "LinkedIn Link", type: "url" },
@@ -121,44 +108,24 @@ const SettingsList = () => {
                             >
                                 {field.label}
                             </label>
-                            {field.type === "textarea" ? (
-                                <textarea
-                                    name={field.name}
-                                    value={formData[field.name] || ""}
-                                    onChange={handleInputChange}
-                                    style={{
-                                        width: "100%",
-                                        padding: "0.5rem",
-                                        border: `1px solid ${errors[field.name] ? "#ff0000" : "#ddd"}`,
-                                        borderRadius: "4px",
-                                        fontSize: "0.875rem",
-                                        color: "#555",
-                                        backgroundColor: "#f9f9f9",
-                                        resize: "vertical",
-                                        minHeight: "80px",
-                                    }}
-                                    className="light-placeholder"
-                                />
-                            ) : (
-                                <input
-                                    type={field.type}
-                                    name={field.name}
-                                    value={formData[field.name] || ""}
-                                    onChange={handleInputChange}
-                                    placeholder={`Enter ${field.label}`}
-                                    style={{
-                                        width: "100%",
-                                        padding: "0.4rem 0.5rem",
-                                        height: "32px",
-                                        border: `1px solid ${errors[field.name] ? "#ff0000" : "#ddd"}`,
-                                        borderRadius: "4px",
-                                        fontSize: "0.875rem",
-                                        color: "#555",
-                                        backgroundColor: "#f9f9f9",
-                                    }}
-                                    className="light-placeholder"
-                                />
-                            )}
+                            <input
+                                type={field.type}
+                                name={field.name}
+                                value={formData[field.name] || ""}
+                                onChange={handleInputChange}
+                                placeholder={`Enter ${field.label}`}
+                                style={{
+                                    width: "100%",
+                                    padding: "0.4rem 0.5rem",
+                                    height: "32px",
+                                    border: `1px solid ${errors[field.name] ? "#ff0000" : "#ddd"}`,
+                                    borderRadius: "4px",
+                                    fontSize: "0.875rem",
+                                    color: "#555",
+                                    backgroundColor: "#f9f9f9",
+                                }}
+                                className="light-placeholder"
+                            />
                             {errors[field.name] && (
                                 <p style={{ color: "#ff0000", fontSize: "0.75rem", marginTop: "0.5rem" }}>
                                     {errors[field.name]}
@@ -210,6 +177,41 @@ const SettingsList = () => {
                         </div>
                     ))}
 
+                    <div style={{ flex: "1 1 100%" }}>
+                        <label
+                            style={{
+                                display: "block",
+                                fontSize: "0.875rem",
+                                color: "#555",
+                                marginBottom: "0.5rem",
+                            }}
+                        >
+                            Footer Content
+                        </label>
+                        <textarea
+                            name="footerContent"
+                            value={formData.footerContent || ""}
+                            onChange={handleInputChange}
+                            style={{
+                                width: "100%",
+                                padding: "0.5rem",
+                                border: `1px solid ${errors.footerContent ? "#ff0000" : "#ddd"}`,
+                                borderRadius: "4px",
+                                fontSize: "0.875rem",
+                                color: "#555",
+                                backgroundColor: "#f9f9f9",
+                                resize: "vertical",
+                                minHeight: "80px",
+                            }}
+                            className="light-placeholder"
+                        />
+                        {errors.footerContent && (
+                            <p style={{ color: "#ff0000", fontSize: "0.75rem", marginTop: "0.5rem" }}>
+                                {errors.footerContent}
+                            </p>
+                        )}
+                    </div>
+
                     <div style={{ flex: "1 1 100%", textAlign: "right", marginTop: "1rem" }}>
                         <button
                             type="submit"
@@ -230,11 +232,6 @@ const SettingsList = () => {
             </div>
         </DsPageOuter>
     );
-};
-
-export const metadata = {
-    title: "Domesta Settings || Domesta - Listing Board",
-    description: "Manage website configuration for Domesta - Listing Board",
 };
 
 export default SettingsList;

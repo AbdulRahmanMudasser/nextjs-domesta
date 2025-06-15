@@ -122,7 +122,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
     label: "Action",
     render: (row) => (
       <div className="option-box">
-        <ul className="option-list" style={{ display: "flex", gap: "0.25rem" }}>
+        <ul className="option-list" style={{ display: "flex", gap: "0" }}>
           <li>
             <Link
               href={`/website/employees/profile/${row.id}`}
@@ -169,7 +169,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
     label: "Action",
     render: (row) => (
       <div className="option-box">
-        <ul className="option-list" style={{ display: "flex", gap: "0.25rem" }}>
+        <ul className="option-list" style={{ display: "flex", gap: "0" }}>
           <li>
             <Link
               href={`/website/employees/profile/${row.id}`}
