@@ -214,7 +214,7 @@ const SettingsList = () => {
                         <button
                             type="submit"
                             style={{
-                                backgroundColor: "#000000",
+                                backgroundColor: "#8c956b",
                                 color: "#fff",
                                 padding: "0.5rem 1rem",
                                 border: "none",
