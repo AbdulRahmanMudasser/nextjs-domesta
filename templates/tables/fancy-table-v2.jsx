@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import Link from "next/link";
 
-const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptionsHtml, handleBulkDelete }) => {
+const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, handleBulkDelete, customActions }) => {
   const [filters, setFilters] = useState(
     filterOptions.reduce((acc, option) => {
       acc[option.key] = "";
@@ -117,73 +117,196 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
     ),
   };
 
-  const allFields = [checkboxColumn, profileColumn, ...fields];
+  const defaultActionColumn = {
+    key: "actions",
+    label: "Action",
+    render: (row) => (
+      <div className="option-box">
+        <ul className="option-list" style={{ display: "flex", gap: "0.25rem" }}>
+          <li>
+            <Link
+              href={`/website/employees/profile/${row.id}`}
+              title="View Profile"
+              data-text="View Profile"
+            >
+              <span className="la la-eye"></span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              href={`/website/employees/edit/${row.id}`}
+              title="Edit Profile"
+              data-text="Edit Profile"
+            >
+              <span className="la la-pencil"></span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              href={`/website/employees/documents/${row.id}`}
+              title="View Documents"
+              data-text="View Documents"
+            >
+              <span className="la la-file-alt"></span>
+            </Link>
+          </li>
+          <li>
+            <button
+              title="Delete Record"
+              data-text="Delete Record"
+              onClick={() => handleBulkDelete([row.id])}
+            >
+              <span className="la la-trash"></span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    ),
+  };
+
+  const interviewActionColumn = {
+    key: "actions",
+    label: "Action",
+    render: (row) => (
+      <div className="option-box">
+        <ul className="option-list" style={{ display: "flex", gap: "0.25rem" }}>
+          <li>
+            <Link
+              href={`/website/employees/profile/${row.id}`}
+              title="View Profile"
+              data-text="View Profile"
+            >
+              <span className="la la-eye"></span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              href={`/website/employees/edit/${row.id}`}
+              title="Edit Profile"
+              data-text="Edit Profile"
+            >
+              <span className="la la-pencil"></span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              href={`/website/employees/documents/${row.id}`}
+              title="View Documents"
+              data-text="View Documents"
+            >
+              <span className="la la-file-alt"></span>
+            </Link>
+          </li>
+          <li>
+            <button
+              title="Delete Record"
+              data-text="Delete Record"
+              onClick={() => handleBulkDelete([row.id])}
+            >
+              <span className="la la-trash"></span>
+            </button>
+          </li>
+          <li>
+            <Link
+              href={`/website/interviews/notes/${row.id}`}
+              title="Notes"
+              data-text="Notes"
+            >
+              <span className="la la-sticky-note"></span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              href={`/website/interviews/logs/${row.id}`}
+              title="Logs"
+              data-text="Logs"
+            >
+              <span className="la la-history"></span>
+            </Link>
+          </li>
+          <li>
+            <button
+              title="Change Status"
+              data-text="Change Status"
+              onClick={() => row.handleChangeStatus(row.id)}
+            >
+              <span className="la la-exchange-alt"></span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    ),
+  };
+
+  const allFields = [
+    checkboxColumn,
+    profileColumn,
+    ...fields,
+    customActions ? interviewActionColumn : defaultActionColumn,
+  ];
 
   return (
     <div style={{ backgroundColor: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
-      <h2 style={{ fontSize: "1.5rem", fontWeight: "600", color: "#333", margin: 0 }}>
-        {title}
-      </h2>
-      {subtitle && (
-        <p style={{ fontSize: "1rem", color: "#555", margin: "0.25rem 0 1rem" }}>
-          {subtitle}
-        </p>
-      )}
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", alignItems: "center", marginBottom: "1rem" }}>
-        <div dangerouslySetInnerHTML={{ __html: rightOptionsHtml }} />
-        <button
-          onClick={handleClearFilters}
-          title="Clear Filters"
-          style={{
-            background: "#fff",
-            border: "1px solid #ddd",
-            borderRadius: "4px",
-            padding: "0.5rem",
-            cursor: "pointer",
-            color: "#333",
-            fontSize: "1.25rem",
-            display: "flex",
-            alignItems: "center",
-            width: "36px",
-            height: "36px",
-            justifyContent: "center",
-          }}
-        >
-          <span className="la la-refresh"></span>
-        </button>
-        <button
-          onClick={() => handleBulkDelete(selectedRows)}
-          disabled={selectedRows.length === 0}
-          style={{
-            backgroundColor: selectedRows.length === 0 ? "#dc3545" : "#dc3545",
-            color: "#fff",
-            padding: "0.3rem 1rem",
-            border: "none",
-            borderRadius: "4px",
-            cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
-            fontSize: "0.875rem",
-          }}
-        >
-          Bulk Delete ({selectedRows.length})
-        </button>
-        <select
-          onChange={handleStatusChange}
-          disabled={selectedRows.length === 0}
-          style={{
-            padding: "0.5rem",
-            border: "1px solid #ddd",
-            borderRadius: "4px",
-            fontSize: "0.875rem",
-            color: selectedRows.length === 0 ? "#aaa" : "#333",
-            backgroundColor: "#f9f9f9",
-            cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
-          }}
-        >
-          <option value="">Change Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-          <option value="pending">Pending</option>
-        </select>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <h2 style={{ fontSize: "1.5rem", fontWeight: "500", color: "#333", margin: 0 }}>
+          {title}
+        </h2>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <div dangerouslySetInnerHTML={{ __html: rightOptionsHtml }} />
+          <button
+            onClick={handleClearFilters}
+            title="Clear Filters"
+            style={{
+              background: "#fff",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+              padding: "0.5rem",
+              cursor: "pointer",
+              color: "#333",
+              fontSize: "1.25rem",
+              display: "flex",
+              alignItems: "center",
+              width: "36px",
+              height: "36px",
+              justifyContent: "center",
+            }}
+          >
+            <span className="la la-refresh"></span>
+          </button>
+          <button
+            onClick={() => handleBulkDelete(selectedRows)}
+            disabled={selectedRows.length === 0}
+            style={{
+              backgroundColor: selectedRows.length === 0 ? "#dc3545" : "#dc3545",
+              color: "#fff",
+              padding: "0.3rem 1rem",
+              border: "none",
+              borderRadius: "4px",
+              cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
+              fontSize: "0.875rem",
+            }}
+          >
+            Bulk Delete ({selectedRows.length})
+          </button>
+          <select
+            onChange={handleStatusChange}
+            disabled={selectedRows.length === 0}
+            style={{
+              padding: "0.5rem",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+              fontSize: "0.875rem",
+              color: selectedRows.length === 0 ? "#aaa" : "#333",
+              backgroundColor: "#f9f9f9",
+              cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
+            }}
+          >
+            <option value="">Change Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
@@ -252,7 +375,7 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
         }
       `}</style>
 
-      <div className="table-outer" style={{ overflowX: "hidden" }}>
+      <div className="table-outer" style={{ overflowX: "auto" }}>
         <table className="default-table manage-job-table">
           <thead>
             <tr>
@@ -270,17 +393,6 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
                   {field.label}
                 </th>
               ))}
-              <th
-                style={{
-                  padding: "1rem",
-                  textAlign: "left",
-                  color: "#747c4d",
-                  fontWeight: "500",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Action
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -305,50 +417,12 @@ const FancyTableV2 = ({ fields, data, title, subtitle, filterOptions, rightOptio
                       {field.render ? field.render(row, row) : row[field.key]}
                     </td>
                   ))}
-                  <td style={{ padding: "1rem" }}>
-                    <div className="option-box">
-                      <ul className="option-list">
-                        <li>
-                          <Link
-                            href={`/website/employees/profile/${row.id}`}
-                            title="View Profile"
-                            data-text="View Profile"
-                          >
-                            <span className="la la-eye"></span>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link
-                            href={`/website/employees/edit/${row.id}`}
-                            title="Edit Profile"
-                            data-text="Edit Profile"
-                          >
-                            <span className="la la-pencil"></span>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link
-                            href={`/website/employees/documents/${row.id}`}
-                            title="View Documents"
-                            data-text="View Documents"
-                          >
-                            <span className="la la-file-alt"></span>
-                          </Link>
-                        </li>
-                        <li>
-                          <button title="Delete Record" data-text="Delete Record">
-                            <span className="la la-trash"></span>
-                          </button>
-                        </li>
-                      </ul>
-                    </div>
-                  </td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td
-                  colSpan={allFields.length + 1}
+                  colSpan={allFields.length}
                   style={{
                     textAlign: "center",
                     padding: "1rem",
@@ -456,7 +530,6 @@ FancyTableV2.propTypes = {
   ).isRequired,
   data: PropTypes.arrayOf(PropTypes.object).isRequired,
   title: PropTypes.string.isRequired,
-  subtitle: PropTypes.string,
   filterOptions: PropTypes.arrayOf(
     PropTypes.shape({
       key: PropTypes.string.isRequired,
@@ -472,10 +545,14 @@ FancyTableV2.propTypes = {
   ).isRequired,
   rightOptionsHtml: PropTypes.string,
   handleBulkDelete: PropTypes.func,
+  customActions: PropTypes.shape({
+    key: PropTypes.string.isRequired,
+    label: PropTypes.oneOfType([PropTypes.string, PropTypes.element]).isRequired,
+    render: PropTypes.func.isRequired,
+  }),
 };
 
 FancyTableV2.defaultProps = {
-  subtitle: "",
   rightOptionsHtml: "",
 };
 
