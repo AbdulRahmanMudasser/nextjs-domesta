@@ -76,7 +76,16 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
     label: "Profile",
     className: "profile-column",
     render: () => (
-      <span className="la la-user" style={{ fontSize: "1.5rem", color: "#333" }}></span>
+      <img
+        src="/images/demo-profile.jpg"
+        alt="Profile"
+        style={{
+          width: "32px",
+          height: "32px",
+          borderRadius: "50%",
+          objectFit: "cover",
+        }}
+      />
     ),
   };
 
@@ -122,7 +131,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
     label: "Action",
     render: (row) => (
       <div className="option-box">
-        <ul className="option-list" style={{ display: "flex", gap: "0" }}>
+        <ul className="option-list" style={{ display: "flex", gap: "" }}>
           <li>
             <Link
               href={`/website/employees/profile/${row.id}`}
@@ -169,7 +178,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
     label: "Action",
     render: (row) => (
       <div className="option-box">
-        <ul className="option-list" style={{ display: "flex", gap: "0" }}>
+        <ul className="option-list" style={{ display: "flex", gap: "" }}>
           <li>
             <Link
               href={`/website/employees/profile/${row.id}`}
