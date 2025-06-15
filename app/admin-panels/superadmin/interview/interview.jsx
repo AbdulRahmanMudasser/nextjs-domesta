@@ -1,10 +1,12 @@
+
 'use client'
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DsPageOuter from "@/templates/layouts/ds-page-outer";
 import { ProfileTypes } from "@/data/globalKeys";
 import FancyTableV2 from "@/templates/tables/fancy-table-v2";
 import Link from "next/link";
+import Shimmer from "@/templates/misc/Shimmer";
 
 export const metadata = {
   title: "Agency Interviews || Domesta - Listing Board",
@@ -12,56 +14,64 @@ export const metadata = {
 };
 
 const Interview = () => {
-  const [interviews, setInterviews] = useState([
-    {
-      id: 1,
-      employee: "John Doe",
-      employer: "Acme Corp",
-      service: "Web Development",
-      dateTime: "2025-05-01 10:00 AM",
-      status: "Pending",
-      handleChangeStatus: (id) => {
-        setInterviews(interviews.map(interview =>
-          interview.id === id ? { 
-            ...interview, 
-            status: interview.status === "Pending" ? "Confirmed" : interview.status === "Confirmed" ? "Completed" : "Pending" 
-          } : interview
-        ));
-      },
-    },
-    {
-      id: 2,
-      employee: "Sarah Smith",
-      employer: "Beta Inc",
-      service: "Graphic Design",
-      dateTime: "2025-05-03 2:00 PM",
-      status: "Confirmed",
-      handleChangeStatus: (id) => {
-        setInterviews(interviews.map(interview =>
-          interview.id === id ? { 
-            ...interview, 
-            status: interview.status === "Pending" ? "Confirmed" : interview.status === "Confirmed" ? "Completed" : "Pending" 
-          } : interview
-        ));
-      },
-    },
-    {
-      id: 3,
-      employee: "Mike Johnson",
-      employer: "Gamma Ltd",
-      service: "Marketing Strategy",
-      dateTime: "2025-04-20 11:00 AM",
-      status: "Completed",
-      handleChangeStatus: (id) => {
-        setInterviews(interviews.map(interview =>
-          interview.id === id ? { 
-            ...interview, 
-            status: interview.status === "Pending" ? "Confirmed" : interview.status === "Confirmed" ? "Completed" : "Pending" 
-          } : interview
-        ));
-      },
-    },
-  ]);
+  const [interviews, setInterviews] = useState(null);
+
+  useEffect(() => {
+    // Simulate data loading
+    const timer = setTimeout(() => {
+      setInterviews([
+        {
+          id: 1,
+          employee: "John Doe",
+          employer: "Acme Corp",
+          service: "Web Development",
+          dateTime: "2025-05-01 10:00 AM",
+          status: "Pending",
+          handleChangeStatus: (id) => {
+            setInterviews(interviews.map(interview =>
+              interview.id === id ? {
+                ...interview,
+                status: interview.status === "Pending" ? "Confirmed" : interview.status === "Confirmed" ? "Completed" : "Pending"
+              } : interview
+            ));
+          },
+        },
+        {
+          id: 2,
+          employee: "Sarah Smith",
+          employer: "Beta Inc",
+          service: "Graphic Design",
+          dateTime: "2025-05-03 2:00 PM",
+          status: "Confirmed",
+          handleChangeStatus: (id) => {
+            setInterviews(interviews.map(interview =>
+              interview.id === id ? {
+                ...interview,
+                status: interview.status === "Pending" ? "Confirmed" : interview.status === "Confirmed" ? "Completed" : "Pending"
+              } : interview
+            ));
+          },
+        },
+        {
+          id: 3,
+          employee: "Mike Johnson",
+          employer: "Gamma Ltd",
+          service: "Marketing Strategy",
+          dateTime: "2025-04-20 11:00 AM",
+          status: "Completed",
+          handleChangeStatus: (id) => {
+            setInterviews(interviews.map(interview =>
+              interview.id === id ? {
+                ...interview,
+                status: interview.status === "Pending" ? "Confirmed" : interview.status === "Confirmed" ? "Completed" : "Pending"
+              } : interview
+            ));
+          },
+        },
+      ]);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleBulkDelete = (ids) => {
     setInterviews(interviews.filter(interview => !ids.includes(interview.id)));
@@ -149,12 +159,23 @@ const Interview = () => {
     ),
   };
 
+  if (!interviews) {
+    return (
+      <DsPageOuter headerType={ProfileTypes.SUPERADMIN}>
+        <div style={{ padding: "1.5rem", backgroundColor: "#fff", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+          <Shimmer width="200px" height="24px" style={{ marginBottom: "0.5rem" }} />
+          <div style={{ display: "grid", gap: "0.5rem" }}>
+            {[...Array(5)].map((_, i) => (
+              <Shimmer key={i} width="100%" height="40px" />
+            ))}
+          </div>
+        </div>
+      </DsPageOuter>
+    );
+  }
+
   return (
-    <DsPageOuter
-      headerType={ProfileTypes.SUPERADMIN}
-      // title="Interviews"
-      // subtitle="Stay on Top of Your Interviews!"
-    >
+    <DsPageOuter headerType={ProfileTypes.SUPERADMIN}>
       <FancyTableV2
         fields={interviewFields}
         data={interviews}

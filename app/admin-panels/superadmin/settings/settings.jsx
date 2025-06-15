@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import DsPageOuter from "@/templates/layouts/ds-page-outer";
 import { ProfileTypes } from "@/data/globalKeys";
-import FancyTableV2 from "@/templates/tables/fancy-table-v2";
+import Shimmer from "@/templates/misc/Shimmer";
 
 const initialSettings = {
     id: 1,
@@ -20,12 +20,21 @@ const initialSettings = {
 };
 
 const SettingsList = () => {
-    const [settings, setSettings] = useState(initialSettings);
-    const [formData, setFormData] = useState({ ...initialSettings });
+    const [settings, setSettings] = useState(null);
+    const [formData, setFormData] = useState(null);
     const [errors, setErrors] = useState({});
 
     useEffect(() => {
-        if (settings.favicon) {
+        // Simulate data loading
+        const timer = setTimeout(() => {
+            setSettings(initialSettings);
+            setFormData({ ...initialSettings });
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        if (settings?.favicon) {
             const faviconLink = document.querySelector('link[rel="icon"]') || document.createElement('link');
             faviconLink.rel = 'icon';
             faviconLink.type = settings.favicon.type || 'image/x-icon';
@@ -34,7 +43,7 @@ const SettingsList = () => {
                 document.head.appendChild(faviconLink);
             }
         }
-    }, [settings.favicon]);
+    }, [settings?.favicon]);
 
     const validateForm = () => {
         const newErrors = {};
@@ -78,6 +87,39 @@ const SettingsList = () => {
             setErrors({});
         }
     };
+
+    if (!settings || !formData) {
+        return (
+            <DsPageOuter headerType={ProfileTypes.SUPERADMIN}>
+                <div style={{ backgroundColor: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", marginBottom: "2rem" }}>
+                    <Shimmer width="200px" height="24px" style={{ marginBottom: "1rem" }} />
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "1.5rem" }}>
+                        {[...Array(7)].map((_, i) => (
+                            <div key={i} style={{ flex: "1 1 300px" }}>
+                                <Shimmer width="100px" height="14px" style={{ marginBottom: "0.5rem" }} />
+                                <Shimmer width="100%" height="32px" />
+                            </div>
+                        ))}
+                        <div style={{ flex: "1 1 300px" }}>
+                            <Shimmer width="100px" height="14px" style={{ marginBottom: "0.5rem" }} />
+                            <Shimmer width="100%" height="32px" />
+                        </div>
+                        <div style={{ flex: "1 1 300px" }}>
+                            <Shimmer width="100px" height="14px" style={{ marginBottom: "0.5rem" }} />
+                            <Shimmer width="100%" height="32px" />
+                        </div>
+                        <div style={{ flex: "1 1 100%" }}>
+                            <Shimmer width="100px" height="14px" style={{ marginBottom: "0.5rem" }} />
+                            <Shimmer width="100%" height="80px" />
+                        </div>
+                        <div style={{ flex: "1 1 100%", textAlign: "right" }}>
+                            <Shimmer width="120px" height="32px" />
+                        </div>
+                    </div>
+                </div>
+            </DsPageOuter>
+        );
+    }
 
     return (
         <DsPageOuter
