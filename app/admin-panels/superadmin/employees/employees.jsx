@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect } from "react";
@@ -89,6 +90,31 @@ const EmployeesList = () => {
       label: "Nationality",
       type: "text",
     },
+    {
+      key: "religion",
+      label: "Religion",
+      type: "select",
+      options: [
+        { value: "christianity", label: "Christianity" },
+        { value: "islam", label: "Islam" },
+        { value: "hinduism", label: "Hinduism" },
+        { value: "buddhism", label: "Buddhism" },
+        { value: "sikhism", label: "Sikhism" },
+        { value: "other", label: "Other" },
+      ],
+    },
+
+    {
+      key: "maritalStatus",
+      label: "Marital Status",
+      type: "select",
+      options: [
+        { value: "single", label: "Single" },
+        { value: "married", label: "Married" },
+        { value: "divorced", label: "Divorced" },
+        { value: "widowed", label: "Widowed" },
+      ],
+    },
   ];
 
   if (!employeesData) {
@@ -98,7 +124,7 @@ const EmployeesList = () => {
           <Shimmer width="200px" height="24px" style={{ marginBottom: "0.5rem" }} />
           <Shimmer width="300px" height="16px" style={{ marginBottom: "1rem" }} />
           <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
-            {[...Array(4)].map((_, i) => (
+            {[...Array(6)].map((_, i) => (
               <Shimmer key={i} width="150px" height="32px" />
             ))}
           </div>
