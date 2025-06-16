@@ -6,18 +6,7 @@ import WsPageOuter from "@/templates/layouts/ws-page-outer";
 
 const index = () => {
   return (
-<WsPageOuter> 
-
-
-    
-      {/* End Job Categorie Section */}
-
-    
-      {/* <!-- End Job Section --> */}
-
- 
-      {/* <!-- End App Section --> */}
-
+    <WsPageOuter>
       <section className="pricing-section pb-0">
         <div className="auto-container">
           <div className="sec-title -type-2 text-center">
@@ -32,13 +21,6 @@ const index = () => {
           </div>
         </div>
       </section>
-      {/* <!-- End Pricing Section --> */}
-
-      
-      {/* <!-- End Clients Section --> */}
-
-      
-      {/* <!-- End Main Footer --> */}
     </WsPageOuter>
   );
 };
