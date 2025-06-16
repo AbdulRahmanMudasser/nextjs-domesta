@@ -13,19 +13,19 @@ module.exports = [
       // },
     ],
   },
-  {
-    id: 2,
-    title: "For Agencies",
-    menuList: [
-      {
-        name: "Browse Agencies",
-        route: "/website/agents",
-      },
-      // { name: "Employer Dashboard", route: "/admin-panels/employer/dashboard" },
-      // { name: "Add Job", route: "/employers-dashboard/post-jobs" },
-      // { name: "Job Packages", route: "/employers-dashboard/packages" },
-    ],
-  },
+  // {
+  //   id: 2,
+  //   title: "For Agencies",
+  //   menuList: [
+  //     {
+  //       name: "Browse Agencies",
+  //       route: "/website/agents",
+  //     },
+  //     // { name: "Employer Dashboard", route: "/admin-panels/employer/dashboard" },
+  //     // { name: "Add Job", route: "/employers-dashboard/post-jobs" },
+  //     // { name: "Job Packages", route: "/employers-dashboard/packages" },
+  //   ],
+  // },
   {
     id: 3,
     title: "About Us",
