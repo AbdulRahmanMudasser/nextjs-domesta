@@ -1,7 +1,7 @@
 
 import WsPageOuter from "@/templates/layouts/ws-page-outer";
 import JobSearchForm from "./components/JobSearchForm";
-import FilterTopBox from "../employees/filtertopbox";
+import FilterTopBox from "./components/FilterTopBox";
 
 const Search = () => {
     return (

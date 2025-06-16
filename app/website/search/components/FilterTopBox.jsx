@@ -14,11 +14,11 @@ import {
     addSort,
     clearExperienceF,
     clearQualificationF, 
-} from "../../../features/filter/candidateFilterSlice";
+} from "@/features/filter/candidateFilterSlice";
 import {
   clearExperience,
   clearQualification,
-} from "../../../features/candidate/candidateSlice";
+} from "@/features/candidate/candidateSlice";
 import Image from "next/image";
 
 // Mock authentication state (replace with actual auth logic)
