@@ -326,15 +326,15 @@ export const pageItems = [
     routePath: "#",
   },
 
-  {
-    name: "FAQ's",
-    routePath: "/website/faq",
-  },
+  // {
+  //   name: "FAQ's",
+  //   routePath: "/website/faq",
+  // },
 
-  {
-    name: "Terms",
-    routePath: "/website/terms",
-  },
+  // {
+  //   name: "Terms",
+  //   routePath: "/website/terms",
+  // },
 
   {
     name: "Contact Us",
