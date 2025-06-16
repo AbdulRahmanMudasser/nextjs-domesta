@@ -318,16 +318,18 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
         </div>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
+      <div className="d-flex flex-row flex-wrap gap-3 mb-4">
         {filterOptions.map((option, index) => (
-          <div key={index} style={{ flex: "0 1 200px", maxWidth: "300px" }}>
+          <div key={index} className="flex-fill" style={{ minWidth: "150px", maxWidth: "250px" }}>
             <label
+              className="d-block text-truncate"
               style={{
-                display: "block",
                 fontSize: "0.875rem",
                 color: "#555",
                 marginBottom: "0.25rem",
+                maxWidth: "100%",
               }}
+              title={option.label}
             >
               {option.label}
             </label>
@@ -336,29 +338,22 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
                 type="text"
                 value={filters[option.key] || ""}
                 onChange={(e) => handleFilterChange(option.key, e.target.value)}
-                placeholder={`Filter by ${option.label}`}
+                placeholder={`Filter by ${option.label.length > 12 ? `${option.label.slice(0, 9)}...` : option.label}`}
+                className="form-control light-placeholder"
                 style={{
-                  width: "100%",
-                  padding: "0.4rem 0.5rem",
                   height: "34px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
                   fontSize: "0.875rem",
                   color: "#333",
                   backgroundColor: "#f5f7fc",
                 }}
-                className="light-placeholder"
               />
             ) : option.type === "select" ? (
               <select
                 value={filters[option.key] || ""}
                 onChange={(e) => handleFilterChange(option.key, e.target.value)}
+                className="form-select"
                 style={{
-                  width: "100%",
-                  padding: "0.4rem 0.5rem",
                   height: "34px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
                   fontSize: "0.875rem",
                   color: "#333",
                   backgroundColor: "#f5f7fc",
