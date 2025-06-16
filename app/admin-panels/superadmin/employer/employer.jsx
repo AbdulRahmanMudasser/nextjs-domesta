@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect } from "react";
@@ -63,7 +62,7 @@ const EmployerList = () => {
     return row;
   }) || [];
 
-  // Define filter options
+  // Define filter options with religion filter added
   const filterOptions = [
     {
       key: "gender",
@@ -101,6 +100,21 @@ const EmployerList = () => {
       options: [
         { value: "yes", label: "Yes" },
         { value: "no", label: "No" },
+      ],
+    },
+    {
+      key: "religion",
+      label: "Religion",
+      type: "select",
+      options: [
+        { value: "christianity", label: "Christianity" },
+        { value: "islam", label: "Islam" },
+        { value: "hinduism", label: "Hinduism" },
+        { value: "buddhism", label: "Buddhism" },
+        { value: "sikhism", label: "Sikhism" },
+        { value: "judaism", label: "Judaism" },
+        { value: "other", label: "Other" },
+        { value: "none", label: "None" },
       ],
     },
   ];
