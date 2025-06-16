@@ -69,11 +69,13 @@ const EmployeesList = () => {
       title="Employees List!"
       subtitle="Keep Your Crew Connected"
     >
-      <FancyTable
-        fields={employeeFields}
-        data={employees}
+      <FancyTableV2
+        context="employee"
+        fields={fields}
+        data={data}
         title="Employees"
-        filterOptions={[]}
+        filterOptions={filterOptions}
+        handleBulkDelete={handleBulkDelete}
       />
     </DsPageOuter>
   );

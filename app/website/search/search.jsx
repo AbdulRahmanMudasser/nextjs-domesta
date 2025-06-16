@@ -7,7 +7,6 @@ const Search = () => {
     return (
         <WsPageOuter>
             <>
-
                 <section className="page-title style-two">
                     <div className="auto-container">
                         <JobSearchForm />
