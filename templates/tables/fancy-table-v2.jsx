@@ -143,7 +143,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
           </li>
           <li>
             <Link
-              href={`/website/employees/edit/${row.id}`}
+              href={`/website/employees/profile/${row.id}`}
               title="Edit Profile"
               data-text="Edit Profile"
             >
