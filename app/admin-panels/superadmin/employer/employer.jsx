@@ -129,6 +129,7 @@ const EmployerList = () => {
   return (
     <DsPageOuter headerType={ProfileTypes.SUPERADMIN}>
       <FancyTableV2
+        context="employer"
         fields={employerFields}
         data={employers}
         title="Manage Employers"

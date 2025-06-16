@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import Link from "next/link";
 
-const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, handleBulkDelete, customActions }) => {
+const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, handleBulkDelete, customActions, context }) => {
   const [filters, setFilters] = useState(
     filterOptions.reduce((acc, option) => {
       acc[option.key] = "";
@@ -126,6 +126,25 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
     ),
   };
 
+  // Define route mappings based on context
+  const routeMap = {
+    employee: {
+      viewProfile: (id) => `/website/employees/profile/${id}`,
+      editProfile: (id) => `/panels/employee/profile`,
+    },
+    employer: {
+      viewProfile: (id) => `/website/employers/profile/${id}`,
+      editProfile: (id) => `/panels/employer/profile`,
+    },
+    agency: {
+      viewProfile: (id) => `/website/agents/profile/${id}`,
+      editProfile: (id) => `/panels/agency/profile`,
+    },
+  };
+
+  // Get routes based on context or fall back to default
+  const routes = routeMap[context] || routeMap.employee;
+
   const defaultActionColumn = {
     key: "actions",
     label: "Action",
@@ -134,7 +153,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
         <ul className="option-list" style={{ display: "flex", gap: "" }}>
           <li>
             <Link
-              href={`/website/employees/profile/${row.id}`}
+              href={routes.viewProfile(row.id)}
               title="View Profile"
               data-text="View Profile"
             >
@@ -143,7 +162,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
           </li>
           <li>
             <Link
-              href={`/website/employees/profile/${row.id}`}
+              href={routes.editProfile(row.id)}
               title="Edit Profile"
               data-text="Edit Profile"
             >
@@ -181,7 +200,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
         <ul className="option-list" style={{ display: "flex", gap: "" }}>
           <li>
             <Link
-              href={`/website/employees/profile/${row.id}`}
+              href={routes.viewProfile(row.id)}
               title="View Profile"
               data-text="View Profile"
             >
@@ -190,7 +209,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
           </li>
           <li>
             <Link
-              href={`/website/employees/edit/${row.id}`}
+              href={routes.editProfile(row.id)}
               title="Edit Profile"
               data-text="Edit Profile"
             >
@@ -554,10 +573,12 @@ FancyTableV2.propTypes = {
     label: PropTypes.oneOfType([PropTypes.string, PropTypes.element]).isRequired,
     render: PropTypes.func.isRequired,
   }),
+  context: PropTypes.oneOf(["employee", "employer", "agency"]),
 };
 
 FancyTableV2.defaultProps = {
   rightOptionsHtml: "",
+  context: "employee",
 };
 
 export default FancyTableV2;

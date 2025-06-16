@@ -110,6 +110,7 @@ const Agents = () => {
   return (
     <DsPageOuter headerType={ProfileTypes.SUPERADMIN}>
       <FancyTableV2
+        context="agency"
         fields={agentFields}
         data={agents}
         title="Manage Agencies"
