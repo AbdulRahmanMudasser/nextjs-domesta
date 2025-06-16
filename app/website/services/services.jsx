@@ -9,17 +9,14 @@ const Services = () => {
     const [categories, setCategories] = useState(null);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setCategories(jobCatContent || []);
-        }, 1000);
-        return () => clearTimeout(timer);
+        setCategories(jobCatContent || []);
     }, []);
 
     return (
         <WsPageOuter>
-            <section className="services-section pb-0">
+            <section className="job-categories ui-job-categories">
                 <div className="auto-container">
-                    <div className="sec-title -type-2 text-center">
+                    <div className="sec-title text-center">
                         <h2>Our Services</h2>
                         <div className="text">
                             Explore our range of service categories tailored to your needs.
@@ -34,7 +31,7 @@ const Services = () => {
                             <ListingCategories categories={categories} />
                         ) : (
                             <p style={{ color: "#555", fontSize: "1rem", textAlign: "center" }}>
-                                Loading service categories...
+                                Loading Service Categories...
                             </p>
                         )}
                     </div>
