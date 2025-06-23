@@ -23,8 +23,10 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       state.token = null;
-      storage.removeItem("persist:root"); // Persisted state remove karega
-      localStorage.clear(); // Pura localStorage clear karega
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user_role");
+      storage.removeItem("persist:root");
     },
   },
 });

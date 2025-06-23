@@ -90,6 +90,33 @@ class UserService {
       return null;
     }
   }
+
+  async logoutUser() {
+    try {
+      console.log("user.service: Calling networkService.logoutUser");
+      const response = await networkService.logoutUser();
+      console.log("user.service: logoutUser response:", response);
+  
+      if (response && response.status) {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user_role");
+        await utilityService.showAlert("Success", "Logout Successful!", "success");
+        return response;
+      } else {
+        console.error("Logout failed. Invalid response:", response);
+        await utilityService.showAlert("Error", "Logout Failed: Invalid response from server.", "error");
+        return null;
+      }
+    } catch (error) {
+      console.error("user.service: logoutUser error:", error);
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user_role");
+      await utilityService.showAlert("Error", `Logout Failed: ${error.message || "Server error."}`, "error");
+      return null;
+    }
+  }
   
   async getRoles() {
     try {
