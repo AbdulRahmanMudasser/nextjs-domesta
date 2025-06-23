@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect } from "react";
@@ -65,6 +64,21 @@ const Agents = () => {
   // Define filter options
   const filterOptions = [
     {
+      key: "name",
+      label: "Name",
+      type: "text",
+    },
+    {
+      key: "email",
+      label: "Email",
+      type: "text",
+    },
+    {
+      key: "phoneNumber",
+      label: "Phone Number",
+      type: "text",
+    },
+    {
       key: "agencyName",
       label: "Agency Name",
       type: "text",
@@ -72,11 +86,6 @@ const Agents = () => {
     {
       key: "country",
       label: "Country",
-      type: "text",
-    },
-    {
-      key: "phoneNumber",
-      label: "Phone Number",
       type: "text",
     },
     {
@@ -110,6 +119,7 @@ const Agents = () => {
   return (
     <DsPageOuter headerType={ProfileTypes.SUPERADMIN}>
       <FancyTableV2
+        context="agency"
         fields={agentFields}
         data={agents}
         title="Manage Agencies"

@@ -323,18 +323,18 @@ export const pageItems = [
 
   {
     name: "Services",
-    routePath: "#",
+    routePath: "/website/services",
   },
 
-  {
-    name: "FAQ's",
-    routePath: "/website/faq",
-  },
+  // {
+  //   name: "FAQ's",
+  //   routePath: "/website/faq",
+  // },
 
-  {
-    name: "Terms",
-    routePath: "/website/terms",
-  },
+  // {
+  //   name: "Terms",
+  //   routePath: "/website/terms",
+  // },
 
   {
     name: "Contact Us",
