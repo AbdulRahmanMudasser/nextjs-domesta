@@ -12,9 +12,10 @@ import employerMenuData from "@/data/employerMenuData";
 import { useEffect, useState } from "react";
 import { ProfileTypes } from "@/data/globalKeys";
 import agencyMenuData from "@/data/agencyMenuData";
-import superAdminMenu from "@/data/superAdminMenu";
+import superAdminMenuData from "@/data/superAdminMenu";
+import { userService } from "@/services/user.service";
+
 const DashboardSidebar = ({ headerType }) => {
-  // Sidebar menu data
   const [profileType, setProfileType] = useState(null);
   useEffect(() => {
     if (headerType) {
@@ -22,7 +23,7 @@ const DashboardSidebar = ({ headerType }) => {
     }
   }, [headerType]);
 
-  console.log("profileType", profileType);
+  console.log("profileType:", profileType);
   let menuData = [];
   switch (profileType) {
     case ProfileTypes.CANDIDATE:
@@ -34,18 +35,15 @@ const DashboardSidebar = ({ headerType }) => {
     case ProfileTypes.AGENCY:
       menuData = agencyMenuData;
       break;
-    case ProfileTypes.ADMIN:
-      menuData = adminMenuData;
-      break;
     case ProfileTypes.SUPERADMIN:
-      menuData = superAdminMenu;
+      menuData = superAdminMenuData;
       break;
     default:
       console.warn("Unknown profile type:", profileType);
       menuData = [];
   }
 
-  console.log("menuData", menuData);
+  console.log("menuData:", menuData);
 
   const { menu } = useSelector((state) => state.toggle);
   const percentage = 30;
@@ -53,34 +51,34 @@ const DashboardSidebar = ({ headerType }) => {
   const router = useRouter();
   const dispatch = useDispatch();
 
-  // Menu toggle handler
   const menuToggleHandler = () => {
     dispatch(menuToggle());
   };
 
-  // Logout handler
-  const handleLogout = () => {
-    dispatch(logout());
-    router.push("/"); // Redirect to home page
+  const handleLogout = async () => {
+    try {
+      await userService.logoutUser();
+      dispatch(logout());
+      router.push("/");
+    } catch (error) {
+      console.error("Logout error in DashboardSidebar:", error);
+      dispatch(logout());
+      router.push("/");
+    }
   };
 
-  // Helper function to check active link
   const isActiveLink = (routePath, currentPath) => routePath === currentPath;
 
   return (
     <div
       className={`user-sidebar ${menu ? "sidebar_open" : ""}`}
-      style={{
-        width: "240px",
-      }}
+      style={{ width: "240px" }}
     >
-      {/* Start sidebar close icon */}
       <div className="pro-header text-end pb-0 mb-0 show-1023">
         <div className="fix-icon" onClick={menuToggleHandler}>
           <span className="flaticon-close"></span>
         </div>
       </div>
-      {/* End sidebar close icon */}
 
       <div className="sidebar-inner" style={{ padding: "20px" }}>
         <ul className="navigation">
@@ -93,7 +91,7 @@ const DashboardSidebar = ({ headerType }) => {
               onClick={menuToggleHandler}
             >
               {item.name === "Logout" ? (
-                <Link href="/" onClick={handleLogout}>
+                <Link href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
                   <i className={`la ${item.icon}`}></i> {item.name}
                 </Link>
               ) : (
