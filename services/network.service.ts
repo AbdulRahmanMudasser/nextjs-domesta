@@ -49,6 +49,8 @@ export const networkService = {
   },
   loginUser: (data: any) =>
     handleResponse(apiService.put("/user/login", data, {}, false), true),
+  logoutUser: () =>
+    handleResponse(apiService.get("/user/logout", {}, false), true),
   getRoles: () => {
     console.log("Fetching roles from /roles");
     return handleResponse(apiService.get("/roles", {}, true), false);
