@@ -1,7 +1,6 @@
-// services/apiService.ts
 import axios from "axios";
 
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://darmaid.gadgetreviewzone.com/api";
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.zoexp.com/";
 
 const axiosInstance = axios.create({
   baseURL,
