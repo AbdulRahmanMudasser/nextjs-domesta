@@ -61,7 +61,7 @@ class UserService {
   async loginUser(data) {
     if (!data || !data.email || !data.password) {
       console.error("Invalid login data:", data);
-      await utilityService.showAlert("Error", "Please provide username and password", "error");
+      await utilityService.showAlert("Error", "Please provide email and password", "error");
       return null;
     }
   
@@ -70,11 +70,18 @@ class UserService {
       const response = await networkService.loginUser(data);
       console.log("user.service: loginUser response:", response);
   
-      if (response && response.token) {
-        localStorage.setItem("user", JSON.stringify(response));
+      if (response && response.token && response.role_id) {
+        localStorage.setItem("user", JSON.stringify({
+          id: response.id,
+          email: response.email,
+          first_name: response.first_name,
+          last_name: response.last_name,
+          role_id: response.role_id,
+        }));
         localStorage.setItem("token", response.token);
         return response;
       }
+      console.error("Login failed. Response missing token or role_id:", response);
       await utilityService.showAlert("Error", "Login Failed: Invalid response from server.", "error");
       return null;
     } catch (error) {
