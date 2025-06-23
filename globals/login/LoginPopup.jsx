@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import Register from "../register/Register";
 import FormContent from "./FormContent";
@@ -8,21 +8,28 @@ import { useDispatch } from "react-redux";
 import { login } from "@/features/auth/authSlice";
 import { useRouter } from "next/navigation";
 
+const roleIdToSlug = {
+  2: "super-admin",
+  3: "agency",
+  4: "employer",
+  5: "employee",
+  6: "user",
+};
+
 const LoginPopup = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  // Handle registration form submission
   const handleRegisterSubmit = async (formData) => {
     console.log("Received registration data:", formData);
     try {
-      const res = await userService.registerUser(formData); // Fix: Using registerUser instead of loginUser
+      const res = await userService.registerUser(formData);
       console.log("Registration API Response:", res);
 
-      if (!res || !res.success) {
+      if (!res || !res.token || !res.role_id) {
         await utilityService.showAlert(
           "Error",
-          res?.message || "Something went wrong, please try again later",
+          "Registration failed: Invalid response from server.",
           "error"
         );
         return;
@@ -33,7 +40,7 @@ const LoginPopup = () => {
         "Registration successful!",
         "success"
       );
-      // Close modal
+
       const modal = document.getElementById("registerModal");
       if (modal) {
         const modalInstance = bootstrap.Modal.getInstance(modal);
@@ -45,13 +52,12 @@ const LoginPopup = () => {
       console.error("Registration Error:", error);
       await utilityService.showAlert(
         "Error",
-        error.message || "Something went wrong, please try again later",
+        error.message || "Registration failed. Please try again.",
         "error"
       );
     }
   };
 
-  // Handle switching to the register modal
   const handleSwitchRegister = () => {
     const loginModal = document.getElementById("loginPopupModal");
     const registerModal = document.getElementById("registerModal");
@@ -62,8 +68,8 @@ const LoginPopup = () => {
         loginModalInstance.hide();
       }
 
-      document.querySelector(".modal-backdrop").classList.remove("show");
-      document.querySelector(".modal-backdrop").remove();
+      document.querySelector(".modal-backdrop")?.classList.remove("show");
+      document.querySelector(".modal-backdrop")?.remove();
     }
 
     if (registerModal) {
@@ -72,14 +78,13 @@ const LoginPopup = () => {
     }
   };
 
-  // Handle login form submission
   const handleFormSubmit = async (formData) => {
     console.log("Received login data in LoginPopup:", formData);
     if (!formData || !formData.email || !formData.password) {
       console.error("Invalid login data:", formData);
       await utilityService.showAlert(
         "Error",
-        "Please provide username and password",
+        "Please provide email and password",
         "error"
       );
       return;
@@ -89,14 +94,32 @@ const LoginPopup = () => {
       const res = await userService.loginUser(formData);
       console.log("Login API Response:", res);
 
-      if (!res || !res.user) {
+      if (!res || !res.token || !res.role_id) {
+        console.error("Invalid login response:", res);
+        await utilityService.showAlert(
+          "Error",
+          "Login failed: Invalid response from server.",
+          "error"
+        );
         return;
       }
 
-      // Dispatch login action
-      dispatch(login(res));
+      const slug = roleIdToSlug[res.role_id] || "user";
+      console.log("Mapped role_id:", res.role_id, "to slug:", slug);
 
-      // Close modal
+      const loginData = {
+        token: res.token,
+        user: {
+          id: res.id,
+          email: res.email,
+          first_name: res.first_name,
+          last_name: res.last_name,
+          role: { slug },
+        },
+      };
+
+      dispatch(login(loginData));
+
       const modal = document.getElementById("loginPopupModal");
       if (modal) {
         const modalInstance = bootstrap.Modal.getInstance(modal);
@@ -105,39 +128,46 @@ const LoginPopup = () => {
         }
       }
 
-      // Remove modal-backdrop if it remains
-      const backdrop = document.querySelector(".modal-backdrop.fade.show");
-      if (backdrop) {
-        backdrop.parentNode.removeChild(backdrop);
-      }
+      document.querySelector(".modal-backdrop")?.classList.remove("show");
+      document.querySelector(".modal-backdrop")?.remove();
+      document.body.classList.remove("modal-open");
 
-      document.body.classList.remove("modal-open"); // Remove Bootstrap's modal-open class
-      document.querySelector(".modal-backdrop").classList.remove("show");
-      document.querySelector(".modal-backdrop").remove();
-
-      const userData = res.user; // Use 'res' instead of 'd'
-      console.log("User data:", userData);
-
-      // Navigate based on role
-      switch (userData.role.slug) {
+      switch (slug) {
+        case "super-admin":
+          router.push("/panels/superadmin/dashboard");
+          break;
         case "employer":
           router.push("/panels/employer/dashboard");
-          break;
-        case "employee":
-          router.push("/panels/employee/dashboard");
           break;
         case "agency":
           router.push("/panels/agency/dashboard");
           break;
-        case "super-admin":
-          router.push("/panels/superadmin/dashboard");
+        case "employee":
+          router.push("/panels/employee/dashboard");
+          break;
+        case "user":
+          await utilityService.showAlert(
+            "Info",
+            "User role logged in. Please proceed.",
+            "info"
+          );
+          router.push("/login");
           break;
         default:
-          router.push("/login"); // If role not found, redirect to login
-          console.log("Unknown role:", userData.role);
+          await utilityService.showAlert(
+            "Error",
+            "Unknown role. Please contact support.",
+            "error"
+          );
+          router.push("/login");
       }
     } catch (error) {
       console.error("Login Error:", error);
+      await utilityService.showAlert(
+        "Error",
+        error.message || "Login failed. Please try again.",
+        "error"
+      );
     }
   };
 
@@ -151,8 +181,6 @@ const LoginPopup = () => {
               className="closed-modal"
               data-bs-dismiss="modal"
             ></button>
-            {/* End close modal btn */}
-
             <div className="modal-body">
               <div id="login-modal">
                 <div className="login-form default-form">
@@ -172,8 +200,6 @@ const LoginPopup = () => {
               className="closed-modal"
               data-bs-dismiss="modal"
             ></button>
-            {/* End close modal btn */}
-
             <div className="modal-body">
               <div id="login-modal">
                 <div className="login-form default-form">
