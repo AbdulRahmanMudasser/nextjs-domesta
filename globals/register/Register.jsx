@@ -10,7 +10,7 @@ import Form from "./FormContent";
 import Link from "next/link";
 
 const roleIdToSlug = {
-  2: "admin",
+  2: "super-admin",
   3: "agency",
   4: "employer",
   5: "employee",
@@ -52,25 +52,18 @@ const Register = () => {
 
   const handleFormSubmit = async (formData) => {
     try {
-      console.log("Form data sent to registerUser:", formData);
       const res = await userService.registerUser(formData);
-      console.log("Registration Response:", res);
-
       if (!res || typeof res !== "object") {
-        console.error("Invalid response:", res);
         await utilityService.showAlert("Error", "Registration failed: Invalid response from server.", "error");
         return;
       }
 
       if (!res.token || !res.role_id) {
-        console.error("Missing token or role_id:", res);
         await utilityService.showAlert("Error", "Registration failed: Missing token or role_id.", "error");
         return;
       }
 
       const slug = roleIdToSlug[res.role_id] || "user";
-      console.log("Mapped role_id:", res.role_id, "to slug:", slug);
-
       const loginData = {
         token: res.token,
         user: {
@@ -87,7 +80,7 @@ const Register = () => {
       closeModal();
 
       switch (slug) {
-        case "admin":
+        case "super-admin":
           router.push("/panels/superadmin/dashboard");
           break;
         case "employer":
@@ -108,7 +101,6 @@ const Register = () => {
           router.push("/login");
       }
     } catch (error) {
-      console.error("Registration Error:", error);
       await utilityService.showAlert("Error", `Registration failed: ${error.message || "Server error."}`, "error");
     }
   };

@@ -12,12 +12,9 @@ const handleResponse = async (
 ): Promise<any> => {
   try {
     const response = await request;
-    console.log("API Response:", response);
     const data = response.data.data || response.data || response;
-    console.log("Extracted Data:", data);
     return data;
   } catch (error: any) {
-    console.error("API Error:", error.response || error);
     const err = error.response?.data || error;
 
     if (showError && err?.message) {
@@ -28,7 +25,6 @@ const handleResponse = async (
     }
 
     if (error.response?.status === 401) {
-      console.log("Unauthorized: Clearing token and redirecting to login");
       localStorage.removeItem("token");
       localStorage.removeItem("user_role");
       window.location.href = "/";
@@ -39,22 +35,15 @@ const handleResponse = async (
 };
 
 export const networkService = {
-  registerUser: (data: any) => {
-    console.log("Registering user with data:", data);
-    return handleResponse(apiService.post("/user/register", data, {}, false), false)
-      .then((response) => {
-        console.log("network.service: registerUser returning:", response);
-        return response;
-      });
-  },
+  registerUser: (data: any) =>
+    handleResponse(apiService.post("/user/register", data, {}, false), false)
+      .then((response) => response),
   loginUser: (data: any) =>
     handleResponse(apiService.put("/user/login", data, {}, false), true),
   logoutUser: () =>
     handleResponse(apiService.get("/user/logout", {}, false), true),
-  getRoles: () => {
-    console.log("Fetching roles from /roles");
-    return handleResponse(apiService.get("/roles", {}, true), false);
-  },
+  getRoles: () =>
+    handleResponse(apiService.get("/roles", {}, true), false),
 
   get: (endpoint: string, id: any = null, showError = true) =>
     handleResponse(

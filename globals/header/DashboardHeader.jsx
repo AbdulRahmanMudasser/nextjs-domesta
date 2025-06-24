@@ -57,7 +57,6 @@ const DashboardHeader = ({ headerType }) => {
       dispatch(logout());
       router.push("/");
     } catch (error) {
-      console.error("Logout error in DashboardHeader:", error);
       dispatch(logout());
       router.push("/");
     }

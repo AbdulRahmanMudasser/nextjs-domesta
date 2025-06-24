@@ -55,7 +55,6 @@ const WebsiteHeader = () => {
       dispatch(logout());
       router.push("/");
     } catch (error) {
-      console.error("Logout error in WebsiteHeader:", error);
       dispatch(logout());
       router.push("/");
     }
@@ -79,9 +78,7 @@ const WebsiteHeader = () => {
           break;
         default:
           router.push("/login");
-          console.log("Unknown role:", user?.role);
       }
-      console.log("User role:", user?.role);
     }
   };
 
@@ -135,30 +132,27 @@ const WebsiteHeader = () => {
 
               <ul className={`dropdown-menu ${dropdownOpen ? "show" : ""}`}>
                 {dropdownOpen &&
-                  headerdropdownmenu.map((item, index) => {
-                    console.log("Rendering item with key:", item.id || index);
-                    return (
-                      <li key={item.id || index}>
-                        {item.name === "Logout" ? (
-                          <Link
-                            href="#"
-                            onClick={(e) => { e.preventDefault(); handleLogout(); }}
-                            className="dropdown-item"
-                          >
-                            <i className={`la ${item.icon}`}></i> {item.name}
-                          </Link>
-                        ) : (
-                          <Link
-                            href={item.routePath}
-                            onClick={(e) => handleClick(item, e)}
-                            className="dropdown-item"
-                          >
-                            <i className={`la ${item.icon}`}></i> {item.name}
-                          </Link>
-                        )}
-                      </li>
-                    );
-                  })}
+                  headerdropdownmenu.map((item, index) => (
+                    <li key={item.id || index}>
+                      {item.name === "Logout" ? (
+                        <Link
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); handleLogout(); }}
+                          className="dropdown-item"
+                        >
+                          <i className={`la ${item.icon}`}></i> {item.name}
+                        </Link>
+                      ) : (
+                        <Link
+                          href={item.routePath}
+                          onClick={(e) => handleClick(item, e)}
+                          className="dropdown-item"
+                        >
+                          <i className={`la ${item.icon}`}></i> {item.name}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
               </ul>
             </div>
           ) : (
