@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import Link from "next/link";
+import CustomSelect from "../misc/CustomSelect";
 
 const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, handleBulkDelete, customActions, context }) => {
   const [filters, setFilters] = useState(
@@ -45,10 +46,11 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
     }
   };
 
-  const handleStatusChange = (e) => {
-    const status = e.target.value;
-    console.log(`Changing status to ${status} for records: ${selectedRows.join(", ")}`);
-    setSelectedRows([]);
+  const handleStatusChange = (status) => {
+    if (status) {
+      console.log(`Changing status to ${status} for records: ${selectedRows.join(", ")}`);
+      setSelectedRows([]);
+    }
   };
 
   const filteredData = data.filter((row) =>
@@ -273,6 +275,21 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
     customActions ? interviewActionColumn : defaultActionColumn,
   ];
 
+  // Status change options
+  const statusOptions = [
+    { value: "active", label: "Active" },
+    { value: "inactive", label: "Inactive" },
+    { value: "pending", label: "Pending" }
+  ];
+
+  // Page size options
+  const pageSizeOptions = [
+    { value: "5", label: "5" },
+    { value: "10", label: "10" },
+    { value: "20", label: "20" },
+    { value: "50", label: "50" }
+  ];
+
   return (
     <div style={{ backgroundColor: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
@@ -316,24 +333,18 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
           >
             Bulk Delete ({selectedRows.length})
           </button>
-          <select
-            onChange={handleStatusChange}
-            disabled={selectedRows.length === 0}
-            style={{
-              padding: "0.5rem",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              fontSize: "0.875rem",
-              color: selectedRows.length === 0 ? "#aaa" : "#333",
-              backgroundColor: "#f9f9f9",
-              cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
-            }}
-          >
-            <option value="">Change Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="pending">Pending</option>
-          </select>
+          <div style={{ minWidth: "140px" }}>
+            <CustomSelect
+              value=""
+              onChange={handleStatusChange}
+              options={statusOptions}
+              placeholder="Change Status"
+              disabled={selectedRows.length === 0}
+              style={{
+                opacity: selectedRows.length === 0 ? 0.6 : 1
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -345,8 +356,9 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
               style={{
                 fontSize: "0.875rem",
                 color: "#555",
-                marginBottom: "0.25rem",
+                marginBottom: "0.5rem",
                 maxWidth: "100%",
+                fontWeight: "500"
               }}
               title={option.label}
             >
@@ -360,33 +372,31 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
                 placeholder={`Filter by ${option.label.length > 12 ? `${option.label.slice(0, 9)}...` : option.label}`}
                 className="form-control light-placeholder"
                 style={{
-                  height: "34px",
-                  fontSize: "0.875rem",
-                  color: "#333",
-                  backgroundColor: "#f5f7fc",
+                  height: "48px",
+                  fontSize: "14px",
+                  color: "#495057",
+                  backgroundColor: "#f0f5f7",
+                  border: "1px solid #dee2e6",
+                  borderRadius: "6px",
+                  padding: "12px 16px",
+                  transition: "border-color 0.15s ease",
+                  outline: "none"
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#80bdff";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#dee2e6";
                 }}
               />
             ) : option.type === "select" ? (
-              <select
+              <CustomSelect
                 value={filters[option.key] || ""}
-                onChange={(e) => handleFilterChange(option.key, e.target.value)}
-                className="form-select"
-                style={{
-                  height: "34px",
-                  fontSize: "0.875rem",
-                  color: "#333",
-                  backgroundColor: "#f5f7fc",
-                }}
-              >
-                <option value="" style={{ color: "#bbb" }}>
-                  All {option.label}
-                </option>
-                {option.options.map((opt, idx) => (
-                  <option key={idx} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => handleFilterChange(option.key, value)}
+                options={option.options}
+                placeholder={`Select ${option.label}`}
+                allowClear={true}
+              />
             ) : null}
           </div>
         ))}
@@ -394,7 +404,7 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
 
       <style jsx>{`
         .light-placeholder::placeholder {
-          color: #bbb;
+          color: #6c757d;
         }
       `}</style>
 
@@ -468,6 +478,8 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
           marginTop: "1.5rem",
           fontSize: "0.875rem",
           color: "#555",
+          flexWrap: "wrap",
+          gap: "1rem"
         }}
       >
         <div>
@@ -475,47 +487,39 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
           {Math.min(currentPage * pageSize, filteredData.length)} of{" "}
           {filteredData.length} records
         </div>
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <label style={{ marginRight: "0.5rem" }}>Rows per page:</label>
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-            style={{
-              padding: "0.5rem",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              backgroundColor: "#f9f9f9",
-              height: "36px",
-              fontSize: "0.875rem",
-            }}
-          >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-          </select>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+          <label style={{ marginRight: "0.5rem", whiteSpace: "nowrap" }}>Rows per page:</label>
+          <div style={{ minWidth: "80px" }}>
+            <CustomSelect
+              value={pageSize.toString()}
+              onChange={(value) => {
+                setPageSize(Number(value));
+                setCurrentPage(1);
+              }}
+              options={pageSizeOptions}
+            />
+          </div>
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
             style={{
               padding: "0 0.75rem",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              backgroundColor: currentPage === 1 ? "#f0f0f0" : "#fff",
+              border: "1px solid #e1e5e9",
+              borderRadius: "8px",
+              backgroundColor: currentPage === 1 ? "#f5f5f5" : "#fff",
               cursor: currentPage === 1 ? "not-allowed" : "pointer",
               height: "36px",
               fontSize: "0.875rem",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              color: currentPage === 1 ? "#9ca3af" : "#333",
+              transition: "all 0.2s ease"
             }}
           >
             Previous
           </button>
-          <span style={{ padding: "0.5rem" }}>
+          <span style={{ padding: "0.5rem", whiteSpace: "nowrap" }}>
             Page {currentPage} of {totalPages}
           </span>
           <button
@@ -523,15 +527,17 @@ const FancyTableV2 = ({ fields, data, title, filterOptions, rightOptionsHtml, ha
             disabled={currentPage === totalPages}
             style={{
               padding: "0 0.75rem",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              backgroundColor: currentPage === totalPages ? "#f0f0f0" : "#fff",
+              border: "1px solid #e1e5e9",
+              borderRadius: "8px",
+              backgroundColor: currentPage === totalPages ? "#f5f5f5" : "#fff",
               cursor: currentPage === totalPages ? "not-allowed" : "pointer",
               height: "36px",
               fontSize: "0.875rem",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              color: currentPage === totalPages ? "#9ca3af" : "#333",
+              transition: "all 0.2s ease"
             }}
           >
             Next
