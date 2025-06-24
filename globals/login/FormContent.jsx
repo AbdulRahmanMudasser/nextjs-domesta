@@ -11,12 +11,10 @@ const FormContent = ({ onSubmit, onSwitchRegister }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     const formData = { email, password, rememberMe };
-    console.log("FormContent submitting:", formData);
     onSubmit(formData);
   };
 
   const handleSignup = () => {
-    console.log("Switching to register modal");
     onSwitchRegister();
   };
 

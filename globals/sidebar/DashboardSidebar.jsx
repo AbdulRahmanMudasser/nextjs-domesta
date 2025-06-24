@@ -23,7 +23,6 @@ const DashboardSidebar = ({ headerType }) => {
     }
   }, [headerType]);
 
-  console.log("profileType:", profileType);
   let menuData = [];
   switch (profileType) {
     case ProfileTypes.CANDIDATE:
@@ -39,11 +38,8 @@ const DashboardSidebar = ({ headerType }) => {
       menuData = superAdminMenuData;
       break;
     default:
-      console.warn("Unknown profile type:", profileType);
       menuData = [];
   }
-
-  console.log("menuData:", menuData);
 
   const { menu } = useSelector((state) => state.toggle);
   const percentage = 30;
@@ -61,7 +57,6 @@ const DashboardSidebar = ({ headerType }) => {
       dispatch(logout());
       router.push("/");
     } catch (error) {
-      console.error("Logout error in DashboardSidebar:", error);
       dispatch(logout());
       router.push("/");
     }

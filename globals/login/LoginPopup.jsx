@@ -21,11 +21,8 @@ const LoginPopup = () => {
   const router = useRouter();
 
   const handleRegisterSubmit = async (formData) => {
-    console.log("Received registration data:", formData);
     try {
       const res = await userService.registerUser(formData);
-      console.log("Registration API Response:", res);
-
       if (!res || !res.token || !res.role_id) {
         await utilityService.showAlert(
           "Error",
@@ -49,7 +46,6 @@ const LoginPopup = () => {
         }
       }
     } catch (error) {
-      console.error("Registration Error:", error);
       await utilityService.showAlert(
         "Error",
         error.message || "Registration failed. Please try again.",
@@ -79,9 +75,7 @@ const LoginPopup = () => {
   };
 
   const handleFormSubmit = async (formData) => {
-    console.log("Received login data in LoginPopup:", formData);
     if (!formData || !formData.email || !formData.password) {
-      console.error("Invalid login data:", formData);
       await utilityService.showAlert(
         "Error",
         "Please provide email and password",
@@ -92,21 +86,16 @@ const LoginPopup = () => {
 
     try {
       const res = await userService.loginUser(formData);
-      console.log("Login API Response:", res);
-
       if (!res || !res.token || !res.role_id) {
-        console.error("Invalid login response:", res);
         await utilityService.showAlert(
           "Error",
-          "Login failed: Invalid response from server.",
+          `Login failed: ${res?.error || "Invalid response from server."}`,
           "error"
         );
         return;
       }
 
       const slug = roleIdToSlug[res.role_id] || "user";
-      console.log("Mapped role_id:", res.role_id, "to slug:", slug);
-
       const loginData = {
         token: res.token,
         user: {
@@ -162,7 +151,6 @@ const LoginPopup = () => {
           router.push("/login");
       }
     } catch (error) {
-      console.error("Login Error:", error);
       await utilityService.showAlert(
         "Error",
         error.message || "Login failed. Please try again.",
