@@ -2,7 +2,7 @@ import dynamic from "next/dynamic";
 import ServicesList from "./services";
 
 export const metadata = {
-    title: "SuperAdmin Dashboard || Domesta  - Listing Board",
+    title: "SuperAdmin Dashboard || Domesta - Listing Board",
     description: "Domesta  - Listing Board",
 };
 
