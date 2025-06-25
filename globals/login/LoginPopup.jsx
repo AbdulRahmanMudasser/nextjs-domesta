@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import Register from "../register/Register";
 import FormContent from "./FormContent";
 import { userService } from "@/services/user.service";
@@ -19,6 +20,10 @@ const roleIdToSlug = {
 const LoginPopup = () => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const [forgotPasswordData, setForgotPasswordData] = useState({
+    email: "",
+    type_id: "",
+  });
 
   const handleRegisterSubmit = async (formData) => {
     try {
@@ -55,6 +60,7 @@ const LoginPopup = () => {
   };
 
   const handleSwitchRegister = () => {
+    console.log("Switching to register modal");
     const loginModal = document.getElementById("loginPopupModal");
     const registerModal = document.getElementById("registerModal");
 
@@ -71,6 +77,27 @@ const LoginPopup = () => {
     if (registerModal) {
       const registerModalInstance = new bootstrap.Modal(registerModal);
       registerModalInstance.show();
+    }
+  };
+
+  const handleSwitchForgotPassword = () => {
+    console.log("Switching to forgot password modal");
+    const loginModal = document.getElementById("loginPopupModal");
+    const forgotPasswordModal = document.getElementById("forgotPasswordModal");
+
+    if (loginModal) {
+      const loginModalInstance = bootstrap.Modal.getInstance(loginModal);
+      if (loginModalInstance) {
+        loginModalInstance.hide();
+      }
+
+      document.querySelector(".modal-backdrop")?.classList.remove("show");
+      document.querySelector(".modal-backdrop")?.remove();
+    }
+
+    if (forgotPasswordModal) {
+      const forgotPasswordModalInstance = new bootstrap.Modal(forgotPasswordModal);
+      forgotPasswordModalInstance.show();
     }
   };
 
@@ -159,6 +186,57 @@ const LoginPopup = () => {
     }
   };
 
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    console.log("Submitting forgot password form:", forgotPasswordData);
+
+    if (!forgotPasswordData.email || !forgotPasswordData.type_id) {
+      await utilityService.showAlert(
+        "Error",
+        "Please provide email and select a role",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      const res = await userService.forgotPassword(forgotPasswordData);
+      if (res && res.status) {
+        await utilityService.showAlert(
+          "Success",
+          "Reset password link sent to your email.",
+          "success"
+        );
+        const modal = document.getElementById("forgotPasswordModal");
+        if (modal) {
+          const modalInstance = bootstrap.Modal.getInstance(modal);
+          if (modalInstance) {
+            modalInstance.hide();
+          }
+        }
+        setForgotPasswordData({ email: "", type_id: "" });
+      } else {
+        await utilityService.showAlert(
+          "Error",
+          "Failed to send reset password request.",
+          "error"
+        );
+      }
+    } catch (error) {
+      await utilityService.showAlert(
+        "Error",
+        error.message || "Failed to send reset password request.",
+        "error"
+      );
+    }
+  };
+
+  const handleForgotPasswordChange = (e) => {
+    const { name, value } = e.target;
+    console.log(`Updating forgot password ${name}:`, value);
+    setForgotPasswordData((prev) => ({ ...prev, [name]: value }));
+  };
+
   return (
     <>
       <div className="modal fade" id="loginPopupModal">
@@ -172,7 +250,11 @@ const LoginPopup = () => {
             <div className="modal-body">
               <div id="login-modal">
                 <div className="login-form default-form">
-                  <FormContent onSubmit={handleFormSubmit} onSwitchRegister={handleSwitchRegister} />
+                  <FormContent
+                    onSubmit={handleFormSubmit}
+                    onSwitchRegister={handleSwitchRegister}
+                    onSwitchForgotPassword={handleSwitchForgotPassword}
+                  />
                 </div>
               </div>
             </div>
@@ -192,6 +274,64 @@ const LoginPopup = () => {
               <div id="login-modal">
                 <div className="login-form default-form">
                   <Register onSubmit={handleRegisterSubmit} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="modal fade" id="forgotPasswordModal">
+        <div className="modal-dialog modal-lg modal-dialog-centered login-modal modal-dialog-scrollable">
+          <div className="modal-content">
+            <button
+              type="button"
+              className="closed-modal"
+              data-bs-dismiss="modal"
+            ></button>
+            <div className="modal-body" style={{ padding: "2rem" }}>
+              <div id="forgot-password-modal">
+                <div className="login-form default-form">
+                  <h3 style={{ margin: "0 0 1.5rem 0" }}>Forgot Password</h3>
+                  <form onSubmit={handleForgotPasswordSubmit}>
+                    <div className="form-group">
+                      <label style={{ marginBottom: "0.5rem" }}>Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={forgotPasswordData.email}
+                        onChange={handleForgotPasswordChange}
+                        placeholder="Email"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label style={{ marginBottom: "0.5rem" }}>Role</label>
+                      <select
+                        name="type_id"
+                        value={forgotPasswordData.type_id}
+                        onChange={handleForgotPasswordChange}
+                        required
+                      >
+                        <option value="" disabled>
+                          Select Role
+                        </option>
+                        <option value="1">Admin</option>
+                        <option value="2">Employer</option>
+                        <option value="3">Agency</option>
+                        <option value="4">Employee</option>
+                        <option value="5">User</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <button
+                        className="theme-btn btn-style-one"
+                        type="submit"
+                      >
+                        Send Reset Request
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>

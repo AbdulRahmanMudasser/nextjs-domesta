@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-const FormContent = ({ onSubmit, onSwitchRegister }) => {
+const FormContent = ({ onSubmit, onSwitchRegister, onSwitchForgotPassword }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -11,19 +11,26 @@ const FormContent = ({ onSubmit, onSwitchRegister }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     const formData = { email, password, rememberMe };
+    console.log("Submitting login form:", formData);
     onSubmit(formData);
   };
 
   const handleSignup = () => {
+    console.log("Clicked Signup link");
     onSwitchRegister();
+  };
+
+  const handleForgotPassword = () => {
+    console.log("Clicked Forgot Password link");
+    onSwitchForgotPassword();
   };
 
   return (
     <div className="form-inner">
-      <h3>Login to Domesta</h3>
+      <h3 style={{ margin: "0 0 1.5rem 0" }}>Login to Domesta</h3>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Email</label>
+          <label style={{ marginBottom: "0.5rem" }}>Email</label>
           <input
             type="email"
             name="email"
@@ -34,7 +41,7 @@ const FormContent = ({ onSubmit, onSwitchRegister }) => {
           />
         </div>
         <div className="form-group">
-          <label>Password</label>
+          <label style={{ marginBottom: "0.5rem" }}>Password</label>
           <input
             type="password"
             name="password"
@@ -56,6 +63,15 @@ const FormContent = ({ onSubmit, onSwitchRegister }) => {
               />
             </div>
           </div>
+        </div>
+        <div className="form-group" style={{ textAlign: "right" }}>
+          <span
+            className="call-modal"
+            onClick={handleForgotPassword}
+            style={{ cursor: "pointer", textDecoration: "underline", display: "block", margin: "0 0 1rem 0" }}
+          >
+            Forgot Password?
+          </span>
         </div>
         <div className="form-group">
           <button

@@ -1,6 +1,5 @@
 "use client";
 
-import Select from "react-select";
 import { useState } from "react";
 import CardForm from "@/templates/forms/card-form";
 

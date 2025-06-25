@@ -1,25 +1,48 @@
-'use client'
+"use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import Hero from "./herosection/Hero";
-import JobFeatured from "./jobfeatured/JobFeatured";
 import About from "./about/About";
-import TopCompany from "./topcompany/TopCompany";
 import Candidates from "./candidates/Candidates";
 import WsPageOuter from "@/templates/layouts/ws-page-outer";
 import ListingCategories from "./Listingcategories/ListingCategories";
 import About6 from "@/components/whyemployer";
 import About7 from "@/components/whyagency";
 import About8 from "@/components/whyemployee";
-import jobCatContent from "@/data/job-catergories";
+import Shimmer from "@/templates/misc/Shimmer";
+import { userService } from "@/services/user.service";
 
 const LandingPage = () => {
   const [categories, setCategories] = useState(null);
 
-  useEffect(() => {
-    setCategories(jobCatContent || []);
-  }, []);
+  // useEffect(() => {
+  //   const fetchServices = async () => {
+  //     try {
+  //       console.log("Fetching services from getServices API...");
+  //       const services = await userService.getServices();
+  //       console.log("Services fetched:", services);
+  //       if (services && Array.isArray(services)) {
+  //         const mappedCategories = services.map((service) => ({
+  //           id: service.id,
+  //           catTitle: service.name,
+  //           jobDescription: service.description || "", // Fallback for missing description
+  //           jobNumber: service.employee_counter,
+  //           icon: service.class_name || "fi-rs-circle", // Fallback for missing icon
+  //         }));
+  //         console.log("Mapped categories:", mappedCategories);
+  //         setCategories(mappedCategories);
+  //       } else {
+  //         console.warn("No services returned from getServices API");
+  //         setCategories([]);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching services:", error);
+  //       setCategories([]);
+  //     }
+  //   };
+
+  //   fetchServices();
+  // }, []);
 
   return (
     <WsPageOuter>
@@ -58,9 +81,19 @@ const LandingPage = () => {
             {categories ? (
               <ListingCategories categories={categories} />
             ) : (
-              <p style={{ color: "#555", fontSize: "1rem", textAlign: "center" }}>
-                Loading Service Categories...
-              </p>
+              <div className="row grid-base">
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    className="category-block col-lg-4 col-md-6 col-sm-12"
+                    key={i}
+                    style={{ marginBottom: "1rem" }}
+                  >
+                    <div className="inner-box">
+                      <Shimmer height="200px" width="100%" borderRadius="8px" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
