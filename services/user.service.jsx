@@ -111,6 +111,96 @@ class UserService {
       return null;
     }
   }
+
+  async getServices() {
+    try {
+      console.log("Calling networkService.getServices");
+      const response = await networkService.getServices();
+      console.log("getServices response:", response);
+      if (response) {
+        return response;
+      }
+      console.warn("No services returned from networkService.getServices");
+      await utilityService.showAlert("Error", "Failed to fetch services.", "error");
+      return null;
+    } catch (error) {
+      console.error("getServices error:", error);
+      await utilityService.showAlert("Error", "Failed to fetch services. Please try again.", "error");
+      return null;
+    }
+  }
+
+  async deleteService(id) {
+    try {
+      console.log("Calling networkService.deleteService with ID:", id);
+      const response = await networkService.deleteService(id);
+      console.log("deleteService response:", response);
+      if (response) {
+        return response;
+      }
+      console.warn("Failed to delete service with ID:", id);
+      await utilityService.showAlert("Error", "Failed to delete service.", "error");
+      return null;
+    } catch (error) {
+      console.error("deleteService error:", error);
+      await utilityService.showAlert("Error", `Failed to delete service: ${error.message || "Server error."}`, "error");
+      return null;
+    }
+  }
+
+  async getSingleService(id) {
+    try {
+      console.log("Calling networkService.getSingleService with ID:", id);
+      const response = await networkService.getSingleService(id);
+      console.log("getSingleService response:", response);
+      if (response) {
+        return response;
+      }
+      console.warn("No service details returned for ID:", id);
+      await utilityService.showAlert("Error", "Failed to fetch service details.", "error");
+      return null;
+    } catch (error) {
+      console.error("getSingleService error:", error);
+      await utilityService.showAlert("Error", "Failed to fetch service details. Please try again.", "error");
+      return null;
+    }
+  }
+
+  async addService(data) {
+    try {
+      console.log("Calling networkService.addService with data:", data);
+      const response = await networkService.addService(data);
+      console.log("addService response:", response);
+      if (response) {
+        return response;
+      }
+      console.warn("Failed to add service");
+      await utilityService.showAlert("Error", "Failed to add service.", "error");
+      return null;
+    } catch (error) {
+      console.error("addService error:", error);
+      await utilityService.showAlert("Error", `Failed to add service: ${error.message || "Server error."}`, "error");
+      return null;
+    }
+  }
+
+  async editService(data) {
+    try {
+      console.log("Calling networkService.editService with data:", data);
+      const response = await networkService.editService(data);
+      console.log("editService response:", response);
+      if (response) {
+        return response;
+      }
+      console.warn("Failed to edit service");
+      await utilityService.showAlert("Error", "Failed to edit service.", "error");
+      return null;
+    } catch (error) {
+      console.error("editService error:", error);
+      await utilityService.showAlert("Error", `Failed to edit service: ${error.message || "Server error."}`, "error");
+      return null;
+    }
+  }
 }
 
 export const userService = new UserService();

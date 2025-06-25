@@ -12,9 +12,12 @@ const handleResponse = async (
 ): Promise<any> => {
   try {
     const response = await request;
+    console.log("API Response:", response);
     const data = response.data.data || response.data || response;
+    console.log("Extracted Data:", data);
     return data;
   } catch (error: any) {
+    console.error("API Error:", error.response || error);
     const err = error.response?.data || error;
 
     if (showError && err?.message) {
@@ -25,6 +28,7 @@ const handleResponse = async (
     }
 
     if (error.response?.status === 401) {
+      console.log("Unauthorized: Clearing token and redirecting to login");
       localStorage.removeItem("token");
       localStorage.removeItem("user_role");
       window.location.href = "/";
@@ -44,6 +48,26 @@ export const networkService = {
     handleResponse(apiService.get("/user/logout", {}, false), true),
   getRoles: () =>
     handleResponse(apiService.get("/roles", {}, true), false),
+  getServices: () => {
+    console.log("Sending GET request to https://api.zoexp.com/service/list-with-filter");
+    return handleResponse(apiService.get("https://api.zoexp.com/service/list-with-filter", {}, true), false);
+  },
+  deleteService: (id: number) => {
+    console.log("Sending DELETE request to https://api.zoexp.com/service/delete with IDs:", [id]);
+    return handleResponse(apiService.delete("https://api.zoexp.com/service/delete", { data: { ids: [id] } }, true), true);
+  },
+  getSingleService: (id: number) => {
+    console.log(`Sending GET request to https://api.zoexp.com/service/single/${id}`);
+    return handleResponse(apiService.get(`https://api.zoexp.com/service/single/${id}`, {}, true), false);
+  },
+  addService: (data: any) => {
+    console.log("Sending POST request to https://api.zoexp.com/service/add with data:", data);
+    return handleResponse(apiService.post("https://api.zoexp.com/service/add", data, {}, true), true);
+  },
+  editService: (data: any) => {
+    console.log("Sending POST request to https://api.zoexp.com/service/edit with data:", data);
+    return handleResponse(apiService.post("https://api.zoexp.com/service/edit", data, {}, true), true);
+  },
 
   get: (endpoint: string, id: any = null, showError = true) =>
     handleResponse(
