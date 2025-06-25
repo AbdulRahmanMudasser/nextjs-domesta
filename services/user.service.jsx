@@ -130,24 +130,6 @@ class UserService {
     }
   }
 
-  async getIntellisenseServices() {
-    try {
-      console.log("Calling networkService.getIntellisenseServices for https://api.zoexp.com/service/intellisense-search");
-      const response = await networkService.getIntellisenseServices();
-      console.log("getIntellisenseServices response:", response);
-      if (response && response.data) {
-        return response.data; // Return the data array directly
-      }
-      console.warn("No services returned from networkService.getIntellisenseServices");
-      await utilityService.showAlert("Error", "Failed to fetch intellisense services.", "error");
-      return null;
-    } catch (error) {
-      console.error("getIntellisenseServices error:", error);
-      await utilityService.showAlert("Error", "Failed to fetch intellisense services. Please try again.", "error");
-      return null;
-    }
-  }
-
   async deleteService(id) {
     try {
       console.log("Calling networkService.deleteService with ID:", id);
@@ -220,6 +202,24 @@ class UserService {
         throw new Error(errorMessages || "Invalid service data.");
       }
       await utilityService.showAlert("Error", `Failed to edit service: ${error.message || "Server error."}`, "error");
+      throw error;
+    }
+  }
+
+  async forgotPassword(data) {
+    try {
+      console.log("Calling networkService.forgotPassword with data:", data);
+      const response = await networkService.forgotPassword(data);
+      console.log("forgotPassword response:", response);
+      if (response && response.status) {
+        return response;
+      }
+      console.warn("Failed to send forgot password request");
+      await utilityService.showAlert("Error", "Failed to send reset password request.", "error");
+      return null;
+    } catch (error) {
+      console.error("forgotPassword error:", error);
+      await utilityService.showAlert("Error", `Failed to send reset password request: ${error.message || "Server error."}`, "error");
       throw error;
     }
   }

@@ -72,6 +72,10 @@ export const networkService = {
     console.log("Sending POST request to https://api.zoexp.com/service/edit with data:", data);
     return handleResponse(apiService.post("https://api.zoexp.com/service/edit", data, {}, true), true);
   },
+  forgotPassword: (data: any) => {
+    console.log("Sending POST request to https://api.zoexp.com/user/forgot-password with data:", data);
+    return handleResponse(apiService.post("https://api.zoexp.com/user/forgot-password", data, {}, false), true);
+  },
 
   get: (endpoint: string, id: any = null, showError = true) =>
     handleResponse(
