@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { v4 as uuidv4 } from "uuid";
 import DsPageOuter from "@/templates/layouts/ds-page-outer";
 import { ProfileTypes } from "@/data/globalKeys";
 import ListingCategories from "@/app/website/home/Listingcategories/ListingCategories";
@@ -10,10 +9,382 @@ import Shimmer from "@/templates/misc/Shimmer";
 import { userService } from "@/services/user.service";
 import { utilityService } from "@/services/utility.service";
 
+const AddServiceModal = ({ isOpen, onClose, onSave, currentEntry, handleChange }) => {
+  const buttonStyle = {
+    padding: "0.5rem 1rem",
+    border: "none",
+    borderRadius: "0.25rem",
+    backgroundColor: "#8C956B",
+    color: "white",
+    cursor: "pointer",
+    fontSize: "0.875rem",
+    fontWeight: "500",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "0.5rem",
+    borderRadius: "0.25rem",
+    border: "1px solid #ddd",
+    boxSizing: "border-box",
+    fontSize: "0.875rem",
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    appearance: "none",
+    background: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"6\" viewBox=\"0 0 10 6\"><path fill=\"%23555\" d=\"M0 0l5 6 5-6H0z\"/></svg>') no-repeat right 1rem center",
+  };
+
+  const formFields = [
+    {
+      type: "text",
+      name: "catTitle",
+      label: "Service Name",
+      placeholder: "Enter service name",
+      required: true,
+    },
+    {
+      type: "text",
+      name: "jobDescription",
+      label: "Description",
+      placeholder: "Enter description",
+      required: true,
+    },
+    {
+      type: "number",
+      name: "jobNumber",
+      label: "Open Positions",
+      placeholder: "Enter number",
+      min: "0",
+      required: true,
+    },
+  ];
+
+  return (
+    <div
+      style={{
+        display: isOpen ? "flex" : "none",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        background: "rgba(0,0,0,0.5)",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 999,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: "#fff",
+          padding: "24px",
+          borderRadius: "12px",
+          width: "90%",
+          maxWidth: "400px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+          zIndex: 1000,
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h4 style={{ fontSize: "1.5rem", fontWeight: "600", color: "#333", marginBottom: "1rem" }}>
+          Add Service
+        </h4>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSave(false);
+          }}
+        >
+          {formFields.map((field, index) => (
+            <div key={index} style={{ marginBottom: "1rem" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.875rem",
+                  fontWeight: "500",
+                  color: "#555",
+                  marginBottom: "0.3rem",
+                }}
+              >
+                {field.label}
+              </label>
+              <input
+                type={field.type}
+                name={field.name}
+                value={currentEntry[field.name] || ""}
+                onChange={(e) => handleChange(field.name, e.target.value)}
+                placeholder={field.placeholder}
+                required={field.required}
+                min={field.min}
+                style={inputStyle}
+              />
+            </div>
+          ))}
+          <div style={{ marginBottom: "1rem" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: "500",
+                color: "#555",
+                marginBottom: "0.3rem",
+              }}
+            >
+              Icon
+            </label>
+            <select
+              name="icon"
+              value={currentEntry.icon || ""}
+              onChange={(e) => handleChange("icon", e.target.value)}
+              required
+              style={selectStyle}
+            >
+              <option value="" disabled>
+                Select an icon
+              </option>
+              {jobCatContent.map((cat) => (
+                <option key={cat.id} value={cat.icon}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+            {currentEntry.icon && (
+              <div
+                style={{
+                  marginTop: "10px",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: "40px",
+                  height: "40px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  backgroundColor: "#f9f9f9",
+                }}
+              >
+                <i className={currentEntry.icon} style={{ fontSize: "20px", color: "#555" }}></i>
+              </div>
+            )}
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: "0.5rem 1rem",
+                border: "1px solid #ddd",
+                borderRadius: "0.25rem",
+                backgroundColor: "#fff",
+                color: "#333",
+                cursor: "pointer",
+                fontSize: "0.875rem",
+              }}
+            >
+              Cancel
+            </button>
+            <button type="submit" style={buttonStyle}>
+              Save
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const EditServiceModal = ({ isOpen, onClose, onSave, currentEntry, handleChange }) => {
+  const buttonStyle = {
+    padding: "0.5rem 1rem",
+    border: "none",
+    borderRadius: "0.25rem",
+    backgroundColor: "#8C956B",
+    color: "white",
+    cursor: "pointer",
+    fontSize: "0.875rem",
+    fontWeight: "500",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "0.5rem",
+    borderRadius: "0.25rem",
+    border: "1px solid #ddd",
+    boxSizing: "border-box",
+    fontSize: "0.875rem",
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    appearance: "none",
+    background: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"6\" viewBox=\"0 0 10 6\"><path fill=\"%23555\" d=\"M0 0l5 6 5-6H0z\"/></svg>') no-repeat right 1rem center",
+  };
+
+  const formFields = [
+    {
+      type: "text",
+      name: "catTitle",
+      label: "Service Name",
+      placeholder: "Enter service name",
+      required: true,
+    },
+    {
+      type: "text",
+      name: "jobDescription",
+      label: "Description",
+      placeholder: "Enter description",
+      required: true,
+    },
+    {
+      type: "number",
+      name: "jobNumber",
+      label: "Open Positions",
+      placeholder: "Enter number",
+      min: "0",
+      required: true,
+    },
+  ];
+
+  return (
+    <div
+      style={{
+        display: isOpen ? "flex" : "none",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        background: "rgba(0,0,0,0.5)",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 999,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: "#fff",
+          padding: "24px",
+          borderRadius: "12px",
+          width: "90%",
+          maxWidth: "400px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+          zIndex: 1000,
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h4 style={{ fontSize: "1.5rem", fontWeight: "600", color: "#333", marginBottom: "1rem" }}>
+          Edit Service
+        </h4>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSave(true);
+          }}
+        >
+          {formFields.map((field, index) => (
+            <div key={index} style={{ marginBottom: "1rem" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.875rem",
+                  fontWeight: "500",
+                  color: "#555",
+                  marginBottom: "0.3rem",
+                }}
+              >
+                {field.label}
+              </label>
+              <input
+                type={field.type}
+                name={field.name}
+                value={currentEntry[field.name] || ""}
+                onChange={(e) => handleChange(field.name, e.target.value)}
+                placeholder={field.placeholder}
+                required={field.required}
+                min={field.min}
+                style={inputStyle}
+              />
+            </div>
+          ))}
+          <div style={{ marginBottom: "1rem" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: "500",
+                color: "#555",
+                marginBottom: "0.3rem",
+              }}
+            >
+              Icon
+            </label>
+            <select
+              name="icon"
+              value={currentEntry.icon || ""}
+              onChange={(e) => handleChange("icon", e.target.value)}
+              required
+              style={selectStyle}
+            >
+              <option value="" disabled>
+                Select an icon
+              </option>
+              {jobCatContent.map((cat) => (
+                <option key={cat.id} value={cat.icon}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+            {currentEntry.icon && (
+              <div
+                style={{
+                  marginTop: "10px",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: "40px",
+                  height: "40px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  backgroundColor: "#f9f9f9",
+                }}
+              >
+                <i className={currentEntry.icon} style={{ fontSize: "20px", color: "#555" }}></i>
+              </div>
+            )}
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: "0.5rem 1rem",
+                border: "1px solid #ddd",
+                borderRadius: "0.25rem",
+                backgroundColor: "#fff",
+                color: "#333",
+                cursor: "pointer",
+                fontSize: "0.875rem",
+              }}
+            >
+              Cancel
+            </button>
+            <button type="submit" style={buttonStyle}>
+              Update
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const ServicesList = () => {
   const [categories, setCategories] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentEntry, setCurrentEntry] = useState({
     id: null,
     catTitle: "",
@@ -63,27 +434,12 @@ const ServicesList = () => {
     fontWeight: "500",
   };
 
-  const inputStyle = {
-    width: "100%",
-    padding: "0.5rem",
-    borderRadius: "0.25rem",
-    border: "1px solid #ddd",
-    boxSizing: "border-box",
-    fontSize: "0.875rem",
-  };
-
-  const selectStyle = {
-    ...inputStyle,
-    appearance: "none",
-    background: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"6\" viewBox=\"0 0 10 6\"><path fill=\"%23555\" d=\"M0 0l5 6 5-6H0z\"/></svg>') no-repeat right 0.5rem center",
-  };
-
   const handleChange = (field, value) => {
     console.log(`Updating ${field} to:`, value);
     setCurrentEntry((prev) => ({ ...prev, [field]: value }));
   };
 
-  const saveCategory = async () => {
+  const saveCategory = async (isEditing) => {
     console.log("Saving category:", currentEntry);
     if (!currentEntry.catTitle || !currentEntry.jobDescription || !currentEntry.jobNumber || !currentEntry.icon) {
       console.error("Validation failed: Missing required fields");
@@ -110,19 +466,21 @@ const ServicesList = () => {
       if (response) {
         console.log("Service saved successfully:", response);
         await utilityService.showAlert("Success", isEditing ? "Service updated successfully!" : "Service added successfully!", "success");
-        await fetchServices(); // Refresh the list
+        await fetchServices();
+        setIsAddModalOpen(false);
+        setIsEditModalOpen(false);
+        resetForm();
       } else {
         console.warn("Failed to save service");
         await utilityService.showAlert("Error", isEditing ? "Failed to update service." : "Failed to add service.", "error");
       }
     } catch (error) {
       console.error("Error saving service:", error);
-      await utilityService.showAlert("Error", `Failed to save service: ${error.message || "Server error."}`, "error");
+      // Display specific validation errors
+      const errorMessage = error.message || "Failed to save service.";
+      await utilityService.showAlert("Error", errorMessage, "error");
+      // Keep modal open to allow user to correct errors
     }
-
-    setIsModalOpen(false);
-    resetForm();
-    setIsEditing(false);
   };
 
   const editCategory = async (cat) => {
@@ -138,8 +496,7 @@ const ServicesList = () => {
           jobNumber: service.employee_counter,
           icon: service.class_name,
         });
-        setIsEditing(true);
-        setIsModalOpen(true);
+        setIsEditModalOpen(true);
       } else {
         console.warn("No service details returned for ID:", cat.id);
         await utilityService.showAlert("Error", "Failed to fetch service details.", "error");
@@ -177,39 +534,19 @@ const ServicesList = () => {
       jobNumber: "",
       icon: "",
     });
-    setIsEditing(false);
   };
 
-  const handleCancel = () => {
-    console.log("Cancelling form");
-    setIsModalOpen(false);
+  const handleAddClose = () => {
+    console.log("Closing Add Service modal");
+    setIsAddModalOpen(false);
     resetForm();
   };
 
-  const formFields = [
-    {
-      type: "text",
-      name: "catTitle",
-      label: "Service Title",
-      placeholder: "Enter service title",
-      required: true,
-    },
-    {
-      type: "text",
-      name: "jobDescription",
-      label: "Description",
-      placeholder: "Enter description",
-      required: true,
-    },
-    {
-      type: "number",
-      name: "jobNumber",
-      label: "Open Positions",
-      placeholder: "Enter number",
-      min: "0",
-      required: true,
-    },
-  ];
+  const handleEditClose = () => {
+    console.log("Closing Edit Service modal");
+    setIsEditModalOpen(false);
+    resetForm();
+  };
 
   if (!categories) {
     return (
@@ -239,130 +576,20 @@ const ServicesList = () => {
   return (
     <DsPageOuter headerType={ProfileTypes.SUPERADMIN}>
       <div>
-        {isModalOpen && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              background: "rgba(0,0,0,0.5)",
-              zIndex: 999,
-            }}
-            onClick={handleCancel}
-          >
-            <div
-              style={{
-                position: "fixed",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                background: "#fff",
-                padding: "1.5rem",
-                borderRadius: "8px",
-                width: "90%",
-                maxWidth: "400px",
-                zIndex: 1000,
-                maxHeight: "80vh",
-                overflowY: "auto",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h4 style={{ margin: "0 0 0.75rem", color: "#333", fontSize: "1.25rem" }}>
-                {isEditing ? "Edit Service" : "Add Service"}
-              </h4>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  saveCategory();
-                }}
-              >
-                {formFields.map((field, index) => (
-                  <div key={index} style={{ marginBottom: "0.75rem" }}>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "0.875rem",
-                        color: "#555",
-                        marginBottom: "0.25rem",
-                      }}
-                    >
-                      {field.label}
-                    </label>
-                    <input
-                      type={field.type}
-                      name={field.name}
-                      value={currentEntry[field.name] || ""}
-                      onChange={(e) => handleChange(field.name, e.target.value)}
-                      placeholder={field.placeholder}
-                      required={field.required}
-                      style={inputStyle}
-                      min={field.min}
-                    />
-                  </div>
-                ))}
-                <div style={{ marginBottom: "0.75rem" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "0.875rem",
-                      color: "#555",
-                      marginBottom: "0.25rem",
-                    }}
-                  >
-                    Icon
-                  </label>
-                  <select
-                    name="icon"
-                    value={currentEntry.icon || ""}
-                    onChange={(e) => handleChange("icon", e.target.value)}
-                    required
-                    style={selectStyle}
-                  >
-                    <option value="" disabled>
-                      Select an icon
-                    </option>
-                    {jobCatContent.map((cat) => (
-                      <option key={cat.id} value={cat.icon}>
-                        {cat.catTitle}
-                      </option>
-                    ))}
-                  </select>
-                  {currentEntry.icon && (
-                    <div style={{ marginTop: "0.5rem", fontSize: "1.5rem" }}>
-                      <i className={currentEntry.icon}></i>
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
-                  <button
-                    type="button"
-                    onClick={handleCancel}
-                    style={{
-                      padding: "0.5rem 1rem",
-                      border: "1px solid #ddd",
-                      borderRadius: "0.25rem",
-                      backgroundColor: "#fff",
-                      color: "#333",
-                      cursor: "pointer",
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    style={buttonStyle}
-                  >
-                    {isEditing ? "Update" : "Save"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        <AddServiceModal
+          isOpen={isAddModalOpen}
+          onClose={handleAddClose}
+          onSave={saveCategory}
+          currentEntry={currentEntry}
+          handleChange={handleChange}
+        />
+        <EditServiceModal
+          isOpen={isEditModalOpen}
+          onClose={handleEditClose}
+          onSave={saveCategory}
+          currentEntry={currentEntry}
+          handleChange={handleChange}
+        />
         <div
           style={{
             backgroundColor: "#fff",
@@ -385,7 +612,7 @@ const ServicesList = () => {
               style={buttonStyle}
               onClick={() => {
                 resetForm();
-                setIsModalOpen(true);
+                setIsAddModalOpen(true);
               }}
             >
               Add Service

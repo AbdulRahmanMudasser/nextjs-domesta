@@ -197,8 +197,13 @@ class UserService {
       return null;
     } catch (error) {
       console.error("editService error:", error);
+      // Extract specific validation errors
+      if (error.errors) {
+        const errorMessages = Object.values(error.errors).flat().join("; ");
+        throw new Error(errorMessages || "Invalid service data.");
+      }
       await utilityService.showAlert("Error", `Failed to edit service: ${error.message || "Server error."}`, "error");
-      return null;
+      throw error;
     }
   }
 }
