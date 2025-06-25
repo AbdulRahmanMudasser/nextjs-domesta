@@ -15,34 +15,34 @@ import { userService } from "@/services/user.service";
 const LandingPage = () => {
   const [categories, setCategories] = useState(null);
 
-  useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        console.log("Fetching services from getServices API...");
-        const services = await userService.getServices();
-        console.log("Services fetched:", services);
-        if (services && Array.isArray(services)) {
-          const mappedCategories = services.map((service) => ({
-            id: service.id,
-            catTitle: service.name,
-            jobDescription: service.description || "", // Fallback for missing description
-            jobNumber: service.employee_counter,
-            icon: service.class_name || "fi-rs-circle", // Fallback for missing icon
-          }));
-          console.log("Mapped categories:", mappedCategories);
-          setCategories(mappedCategories);
-        } else {
-          console.warn("No services returned from getServices API");
-          setCategories([]);
-        }
-      } catch (error) {
-        console.error("Error fetching services:", error);
-        setCategories([]);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchServices = async () => {
+  //     try {
+  //       console.log("Fetching services from getServices API...");
+  //       const services = await userService.getServices();
+  //       console.log("Services fetched:", services);
+  //       if (services && Array.isArray(services)) {
+  //         const mappedCategories = services.map((service) => ({
+  //           id: service.id,
+  //           catTitle: service.name,
+  //           jobDescription: service.description || "", // Fallback for missing description
+  //           jobNumber: service.employee_counter,
+  //           icon: service.class_name || "fi-rs-circle", // Fallback for missing icon
+  //         }));
+  //         console.log("Mapped categories:", mappedCategories);
+  //         setCategories(mappedCategories);
+  //       } else {
+  //         console.warn("No services returned from getServices API");
+  //         setCategories([]);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching services:", error);
+  //       setCategories([]);
+  //     }
+  //   };
 
-    fetchServices();
-  }, []);
+  //   fetchServices();
+  // }, []);
 
   return (
     <WsPageOuter>
