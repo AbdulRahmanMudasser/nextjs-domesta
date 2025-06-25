@@ -52,6 +52,10 @@ export const networkService = {
     console.log("Sending GET request to https://api.zoexp.com/service/list-with-filter");
     return handleResponse(apiService.get("https://api.zoexp.com/service/list-with-filter", {}, true), false);
   },
+  getIntellisenseServices: () => {
+    console.log("Sending GET request to https://api.zoexp.com/service/intellisense-search");
+    return handleResponse(apiService.get("https://api.zoexp.com/service/intellisense-search", {}, true), false);
+  },
   deleteService: (id: number) => {
     console.log("Sending DELETE request to https://api.zoexp.com/service/delete with IDs:", [id]);
     return handleResponse(apiService.delete("https://api.zoexp.com/service/delete", { data: { ids: [id] } }, true), true);

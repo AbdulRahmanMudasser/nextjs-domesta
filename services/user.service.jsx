@@ -114,7 +114,7 @@ class UserService {
 
   async getServices() {
     try {
-      console.log("Calling networkService.getServices");
+      console.log("Calling networkService.getServices for https://api.zoexp.com/service/list-with-filter");
       const response = await networkService.getServices();
       console.log("getServices response:", response);
       if (response) {
@@ -126,6 +126,24 @@ class UserService {
     } catch (error) {
       console.error("getServices error:", error);
       await utilityService.showAlert("Error", "Failed to fetch services. Please try again.", "error");
+      return null;
+    }
+  }
+
+  async getIntellisenseServices() {
+    try {
+      console.log("Calling networkService.getIntellisenseServices for https://api.zoexp.com/service/intellisense-search");
+      const response = await networkService.getIntellisenseServices();
+      console.log("getIntellisenseServices response:", response);
+      if (response && response.data) {
+        return response.data; // Return the data array directly
+      }
+      console.warn("No services returned from networkService.getIntellisenseServices");
+      await utilityService.showAlert("Error", "Failed to fetch intellisense services.", "error");
+      return null;
+    } catch (error) {
+      console.error("getIntellisenseServices error:", error);
+      await utilityService.showAlert("Error", "Failed to fetch intellisense services. Please try again.", "error");
       return null;
     }
   }
@@ -197,7 +215,6 @@ class UserService {
       return null;
     } catch (error) {
       console.error("editService error:", error);
-      // Extract specific validation errors
       if (error.errors) {
         const errorMessages = Object.values(error.errors).flat().join("; ");
         throw new Error(errorMessages || "Invalid service data.");
