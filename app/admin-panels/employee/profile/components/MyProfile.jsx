@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CardForm from "@/templates/forms/card-form";
 import { networkService } from "@/services/network.service";
 import { utilityService } from "@/services/utility.service";
@@ -41,8 +41,11 @@ const MyProfile = () => {
     profileImageUrl: "",
     passportCopyUrl: "",
     visaCopyUrl: "",
+
+
     cprCopyUrl: "",
   });
+  const [catOptions, setCatOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -59,16 +62,31 @@ const MyProfile = () => {
     setFormData({ ...formData, [field]: e.target.files[0] });
   };
 
-  const catOptions = [
-    { value: "Banking", label: "Banking" },
-    { value: "Digital & Creative", label: "Digital & Creative" },
-    { value: "Retail", label: "Retail" },
-    { value: "Human Resources", label: "Human Resources" },
-    { value: "Managemnet", label: "Management" },
-    { value: "Accounting & Finance", label: "Accounting & Finance" },
-    { value: "Digital", label: "Digital" },
-    { value: "Creative Art", label: "Creative Art" },
-  ];
+  useEffect(() => {
+    const fetchDropdowns = async () => {
+      try {
+        const response = await networkService.getDropdowns("cat_options");
+        if (response?.cat_options) {
+          const options = response.cat_options.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setCatOptions(options);
+        } else {
+          throw new Error("No category options returned");
+        }
+      } catch (error) {
+        console.error("Error fetching dropdowns:", error);
+        await utilityService.showAlert(
+          "Error",
+          error.message || "Failed to load category options.",
+          "error"
+        );
+      }
+    };
+
+    fetchDropdowns();
+  }, []);
 
   const nationalityOptions = [
     { value: "Bahraini", label: "Bahraini" },
@@ -141,7 +159,7 @@ const MyProfile = () => {
       name: "role",
       label: "Role",
       placeholder: "Employee",
-      colClass: "col-lg-3 col-md-scholar",
+      colClass: "col-lg-3 col-md-12",
       readOnly: true,
     },
     {
@@ -216,13 +234,11 @@ const MyProfile = () => {
     },
     {
       type: "text",
- language: "text",
       name: "childrenCount",
       label: "Number of Children",
       placeholder: "0",
       colClass: "col-lg-3 col-md-12",
       min: "0",
-      required: true,
       required: true,
     },
     {
