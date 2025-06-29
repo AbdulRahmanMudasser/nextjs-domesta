@@ -21,6 +21,7 @@ const Register = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const [selectedTab, setSelectedTab] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     import("bootstrap/dist/js/bootstrap.bundle.min.js").then((bootstrap) => {
@@ -52,7 +53,10 @@ const Register = () => {
 
   const handleFormSubmit = async (formData) => {
     try {
+      setLoading(true);
       const res = await userService.registerUser(formData);
+      setLoading(false);
+
       if (!res || typeof res !== "object") {
         await utilityService.showAlert("Error", "Registration failed: Invalid response from server.", "error");
         return;
@@ -76,7 +80,6 @@ const Register = () => {
       };
 
       dispatch(login(loginData));
-
       closeModal();
 
       switch (slug) {
@@ -101,6 +104,7 @@ const Register = () => {
           router.push("/login");
       }
     } catch (error) {
+      setLoading(false);
       await utilityService.showAlert("Error", `Registration failed: ${error.message || "Server error."}`, "error");
     }
   };
@@ -108,7 +112,7 @@ const Register = () => {
   return (
     <div className="form-inner">
       <h3>Create a Domesta Account</h3>
-      <Form onSubmit={handleFormSubmit} />
+      <Form onSubmit={handleFormSubmit} loading={loading} />
       <div className="bottom-box">
         <div className="text">
           Already have an account?{" "}

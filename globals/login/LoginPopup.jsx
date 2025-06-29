@@ -20,6 +20,7 @@ const roleIdToSlug = {
 const LoginPopup = () => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [forgotPasswordData, setForgotPasswordData] = useState({
     email: "",
     type_id: "",
@@ -37,11 +38,7 @@ const LoginPopup = () => {
         return;
       }
 
-      await utilityService.showAlert(
-        "Success",
-        "Registration successful!",
-        "success"
-      );
+      await utilityService.showAlert("Success", "Registration successful!", "success");
 
       const modal = document.getElementById("registerModal");
       if (modal) {
@@ -51,16 +48,11 @@ const LoginPopup = () => {
         }
       }
     } catch (error) {
-      await utilityService.showAlert(
-        "Error",
-        error.message || "Registration failed. Please try again.",
-        "error"
-      );
+      await utilityService.showAlert("Error", error.message || "Registration failed. Please try again.", "error");
     }
   };
 
   const handleSwitchRegister = () => {
-    console.log("Switching to register modal");
     const loginModal = document.getElementById("loginPopupModal");
     const registerModal = document.getElementById("registerModal");
 
@@ -81,7 +73,6 @@ const LoginPopup = () => {
   };
 
   const handleSwitchForgotPassword = () => {
-    console.log("Switching to forgot password modal");
     const loginModal = document.getElementById("loginPopupModal");
     const forgotPasswordModal = document.getElementById("forgotPasswordModal");
 
@@ -102,17 +93,16 @@ const LoginPopup = () => {
   };
 
   const handleFormSubmit = async (formData) => {
-    if (!formData || !formData.email || !formData.password) {
-      await utilityService.showAlert(
-        "Error",
-        "Please provide email and password",
-        "error"
-      );
+    if (!formData?.email || !formData?.password) {
+      await utilityService.showAlert("Error", "Please provide email and password", "error");
       return;
     }
 
     try {
+      setLoading(true);
       const res = await userService.loginUser(formData);
+      setLoading(false);
+
       if (!res || !res.token || !res.role_id) {
         await utilityService.showAlert(
           "Error",
@@ -162,51 +152,31 @@ const LoginPopup = () => {
           router.push("/panels/employee/dashboard");
           break;
         case "user":
-          await utilityService.showAlert(
-            "Info",
-            "User role logged in. Please proceed.",
-            "info"
-          );
+          await utilityService.showAlert("Info", "User role logged in. Please proceed.", "info");
           router.push("/login");
           break;
         default:
-          await utilityService.showAlert(
-            "Error",
-            "Unknown role. Please contact support.",
-            "error"
-          );
+          await utilityService.showAlert("Error", "Unknown role. Please contact support.", "error");
           router.push("/login");
       }
     } catch (error) {
-      await utilityService.showAlert(
-        "Error",
-        error.message || "Login failed. Please try again.",
-        "error"
-      );
+      setLoading(false);
+      await utilityService.showAlert("Error", error.message || "Login failed. Please try again.", "error");
     }
   };
 
   const handleForgotPasswordSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitting forgot password form:", forgotPasswordData);
 
     if (!forgotPasswordData.email || !forgotPasswordData.type_id) {
-      await utilityService.showAlert(
-        "Error",
-        "Please provide email and select a role",
-        "error"
-      );
+      await utilityService.showAlert("Error", "Please provide email and select a role", "error");
       return;
     }
 
     try {
       const res = await userService.forgotPassword(forgotPasswordData);
-      if (res && res.status) {
-        await utilityService.showAlert(
-          "Success",
-          "Reset password link sent to your email.",
-          "success"
-        );
+      if (res?.status) {
+        await utilityService.showAlert("Success", "Reset password link sent to your email.", "success");
         const modal = document.getElementById("forgotPasswordModal");
         if (modal) {
           const modalInstance = bootstrap.Modal.getInstance(modal);
@@ -216,24 +186,15 @@ const LoginPopup = () => {
         }
         setForgotPasswordData({ email: "", type_id: "" });
       } else {
-        await utilityService.showAlert(
-          "Error",
-          "Failed to send reset password request.",
-          "error"
-        );
+        await utilityService.showAlert("Error", "Failed to send reset password request.", "error");
       }
     } catch (error) {
-      await utilityService.showAlert(
-        "Error",
-        error.message || "Failed to send reset password request.",
-        "error"
-      );
+      await utilityService.showAlert("Error", error.message || "Failed to send reset password request.", "error");
     }
   };
 
   const handleForgotPasswordChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Updating forgot password ${name}:`, value);
     setForgotPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -242,11 +203,7 @@ const LoginPopup = () => {
       <div className="modal fade" id="loginPopupModal">
         <div className="modal-dialog modal-lg modal-dialog-centered login-modal modal-dialog-scrollable">
           <div className="modal-content">
-            <button
-              type="button"
-              className="closed-modal"
-              data-bs-dismiss="modal"
-            ></button>
+            <button type="button" className="closed-modal" data-bs-dismiss="modal"></button>
             <div className="modal-body">
               <div id="login-modal">
                 <div className="login-form default-form">
@@ -254,6 +211,7 @@ const LoginPopup = () => {
                     onSubmit={handleFormSubmit}
                     onSwitchRegister={handleSwitchRegister}
                     onSwitchForgotPassword={handleSwitchForgotPassword}
+                    loading={loading}
                   />
                 </div>
               </div>
@@ -262,14 +220,11 @@ const LoginPopup = () => {
         </div>
       </div>
 
+      {/* Register Modal */}
       <div className="modal fade" id="registerModal">
         <div className="modal-dialog modal-lg modal-dialog-centered login-modal modal-dialog-scrollable">
           <div className="modal-content">
-            <button
-              type="button"
-              className="closed-modal"
-              data-bs-dismiss="modal"
-            ></button>
+            <button type="button" className="closed-modal" data-bs-dismiss="modal"></button>
             <div className="modal-body">
               <div id="login-modal">
                 <div className="login-form default-form">
@@ -281,14 +236,11 @@ const LoginPopup = () => {
         </div>
       </div>
 
+      {/* Forgot Password Modal */}
       <div className="modal fade" id="forgotPasswordModal">
         <div className="modal-dialog modal-lg modal-dialog-centered login-modal modal-dialog-scrollable">
           <div className="modal-content">
-            <button
-              type="button"
-              className="closed-modal"
-              data-bs-dismiss="modal"
-            ></button>
+            <button type="button" className="closed-modal" data-bs-dismiss="modal"></button>
             <div className="modal-body" style={{ padding: "2rem" }}>
               <div id="forgot-password-modal">
                 <div className="login-form default-form">
@@ -313,9 +265,7 @@ const LoginPopup = () => {
                         onChange={handleForgotPasswordChange}
                         required
                       >
-                        <option value="" disabled>
-                          Select Role
-                        </option>
+                        <option value="" disabled>Select Role</option>
                         <option value="1">Admin</option>
                         <option value="2">Employer</option>
                         <option value="3">Agency</option>
@@ -324,10 +274,7 @@ const LoginPopup = () => {
                       </select>
                     </div>
                     <div className="form-group">
-                      <button
-                        className="theme-btn btn-style-one"
-                        type="submit"
-                      >
+                      <button className="theme-btn btn-style-one" type="submit">
                         Send Reset Request
                       </button>
                     </div>
