@@ -1,8 +1,10 @@
-'use client'
+"use client";
 
 import CardForm from "@/templates/forms/card-form";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Select from "react-select";
+import { networkService } from "@/services/network.service";
+import { utilityService } from "@/services/utility.service";
 
 // Define buttonStyle at the top level so it can be used across all components
 const buttonStyle = {
@@ -23,7 +25,7 @@ const inputStyle = {
   borderRadius: "0.5rem",
   backgroundColor: "#F0F5F7",
   boxSizing: "border-box",
-  height:"60px",
+  height: "60px",
 };
 
 // Define tickBoxStyle for the tick container
@@ -66,6 +68,7 @@ const EmploymentDetails = () => {
     flexibleWeekends: "",
     otherBenefits: "",
   });
+  const [employmentPreferenceOptions, setEmploymentPreferenceOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -80,6 +83,33 @@ const EmploymentDetails = () => {
     setSupportingDocs(e.target.files);
   };
 
+  useEffect(() => {
+    const fetchDropdowns = async () => {
+      try {
+        // Fetch type_of_employment_prefernce options
+        const response = await networkService.getDropdowns("type_of_employment_prefernce");
+        if (response?.type_of_employment_prefernce) {
+          const options = response.type_of_employment_prefernce.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setEmploymentPreferenceOptions(options);
+        } else {
+          throw new Error("No employment preference options returned");
+        }
+      } catch (error) {
+        console.error("Error fetching dropdowns:", error);
+        await utilityService.showAlert(
+          "Error",
+          error.message || "Failed to load employment preference options.",
+          "error"
+        );
+      }
+    };
+
+    fetchDropdowns();
+  }, []);
+
   const workingHoursOptions = [
     { value: "9 AM - 5 PM", label: "9 AM - 5 PM" },
     { value: "Flexible Hours", label: "Flexible Hours" },
@@ -90,16 +120,6 @@ const EmploymentDetails = () => {
   const yesNoOptions = [
     { value: "Yes", label: "Yes" },
     { value: "No", label: "No" },
-  ];
-
-  const employmentPreferenceOptions = [
-    { value: "Live in", label: "Live in" },
-    { value: "Full-Time", label: "Full-Time" },
-    { value: "Live-out", label: "Live-out" },
-    { value: "Part-Time", label: "Part-Time" },
-    { value: "Monthly", label: "Monthly" },
-    { value: "Temporary", label: "Temporary" },
-    { value: "Nanny for Newborns", label: "Nanny for Newborns" },
   ];
 
   const availabilityOptions = [
