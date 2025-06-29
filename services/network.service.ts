@@ -76,33 +76,38 @@ export const networkService = {
     console.log("Sending POST request to https://api.zoexp.com/user/forgot-password with data:", data);
     return handleResponse(apiService.post("https://api.zoexp.com/user/forgot-password", data, {}, false), true);
   },
-
+  uploadMedia: (file: File) => {
+    console.log("Sending POST request to https://api.zoexp.com/media/add with file:", file.name);
+    const formData = new FormData();
+    formData.append("media", file);
+    return handleResponse(
+      apiService.post("/media/add", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      }, false),
+      true
+    );
+  },
   get: (endpoint: string, id: any = null, showError = true) =>
     handleResponse(
       apiService.get(`${endpoint}${id ? "/" + id : ""}`, {}, false),
       showError
     ),
-
   post: (endpoint: string, data: any, id: any = null, showError = true) =>
     handleResponse(
       apiService.post(`${endpoint}${id ? "/" + id : ""}`, data, {}, false),
       showError
     ),
-
   put: (endpoint: string, data: any, id: any = null, showError = true) =>
     handleResponse(
       apiService.put(`${endpoint}${id ? "/" + id : ""}`, data, {}, false),
       showError
     ),
-
   patch: (endpoint: string, data: any, showError = true) =>
     handleResponse(apiService.patch(endpoint, data, {}, false), showError),
-
   delete: (endpoint: string, id: any = null, showError = true) =>
     handleResponse(
       apiService.delete(`${endpoint}${id ? "/" + id : ""}`, {}, false),
       showError
     ),
-
   serialize,
 };

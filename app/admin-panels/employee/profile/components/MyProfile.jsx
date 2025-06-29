@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import CardForm from "@/templates/forms/card-form";
+import { networkService } from "@/services/network.service";
+import { utilityService } from "@/services/utility.service";
 
 // Define inputStyle for file inputs (matching Document.jsx)
 const inputStyle = {
@@ -26,6 +28,20 @@ const MyProfile = () => {
     visaCopy: null,
     cprCopy: null,
     dob: "",
+    gender: "",
+    address: "",
+    catOptions: "",
+    nationality: "",
+    religion: "",
+    maritalStatus: "",
+    in_bahrain: "",
+    outside_country: "",
+    work_available: "",
+    current_location: "",
+    profileImageUrl: "",
+    passportCopyUrl: "",
+    visaCopyUrl: "",
+    cprCopyUrl: "",
   });
 
   const handleChange = (field, value) => {
@@ -48,7 +64,7 @@ const MyProfile = () => {
     { value: "Digital & Creative", label: "Digital & Creative" },
     { value: "Retail", label: "Retail" },
     { value: "Human Resources", label: "Human Resources" },
-    { value: "Managemnet", label: "Managemnet" },
+    { value: "Managemnet", label: "Management" },
     { value: "Accounting & Finance", label: "Accounting & Finance" },
     { value: "Digital", label: "Digital" },
     { value: "Creative Art", label: "Creative Art" },
@@ -125,7 +141,7 @@ const MyProfile = () => {
       name: "role",
       label: "Role",
       placeholder: "Employee",
-      colClass: "col-lg-3 col-md-12",
+      colClass: "col-lg-3 col-md-scholar",
       readOnly: true,
     },
     {
@@ -165,7 +181,7 @@ const MyProfile = () => {
     {
       type: "select",
       name: "catOptions",
-      label: "catOptions",
+      label: "Category",
       options: catOptions,
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select category",
@@ -200,11 +216,13 @@ const MyProfile = () => {
     },
     {
       type: "text",
+ language: "text",
       name: "childrenCount",
       label: "Number of Children",
       placeholder: "0",
       colClass: "col-lg-3 col-md-12",
       min: "0",
+      required: true,
       required: true,
     },
     {
@@ -262,7 +280,7 @@ const MyProfile = () => {
     },
     {
       type: "file",
-      name: "passport_copy",
+      name: "passportCopy",
       label: "Passport Copy",
       accept: ".pdf,.jpg,.png",
       colClass: "col-lg-6 col-md-12",
@@ -271,7 +289,7 @@ const MyProfile = () => {
     },
     {
       type: "file",
-      name: "visa_copy",
+      name: "visaCopy",
       label: "Visa Copy",
       accept: ".pdf,.jpg,.png",
       colClass: "col-lg-6 col-md-12",
@@ -280,7 +298,7 @@ const MyProfile = () => {
     },
     {
       type: "file",
-      name: "cpr_copy",
+      name: "cprCopy",
       label: "CPR Copy",
       accept: ".pdf,.jpg,.png",
       colClass: "col-lg-6 col-md-12",
@@ -289,10 +307,43 @@ const MyProfile = () => {
     },
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted with data:", formData);
-    // Add your form submission logic here, such as API calls
+    try {
+      const uploadedFiles = {};
+
+      // Handle file uploads
+      const fileFields = ["profileImage", "passportCopy", "visaCopy", "cprCopy"];
+      for (const field of fileFields) {
+        if (formData[field]) {
+          const response = await networkService.uploadMedia(formData[field]);
+          if (response && response[0]?.base_url && response[0]?.unique_name) {
+            uploadedFiles[`${field}Url`] = `${response[0].base_url}${response[0].unique_name}`;
+          } else {
+            throw new Error(`Failed to upload ${field}`);
+          }
+        }
+      }
+
+      // Combine form data with uploaded file URLs
+      const updatedFormData = {
+        ...formData,
+        ...uploadedFiles,
+      };
+
+      console.log("Form submitted with data:", updatedFormData);
+      await utilityService.showAlert("Success", "Profile updated successfully!", "success");
+
+      // Add additional API call to save profile data if needed
+      // Example: await networkService.post("/user/profile", updatedFormData);
+    } catch (error) {
+      console.error("Form submission error:", error);
+      await utilityService.showAlert(
+        "Error",
+        error.message || "Failed to update profile. Please try again.",
+        "error"
+      );
+    }
   };
 
   return (
