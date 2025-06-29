@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CardForm from "@/templates/forms/card-form";
 import { networkService } from "@/services/network.service";
 import { utilityService } from "@/services/utility.service";
@@ -43,6 +43,9 @@ const MyProfile = () => {
     visaCopyUrl: "",
     cprCopyUrl: "",
   });
+  const [catOptions, setCatOptions] = useState([]);
+  const [genderOptions, setGenderOptions] = useState([]);
+  const [religionOptions, setReligionOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -59,16 +62,56 @@ const MyProfile = () => {
     setFormData({ ...formData, [field]: e.target.files[0] });
   };
 
-  const catOptions = [
-    { value: "Banking", label: "Banking" },
-    { value: "Digital & Creative", label: "Digital & Creative" },
-    { value: "Retail", label: "Retail" },
-    { value: "Human Resources", label: "Human Resources" },
-    { value: "Managemnet", label: "Management" },
-    { value: "Accounting & Finance", label: "Accounting & Finance" },
-    { value: "Digital", label: "Digital" },
-    { value: "Creative Art", label: "Creative Art" },
-  ];
+  useEffect(() => {
+    const fetchDropdowns = async () => {
+      try {
+        // Fetch cat_options
+        const catResponse = await networkService.getDropdowns("cat_options");
+        if (catResponse?.cat_options) {
+          const catOptions = catResponse.cat_options.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setCatOptions(catOptions);
+        } else {
+          throw new Error("No category options returned");
+        }
+
+        // Fetch gender options
+        const genderResponse = await networkService.getDropdowns("gender");
+        if (genderResponse?.gender) {
+          const genderOptions = genderResponse.gender.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setGenderOptions(genderOptions);
+        } else {
+          throw new Error("No gender options returned");
+        }
+
+        // Fetch religion options
+        const religionResponse = await networkService.getDropdowns("religion");
+        if (religionResponse?.religion) {
+          const religionOptions = religionResponse.religion.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setReligionOptions(religionOptions);
+        } else {
+          throw new Error("No religion options returned");
+        }
+      } catch (error) {
+        console.error("Error fetching dropdowns:", error);
+        await utilityService.showAlert(
+          "Error",
+          error.message || "Failed to load dropdown options.",
+          "error"
+        );
+      }
+    };
+
+    fetchDropdowns();
+  }, []);
 
   const nationalityOptions = [
     { value: "Bahraini", label: "Bahraini" },
@@ -88,14 +131,6 @@ const MyProfile = () => {
     { value: "United Arab Emirates", label: "United Arab Emirates" },
   ];
 
-  const religionOptions = [
-    { value: "Islam", label: "Islam" },
-    { value: "Christianity", label: "Christianity" },
-    { value: "Hinduism", label: "Hinduism" },
-    { value: "Sikh", label: "Sikh" },
-    { value: "Other", label: "Other" },
-  ];
-
   const maritalStatusOptions = [
     { value: "Single", label: "Single" },
     { value: "Married", label: "Married" },
@@ -106,12 +141,6 @@ const MyProfile = () => {
   const workAvailableOptions = [
     { value: "Immediately", label: "Immediately" },
     { value: "After Days", label: "After Days" },
-  ];
-
-  const genderOptions = [
-    { value: "Male", label: "Male" },
-    { value: "Female", label: "Female" },
-    { value: "Other", label: "Other" },
   ];
 
   const yesNoOptions = [
@@ -141,7 +170,7 @@ const MyProfile = () => {
       name: "role",
       label: "Role",
       placeholder: "Employee",
-      colClass: "col-lg-3 col-md-scholar",
+      colClass: "col-lg-3 col-md-12",
       readOnly: true,
     },
     {
@@ -216,13 +245,11 @@ const MyProfile = () => {
     },
     {
       type: "text",
- language: "text",
       name: "childrenCount",
       label: "Number of Children",
       placeholder: "0",
       colClass: "col-lg-3 col-md-12",
       min: "0",
-      required: true,
       required: true,
     },
     {

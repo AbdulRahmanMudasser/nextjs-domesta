@@ -87,6 +87,10 @@ export const networkService = {
       true
     );
   },
+  getDropdowns: (types: string) => {
+    console.log(`Sending GET request to https://api.zoexp.com/dropdowns?types=${types}`);
+    return handleResponse(apiService.get(`/dropdowns?types=${types}`, {}, false), false);
+  },
   get: (endpoint: string, id: any = null, showError = true) =>
     handleResponse(
       apiService.get(`${endpoint}${id ? "/" + id : ""}`, {}, false),
