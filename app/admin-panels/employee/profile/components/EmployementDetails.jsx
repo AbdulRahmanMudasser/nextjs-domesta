@@ -72,6 +72,7 @@ const EmploymentDetails = () => {
   const [workingHoursOptions, setWorkingHoursOptions] = useState([]);
   const [verificationStatusOptions, setVerificationStatusOptions] = useState([]);
   const [employeeTypeOptions, setEmployeeTypeOptions] = useState([]);
+  const [willingToLiveInOptions, setWillingToLiveInOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -133,8 +134,20 @@ const EmploymentDetails = () => {
             label: item.value,
           }));
           setEmployeeTypeOptions(options);
-        } else {  
+        } else {
           throw new Error("No employee type options returned");
+        }
+
+        // Fetch willing_to_live_in options
+        const willingToLiveInResponse = await networkService.getDropdowns("willing_to_live_in");
+        if (willingToLiveInResponse?.willing_to_live_in) {
+          const options = willingToLiveInResponse.willing_to_live_in.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setWillingToLiveInOptions(options);
+        } else {
+          throw new Error("No willing to live-in options returned");
         }
       } catch (error) {
         console.error("Error fetching dropdowns:", error);
@@ -170,12 +183,6 @@ const EmploymentDetails = () => {
   const visaStatusOptions = [
     { value: "Own Visa", label: "Own Visa" },
     { value: "Needs Sponsorship", label: "Needs Sponsorship" },
-  ];
-
-  const willingToLiveInOptions = [
-    { value: "Yes", label: "Yes" },
-    { value: "No", label: "No" },
-    { value: "Conditional", label: "Conditional" },
   ];
 
   const fields = [
