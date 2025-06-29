@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-const FormContent = ({ onSubmit, onSwitchRegister, onSwitchForgotPassword }) => {
+const FormContent = ({ onSubmit, onSwitchRegister, onSwitchForgotPassword, loading = false }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -51,22 +51,10 @@ const FormContent = ({ onSubmit, onSwitchRegister, onSwitchForgotPassword }) => 
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <div className="form-group">
-          <div className="field-outer">
-            <div className="input-group checkboxes square">
-              <input
-                type="checkbox"
-                name="remember-me"
-                id="remember"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-            </div>
-          </div>
-        </div>
+
         <div className="form-group" style={{ textAlign: "right" }}>
           <span
-            className="call-modal"
+            className="call-modal text"
             onClick={handleForgotPassword}
             style={{ cursor: "pointer", textDecoration: "underline", display: "block", margin: "0 0 1rem 0" }}
           >
@@ -78,8 +66,9 @@ const FormContent = ({ onSubmit, onSwitchRegister, onSwitchForgotPassword }) => 
             className="theme-btn btn-style-one"
             type="submit"
             name="log-in"
+            disabled={loading}
           >
-            Log In
+            {loading ? "Logging in..." : "Log In"}
           </button>
         </div>
       </form>
