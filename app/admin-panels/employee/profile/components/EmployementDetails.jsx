@@ -70,6 +70,7 @@ const EmploymentDetails = () => {
   });
   const [employmentPreferenceOptions, setEmploymentPreferenceOptions] = useState([]);
   const [workingHoursOptions, setWorkingHoursOptions] = useState([]);
+  const [verificationStatusOptions, setVerificationStatusOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -110,6 +111,18 @@ const EmploymentDetails = () => {
         } else {
           throw new Error("No working hours options returned");
         }
+
+        // Fetch document_verification_status options
+        const verificationStatusResponse = await networkService.getDropdowns("document_verification_status");
+        if (verificationStatusResponse?.document_verification_status) {
+          const options = verificationStatusResponse.document_verification_status.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setVerificationStatusOptions(options);
+        } else {
+          throw new Error("No document verification status options returned");
+        }
       } catch (error) {
         console.error("Error fetching dropdowns:", error);
         await utilityService.showAlert(
@@ -131,12 +144,6 @@ const EmploymentDetails = () => {
   const availabilityOptions = [
     { value: "available", label: "Available" },
     { value: "not_available", label: "Not Available" },
-  ];
-
-  const verificationStatusOptions = [
-    { value: "pending", label: "Pending" },
-    { value: "verified", label: "Verified" },
-    { value: "rejected", label: "Rejected" },
   ];
 
   const employeeTypeOptions = [
