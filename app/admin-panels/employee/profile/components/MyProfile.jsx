@@ -41,11 +41,10 @@ const MyProfile = () => {
     profileImageUrl: "",
     passportCopyUrl: "",
     visaCopyUrl: "",
-
-
     cprCopyUrl: "",
   });
   const [catOptions, setCatOptions] = useState([]);
+  const [genderOptions, setGenderOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -65,21 +64,34 @@ const MyProfile = () => {
   useEffect(() => {
     const fetchDropdowns = async () => {
       try {
-        const response = await networkService.getDropdowns("cat_options");
-        if (response?.cat_options) {
-          const options = response.cat_options.map((item) => ({
+        // Fetch cat_options
+        const catResponse = await networkService.getDropdowns("cat_options");
+        if (catResponse?.cat_options) {
+          const catOptions = catResponse.cat_options.map((item) => ({
             value: item.value,
             label: item.value,
           }));
-          setCatOptions(options);
+          setCatOptions(catOptions);
         } else {
           throw new Error("No category options returned");
+        }
+
+        // Fetch gender options
+        const genderResponse = await networkService.getDropdowns("gender");
+        if (genderResponse?.gender) {
+          const genderOptions = genderResponse.gender.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setGenderOptions(genderOptions);
+        } else {
+          throw new Error("No gender options returned");
         }
       } catch (error) {
         console.error("Error fetching dropdowns:", error);
         await utilityService.showAlert(
           "Error",
-          error.message || "Failed to load category options.",
+          error.message || "Failed to load dropdown options.",
           "error"
         );
       }
@@ -124,12 +136,6 @@ const MyProfile = () => {
   const workAvailableOptions = [
     { value: "Immediately", label: "Immediately" },
     { value: "After Days", label: "After Days" },
-  ];
-
-  const genderOptions = [
-    { value: "Male", label: "Male" },
-    { value: "Female", label: "Female" },
-    { value: "Other", label: "Other" },
   ];
 
   const yesNoOptions = [
