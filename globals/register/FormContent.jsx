@@ -13,7 +13,7 @@ const fallbackRoles = [
   { id: 6, name: "User", slug: "user" },
 ];
 
-const FormContent = ({ onSubmit }) => {
+const FormContent = ({ onSubmit, loading = false }) => {
   const [formData, setFormData] = useState({
     role_id: "",
     first_name: "",
@@ -192,8 +192,8 @@ const FormContent = ({ onSubmit }) => {
       </div>
 
       <div className="form-group">
-        <button className="theme-btn btn-style-one" type="submit">
-          Register
+        <button className="theme-btn btn-style-one" type="submit" disabled={loading}>
+          {loading ? "Registering..." : "Register"}
         </button>
       </div>
     </form>
