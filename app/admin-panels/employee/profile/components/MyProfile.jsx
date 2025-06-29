@@ -45,6 +45,7 @@ const MyProfile = () => {
   });
   const [catOptions, setCatOptions] = useState([]);
   const [genderOptions, setGenderOptions] = useState([]);
+  const [religionOptions, setReligionOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -87,6 +88,18 @@ const MyProfile = () => {
         } else {
           throw new Error("No gender options returned");
         }
+
+        // Fetch religion options
+        const religionResponse = await networkService.getDropdowns("religion");
+        if (religionResponse?.religion) {
+          const religionOptions = religionResponse.religion.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setReligionOptions(religionOptions);
+        } else {
+          throw new Error("No religion options returned");
+        }
       } catch (error) {
         console.error("Error fetching dropdowns:", error);
         await utilityService.showAlert(
@@ -116,14 +129,6 @@ const MyProfile = () => {
     { value: "Qatar", label: "Qatar" },
     { value: "Saudi Arabia", label: "Saudi Arabia" },
     { value: "United Arab Emirates", label: "United Arab Emirates" },
-  ];
-
-  const religionOptions = [
-    { value: "Islam", label: "Islam" },
-    { value: "Christianity", label: "Christianity" },
-    { value: "Hinduism", label: "Hinduism" },
-    { value: "Sikh", label: "Sikh" },
-    { value: "Other", label: "Other" },
   ];
 
   const maritalStatusOptions = [
