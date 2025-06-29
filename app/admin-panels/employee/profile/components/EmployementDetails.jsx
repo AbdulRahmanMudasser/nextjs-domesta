@@ -51,7 +51,7 @@ const EmploymentDetails = () => {
     experience: "",
     employers: "",
     skills: "",
-    workingHours: "9 AM - 5 PM",
+    workingHours: "9:00 am to 5:00pm",
     salary: "",
     noticePeriod: "",
     needAirTicket: "",
@@ -69,6 +69,7 @@ const EmploymentDetails = () => {
     otherBenefits: "",
   });
   const [employmentPreferenceOptions, setEmploymentPreferenceOptions] = useState([]);
+  const [workingHoursOptions, setWorkingHoursOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -87,9 +88,9 @@ const EmploymentDetails = () => {
     const fetchDropdowns = async () => {
       try {
         // Fetch type_of_employment_prefernce options
-        const response = await networkService.getDropdowns("type_of_employment_prefernce");
-        if (response?.type_of_employment_prefernce) {
-          const options = response.type_of_employment_prefernce.map((item) => ({
+        const employmentResponse = await networkService.getDropdowns("type_of_employment_prefernce");
+        if (employmentResponse?.type_of_employment_prefernce) {
+          const options = employmentResponse.type_of_employment_prefernce.map((item) => ({
             value: item.value,
             label: item.value,
           }));
@@ -97,11 +98,23 @@ const EmploymentDetails = () => {
         } else {
           throw new Error("No employment preference options returned");
         }
+
+        // Fetch prefered_working_hours options
+        const workingHoursResponse = await networkService.getDropdowns("prefered_working_hours");
+        if (workingHoursResponse?.prefered_working_hours) {
+          const options = workingHoursResponse.prefered_working_hours.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setWorkingHoursOptions(options);
+        } else {
+          throw new Error("No working hours options returned");
+        }
       } catch (error) {
         console.error("Error fetching dropdowns:", error);
         await utilityService.showAlert(
           "Error",
-          error.message || "Failed to load employment preference options.",
+          error.message || "Failed to load dropdown options.",
           "error"
         );
       }
@@ -109,13 +122,6 @@ const EmploymentDetails = () => {
 
     fetchDropdowns();
   }, []);
-
-  const workingHoursOptions = [
-    { value: "9 AM - 5 PM", label: "9 AM - 5 PM" },
-    { value: "Flexible Hours", label: "Flexible Hours" },
-    { value: "Part-Time Morning", label: "Part-Time Morning" },
-    { value: "Part-Time Evening", label: "Part-Time Evening" },
-  ];
 
   const yesNoOptions = [
     { value: "Yes", label: "Yes" },
