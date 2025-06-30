@@ -10,17 +10,15 @@ import Form from "./FormContent";
 import Link from "next/link";
 
 const roleIdToSlug = {
-  2: "super-admin",
-  3: "agency",
-  4: "employer",
-  5: "employee",
-  6: "user",
+  1: "super-admin",
+  2: "admin",
+  3: "hr",
+  4: "employee",
 };
 
 const Register = () => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const [selectedTab, setSelectedTab] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -29,45 +27,27 @@ const Register = () => {
     });
   }, []);
 
-  const cleanModalBackdrop = () => {
-    const backdrop = document.querySelector(".modal-backdrop");
-    if (backdrop) {
-      backdrop.classList.remove("show");
-      backdrop.remove();
-    }
-    document.body.classList.remove("modal-open");
-  };
-
   const closeModal = () => {
-    const modalElement = document.getElementById("registerModal");
-    if (modalElement) {
-      const modalInstance = window.bootstrap?.Modal.getInstance(modalElement);
-      if (modalInstance) {
-        modalInstance.hide();
-      }
-    }
-    setTimeout(() => {
-      cleanModalBackdrop();
-    }, 300);
+    const modal = document.getElementById("registerModal");
+    const instance = window.bootstrap?.Modal.getInstance(modal);
+    instance?.hide();
+    document.querySelector(".modal-backdrop")?.remove();
+    document.body.classList.remove("modal-open");
   };
 
   const handleFormSubmit = async (formData) => {
     try {
       setLoading(true);
-      const res = await userService.registerUser(formData);
+      const res = await userService.registerUser(formData); // 🔥 POST method
       setLoading(false);
 
-      if (!res || typeof res !== "object") {
-        await utilityService.showAlert("Error", "Registration failed: Invalid response from server.", "error");
+      if (!res || !res.token) {
+        await utilityService.showAlert("Error", "Registration failed. Invalid response.", "error");
         return;
       }
 
-      if (!res.token || !res.role_id) {
-        await utilityService.showAlert("Error", "Registration failed: Missing token or role_id.", "error");
-        return;
-      }
+      const slug = roleIdToSlug[res.role_id] || "user"; // Fallback to 'user' if no role_id
 
-      const slug = roleIdToSlug[res.role_id] || "user";
       const loginData = {
         token: res.token,
         user: {
@@ -86,26 +66,22 @@ const Register = () => {
         case "super-admin":
           router.push("/panels/superadmin/dashboard");
           break;
-        case "employer":
+        case "admin":
           router.push("/panels/employer/dashboard");
           break;
-        case "agency":
+        case "hr":
           router.push("/panels/agency/dashboard");
           break;
         case "employee":
           router.push("/panels/employee/dashboard");
           break;
-        case "user":
-          await utilityService.showAlert("Info", "User role registered. Please log in.", "info");
-          router.push("/login");
-          break;
         default:
-          await utilityService.showAlert("Error", "Unknown role. Please contact support.", "error");
+          await utilityService.showAlert("Info", "Registration successful. Please log in.", "info");
           router.push("/login");
       }
     } catch (error) {
       setLoading(false);
-      await utilityService.showAlert("Error", `Registration failed: ${error.message || "Server error."}`, "error");
+      await utilityService.showAlert("Error", `Registration failed: ${error.message || "Server error"}`, "error");
     }
   };
 
