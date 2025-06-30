@@ -40,16 +40,57 @@ const InterviewManagement = () => {
   };
 
   useEffect(() => {
-    const fetchDropdowns = async () => {
+    const fetchData = async () => {
       try {
-        // Fetch prefered_household_tpye options
+        const user = JSON.parse(localStorage.getItem("user"));
+        const employeeId = user?.id;
+        if (!employeeId) {
+          throw new Error("User ID not found in localStorage");
+        }
+
+        // Fetch interview data
+        const interviewResponse = await networkService.get(`/employee/interview-single/${employeeId}`);
+        if (interviewResponse) {
+          // Normalize values to match dropdown options
+          const normalizeValue = (value, type) => {
+            if (!value) return "";
+            // Specific mappings for willing_to_live_in to handle case and typos
+            if (type === "willing_to_live_in") {
+              const mappings = {
+                Yes: "yes",
+                No: "No",
+                Conditional: "Conditonal", // Handle typo in API
+                conditonal: "Conditonal",
+                YES: "yes",
+                NO: "No",
+              };
+              return mappings[value] || value;
+            }
+            // Title case for other dropdowns (householdType, communicationLanguage)
+            return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+          };
+
+          setFormData({
+            interviewTime: interviewResponse.preferred_interview_time || "",
+            liveInWithFamily: normalizeValue(interviewResponse.willing_family?.value, "willing_to_live_in") || "",
+            relocationInsideCountry: interviewResponse.comfortable_with_relocation === null ? "" : interviewResponse.comfortable_with_relocation ? "Yes" : "No",
+            maxHoursPerDay: interviewResponse.maximum_hours_per_day || "",
+            flexibleWeekends: interviewResponse.flexible_with_weekends === null ? "" : interviewResponse.flexible_with_weekends ? "Yes" : "No",
+            householdType: normalizeValue(interviewResponse.house_hold_type?.value, "prefered_household_tpye") || "",
+            communicationLanguage: normalizeValue(interviewResponse.language?.value, "language") || "",
+          });
+        }
+
+        // Fetch preferred_household_type options
         const householdResponse = await networkService.getDropdowns("prefered_household_tpye");
         if (householdResponse?.prefered_household_tpye) {
-          const options = householdResponse.prefered_household_tpye.map((item) => ({
-            value: item.value,
-            label: item.value,
-          }));
-          setHouseholdTypeOptions(options);
+          setHouseholdTypeOptions(
+            householdResponse.prefered_household_tpye.map(item => ({
+              value: item.value,
+              label: item.value,
+              id: item.id,
+            }))
+          );
         } else {
           throw new Error("No household type options returned");
         }
@@ -57,11 +98,13 @@ const InterviewManagement = () => {
         // Fetch language options
         const languageResponse = await networkService.getDropdowns("language");
         if (languageResponse?.language) {
-          const options = languageResponse.language.map((item) => ({
-            value: item.value,
-            label: item.value,
-          }));
-          setLanguageOptions(options);
+          setLanguageOptions(
+            languageResponse.language.map(item => ({
+              value: item.value,
+              label: item.value,
+              id: item.id,
+            }))
+          );
         } else {
           throw new Error("No language options returned");
         }
@@ -69,25 +112,27 @@ const InterviewManagement = () => {
         // Fetch willing_to_live_in options
         const liveInResponse = await networkService.getDropdowns("willing_to_live_in");
         if (liveInResponse?.willing_to_live_in) {
-          const options = liveInResponse.willing_to_live_in.map((item) => ({
-            value: item.value,
-            label: item.value,
-          }));
-          setLiveInOptions(options);
+          setLiveInOptions(
+            liveInResponse.willing_to_live_in.map(item => ({
+              value: item.value,
+              label: item.value,
+              id: item.id,
+            }))
+          );
         } else {
           throw new Error("No willing to live-in options returned");
         }
       } catch (error) {
-        console.error("Error fetching dropdowns:", error);
+        console.error("Error fetching data:", error);
         await utilityService.showAlert(
           "Error",
-          error.message || "Failed to load dropdown options.",
+          error.message || "Failed to load interview data.",
           "error"
         );
       }
     };
 
-    fetchDropdowns();
+    fetchData();
   }, []);
 
   const yesNoOptions = [
@@ -160,9 +205,44 @@ const InterviewManagement = () => {
     },
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form Data:", formData);
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const employeeId = user?.id;
+      if (!employeeId) {
+        throw new Error("User ID not found in localStorage");
+      }
+
+      // Map form values to API expected IDs
+      const getIdFromValue = (options, value) => {
+        const option = options.find(opt => opt.value === value);
+        return option ? option.id : null;
+      };
+
+      const data = {
+        employee_id: employeeId,
+        preferred_interview_time: formData.interviewTime,
+        maximum_hours_per_day: parseInt(formData.maxHoursPerDay) || null,
+        preferred_household_type_id: getIdFromValue(householdTypeOptions, formData.householdType),
+        languages_preferred_id: getIdFromValue(languageOptions, formData.communicationLanguage),
+        willing_to_live_in_with_family_id: getIdFromValue(liveInOptions, formData.liveInWithFamily),
+        comfortable_with_relocation: formData.relocationInsideCountry === "Yes",
+        flexible_with_weekends: formData.flexibleWeekends === "Yes",
+      };
+
+      const response = await networkService.post("/employee/interview-edit", data);
+      if (response) {
+        await utilityService.showAlert("Success", "Interview preferences updated successfully!", "success");
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      await utilityService.showAlert(
+        "Error",
+        error.message || "Failed to update interview preferences. Please try again.",
+        "error"
+      );
+    }
   };
 
   return (
