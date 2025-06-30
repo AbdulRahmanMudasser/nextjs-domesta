@@ -29,6 +29,7 @@ const InterviewManagement = () => {
   });
   const [householdTypeOptions, setHouseholdTypeOptions] = useState([]);
   const [languageOptions, setLanguageOptions] = useState([]);
+  const [liveInOptions, setLiveInOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -64,6 +65,18 @@ const InterviewManagement = () => {
         } else {
           throw new Error("No language options returned");
         }
+
+        // Fetch willing_to_live_in options
+        const liveInResponse = await networkService.getDropdowns("willing_to_live_in");
+        if (liveInResponse?.willing_to_live_in) {
+          const options = liveInResponse.willing_to_live_in.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setLiveInOptions(options);
+        } else {
+          throw new Error("No willing to live-in options returned");
+        }
       } catch (error) {
         console.error("Error fetching dropdowns:", error);
         await utilityService.showAlert(
@@ -80,12 +93,6 @@ const InterviewManagement = () => {
   const yesNoOptions = [
     { value: "Yes", label: "Yes" },
     { value: "No", label: "No" },
-  ];
-
-  const liveInOptions = [
-    { value: "Yes", label: "Yes" },
-    { value: "No", label: "No" },
-    { value: "Conditional", label: "Conditional" },
   ];
 
   const fields = [
