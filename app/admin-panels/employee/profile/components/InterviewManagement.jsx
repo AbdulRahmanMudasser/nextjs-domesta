@@ -1,8 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CardForm from "@/templates/forms/card-form";
 import Select from "react-select";
+import { networkService } from "@/services/network.service";
+import { utilityService } from "@/services/utility.service";
 
 const buttonStyle = {
   padding: "0.75rem 1.5rem",
@@ -25,6 +27,7 @@ const InterviewManagement = () => {
     householdType: "",
     communicationLanguage: "",
   });
+  const [householdTypeOptions, setHouseholdTypeOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -33,6 +36,33 @@ const InterviewManagement = () => {
   const handleSelectChange = (field) => (selectedOption) => {
     setFormData({ ...formData, [field]: selectedOption ? selectedOption.value : "" });
   };
+
+  useEffect(() => {
+    const fetchDropdowns = async () => {
+      try {
+        // Fetch prefered_household_tpye options
+        const response = await networkService.getDropdowns("prefered_household_tpye");
+        if (response?.prefered_household_tpye) {
+          const options = response.prefered_household_tpye.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setHouseholdTypeOptions(options);
+        } else {
+          throw new Error("No household type options returned");
+        }
+      } catch (error) {
+        console.error("Error fetching dropdowns:", error);
+        await utilityService.showAlert(
+          "Error",
+          error.message || "Failed to load household type options.",
+          "error"
+        );
+      }
+    };
+
+    fetchDropdowns();
+  }, []);
 
   const languages = [
     { value: "English", label: "English" },
@@ -51,12 +81,6 @@ const InterviewManagement = () => {
     { value: "Yes", label: "Yes" },
     { value: "No", label: "No" },
     { value: "Conditional", label: "Conditional" },
-  ];
-
-  const householdTypeOptions = [
-    { value: "Local", label: "Local" },
-    { value: "Expat", label: "Expat" },
-    { value: "No Preference", label: "No Preference" },
   ];
 
   const fields = [
