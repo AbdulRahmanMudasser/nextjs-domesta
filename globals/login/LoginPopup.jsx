@@ -10,11 +10,11 @@ import { login } from "@/features/auth/authSlice";
 import { useRouter } from "next/navigation";
 
 const roleIdToSlug = {
-  2: "super-admin",
-  3: "agency",
-  4: "employer",
-  5: "employee",
-  6: "user",
+  1: "super-admin", // Admin
+  2: "admin",       // Employer
+  3: "hr",          // Agency
+  4: "employee",    // Employee
+  null: "user",     // User with no role_id
 };
 
 const LoginPopup = () => {
@@ -103,7 +103,7 @@ const LoginPopup = () => {
       const res = await userService.loginUser(formData);
       setLoading(false);
 
-      if (!res || !res.token || !res.role_id) {
+      if (!res || !res.token) {
         await utilityService.showAlert(
           "Error",
           `Login failed: ${res?.error || "Invalid response from server."}`,
@@ -112,7 +112,8 @@ const LoginPopup = () => {
         return;
       }
 
-      const slug = roleIdToSlug[res.role_id] || "user";
+      const roleId = res.role_id ?? null;
+      const slug = roleIdToSlug[roleId] || "user";
       const loginData = {
         token: res.token,
         user: {
@@ -120,7 +121,10 @@ const LoginPopup = () => {
           email: res.email,
           first_name: res.first_name,
           last_name: res.last_name,
-          role: { slug },
+          role: {
+            id: roleId,
+            slug,
+          },
         },
       };
 
@@ -142,10 +146,10 @@ const LoginPopup = () => {
         case "super-admin":
           router.push("/panels/superadmin/dashboard");
           break;
-        case "employer":
+        case "admin":
           router.push("/panels/employer/dashboard");
           break;
-        case "agency":
+        case "hr":
           router.push("/panels/agency/dashboard");
           break;
         case "employee":
@@ -198,7 +202,7 @@ const LoginPopup = () => {
     setForgotPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
-  return (
+ return (
     <>
       <div className="modal fade" id="loginPopupModal">
         <div className="modal-dialog modal-lg modal-dialog-centered login-modal modal-dialog-scrollable">
