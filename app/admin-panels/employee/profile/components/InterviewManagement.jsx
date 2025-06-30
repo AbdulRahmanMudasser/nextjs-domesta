@@ -28,6 +28,7 @@ const InterviewManagement = () => {
     communicationLanguage: "",
   });
   const [householdTypeOptions, setHouseholdTypeOptions] = useState([]);
+  const [languageOptions, setLanguageOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -41,9 +42,9 @@ const InterviewManagement = () => {
     const fetchDropdowns = async () => {
       try {
         // Fetch prefered_household_tpye options
-        const response = await networkService.getDropdowns("prefered_household_tpye");
-        if (response?.prefered_household_tpye) {
-          const options = response.prefered_household_tpye.map((item) => ({
+        const householdResponse = await networkService.getDropdowns("prefered_household_tpye");
+        if (householdResponse?.prefered_household_tpye) {
+          const options = householdResponse.prefered_household_tpye.map((item) => ({
             value: item.value,
             label: item.value,
           }));
@@ -51,11 +52,23 @@ const InterviewManagement = () => {
         } else {
           throw new Error("No household type options returned");
         }
+
+        // Fetch language options
+        const languageResponse = await networkService.getDropdowns("language");
+        if (languageResponse?.language) {
+          const options = languageResponse.language.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setLanguageOptions(options);
+        } else {
+          throw new Error("No language options returned");
+        }
       } catch (error) {
         console.error("Error fetching dropdowns:", error);
         await utilityService.showAlert(
           "Error",
-          error.message || "Failed to load household type options.",
+          error.message || "Failed to load dropdown options.",
           "error"
         );
       }
@@ -63,14 +76,6 @@ const InterviewManagement = () => {
 
     fetchDropdowns();
   }, []);
-
-  const languages = [
-    { value: "English", label: "English" },
-    { value: "Arabic", label: "Arabic" },
-    { value: "French", label: "French" },
-    { value: "Spanish", label: "Spanish" },
-    { value: "Hindi", label: "Hindi" },
-  ];
 
   const yesNoOptions = [
     { value: "Yes", label: "Yes" },
@@ -114,7 +119,7 @@ const InterviewManagement = () => {
       type: "select",
       name: "communicationLanguage",
       label: "Languages preferred",
-      options: languages,
+      options: languageOptions,
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select Language",
       required: true,
