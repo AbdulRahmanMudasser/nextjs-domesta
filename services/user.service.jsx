@@ -1,5 +1,5 @@
 import { networkService } from "./network.service";
-import { utilityService } from "./utility.service";
+import { notificationService } from "./notification.service";
 
 class UserService {
   constructor() {}
@@ -22,7 +22,7 @@ class UserService {
 
   async registerUser(data) {
     if (!data || !data.first_name || !data.last_name || !data.email || !data.password || !data.role_id) {
-      await utilityService.showAlert("Error", "Registration Failed: Missing required fields.", "error");
+      await notificationService.showToast("Registration Failed: Missing required fields.", "error");
       return null;
     }
   
@@ -37,21 +37,21 @@ class UserService {
           role_id: response.role_id,
         }));
         localStorage.setItem("token", response.token);
-        await utilityService.showAlert("Success", "Registration Successful!", "success");
+        await notificationService.showToast("Registration Successful!", "success");
         return response;
       } else {
-        await utilityService.showAlert("Error", "Registration Failed: Invalid response from server.", "error");
+        await notificationService.showToast("Registration Failed: Invalid response from server.", "error");
         return null;
       }
     } catch (error) {
-      await utilityService.showAlert("Error", `Registration Failed: ${error.message || "Server error."}`, "error");
+      await notificationService.showToast(`Registration Failed: ${error.message || "Server error."}`, "error");
       return null;
     }
   }
   
   async loginUser(data) {
     if (!data || !data.email || !data.password) {
-      await utilityService.showAlert("Error", "Please provide email and password", "error");
+      await notificationService.showToast("Please provide email and password", "error");
       return null;
     }
   
@@ -68,10 +68,10 @@ class UserService {
         localStorage.setItem("token", response.token);
         return response;
       }
-      await utilityService.showAlert("Error", `Login Failed: ${response?.error || "Invalid response from server."}`, "error");
+      await notificationService.showToast(`Login Failed: ${response?.error || "Invalid response from server."}`, "error");
       return null;
     } catch (error) {
-      await utilityService.showAlert("Error", `Login Failed: ${error.message || "Server error."}`, "error");
+      await notificationService.showToast(`Login Failed: ${error.message || "Server error."}`, "error");
       return null;
     }
   }
@@ -83,49 +83,55 @@ class UserService {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
         localStorage.removeItem("user_role");
-        await utilityService.showAlert("Success", "Logout Successful!", "success");
+        await notificationService.showToast("Logout Successful!", "success");
         return response;
       } else {
-        await utilityService.showAlert("Error", "Logout Failed: Invalid response from server.", "error");
+        await notificationService.showToast("Logout Failed: Invalid response from server.", "error");
         return null;
       }
     } catch (error) {
       localStorage.removeItem("user");
       localStorage.removeItem("token");
       localStorage.removeItem("user_role");
-      await utilityService.showAlert("Error", `Logout Failed: ${error.message || "Server error."}`, "error");
+      await notificationService.showToast(`Logout Failed: ${error.message || "Server error."}`, "error");
       return null;
     }
   }
   
-  async getRoles() {
+  async getRolesWithFilters() {
     try {
+      console.log("Calling networkService.getRoles for /user/role/list-with-filters");
       const response = await networkService.getRoles();
-      if (response) {
-        return response;
+      console.log("Raw getRolesWithFilters response:", response);
+      if (response && Array.isArray(response)) {
+        const filteredRoles = response.filter((role) => role.slug !== "user");
+        console.log("Processed roles (filtered):", filteredRoles);
+        return filteredRoles;
       }
-      await utilityService.showAlert("Error", "Failed to fetch roles.", "error");
+      console.warn("Invalid roles response:", response);
+      await notificationService.showToast("Failed to fetch roles.", "error");
       return null;
     } catch (error) {
-      await utilityService.showAlert("Error", "Failed to fetch roles. Please try again.", "error");
+      console.error("getRolesWithFilters error:", error);
+      await notificationService.showToast("Failed to fetch roles. Please try again.", "error");
       return null;
     }
   }
 
   async getServices() {
     try {
-      console.log("Calling networkService.getServices for https://api.zoexp.com/service/list-with-filter");
+      console.log("Calling networkService.getServices for /service/list-with-filter");
       const response = await networkService.getServices();
       console.log("getServices response:", response);
       if (response) {
         return response;
       }
       console.warn("No services returned from networkService.getServices");
-      await utilityService.showAlert("Error", "Failed to fetch services.", "error");
+      await notificationService.showToast("Failed to fetch services.", "error");
       return null;
     } catch (error) {
       console.error("getServices error:", error);
-      await utilityService.showAlert("Error", "Failed to fetch services. Please try again.", "error");
+      await notificationService.showToast("Failed to fetch services. Please try again.", "error");
       return null;
     }
   }
@@ -139,11 +145,11 @@ class UserService {
         return response;
       }
       console.warn("Failed to delete service with ID:", id);
-      await utilityService.showAlert("Error", "Failed to delete service.", "error");
+      await notificationService.showToast("Failed to delete service.", "error");
       return null;
     } catch (error) {
       console.error("deleteService error:", error);
-      await utilityService.showAlert("Error", `Failed to delete service: ${error.message || "Server error."}`, "error");
+      await notificationService.showToast(`Failed to delete service: ${error.message || "Server error."}`, "error");
       return null;
     }
   }
@@ -157,11 +163,11 @@ class UserService {
         return response;
       }
       console.warn("No service details returned for ID:", id);
-      await utilityService.showAlert("Error", "Failed to fetch service details.", "error");
+      await notificationService.showToast("Failed to fetch service details.", "error");
       return null;
     } catch (error) {
       console.error("getSingleService error:", error);
-      await utilityService.showAlert("Error", "Failed to fetch service details. Please try again.", "error");
+      await notificationService.showToast("Failed to fetch service details. Please try again.", "error");
       return null;
     }
   }
@@ -175,11 +181,11 @@ class UserService {
         return response;
       }
       console.warn("Failed to add service");
-      await utilityService.showAlert("Error", "Failed to add service.", "error");
+      await notificationService.showToast("Failed to add service.", "error");
       return null;
     } catch (error) {
       console.error("addService error:", error);
-      await utilityService.showAlert("Error", `Failed to add service: ${error.message || "Server error."}`, "error");
+      await notificationService.showToast(`Failed to add service: ${error.message || "Server error."}`, "error");
       return null;
     }
   }
@@ -193,7 +199,7 @@ class UserService {
         return response;
       }
       console.warn("Failed to edit service");
-      await utilityService.showAlert("Error", "Failed to edit service.", "error");
+      await notificationService.showToast("Failed to edit service.", "error");
       return null;
     } catch (error) {
       console.error("editService error:", error);
@@ -201,7 +207,7 @@ class UserService {
         const errorMessages = Object.values(error.errors).flat().join("; ");
         throw new Error(errorMessages || "Invalid service data.");
       }
-      await utilityService.showAlert("Error", `Failed to edit service: ${error.message || "Server error."}`, "error");
+      await notificationService.showToast(`Failed to edit service: ${error.message || "Server error."}`, "error");
       throw error;
     }
   }
@@ -215,11 +221,11 @@ class UserService {
         return response;
       }
       console.warn("Failed to send forgot password request");
-      await utilityService.showAlert("Error", "Failed to send reset password request.", "error");
+      await notificationService.showToast("Failed to send reset password request.", "error");
       return null;
     } catch (error) {
       console.error("forgotPassword error:", error);
-      await utilityService.showAlert("Error", `Failed to send reset password request: ${error.message || "Server error."}`, "error");
+      await notificationService.showToast(`Failed to send reset password request: ${error.message || "Server error."}`, "error");
       throw error;
     }
   }

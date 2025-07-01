@@ -1,8 +1,7 @@
 import axios from "axios";
 
-// Define base URLs
+// Define base URL
 const defaultBaseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.zoexp.com/";
-const rolesBaseURL = "https://darmaid.gadgetreviewzone.com/api";
 
 const createAxiosInstance = (baseURL) => {
   const instance = axios.create({
@@ -33,22 +32,16 @@ const createAxiosInstance = (baseURL) => {
   return instance;
 };
 
-// Create separate Axios instances
+// Create Axios instance
 const defaultAxiosInstance = createAxiosInstance(defaultBaseURL);
-const rolesAxiosInstance = createAxiosInstance(rolesBaseURL);
 
-// 🚀 Export all methods with base URL selection
+// Export API methods
 export const apiService = {
-  get: (url, config = {}, useRolesBase = false) =>
-    (useRolesBase ? rolesAxiosInstance : defaultAxiosInstance).get(url, config),
-  post: (url, data, config = {}, useRolesBase = false) =>
-    (useRolesBase ? rolesAxiosInstance : defaultAxiosInstance).post(url, data, config),
-  put: (url, data, config = {}, useRolesBase = false) =>
-    (useRolesBase ? rolesAxiosInstance : defaultAxiosInstance).put(url, data, config),
-  patch: (url, data, config = {}, useRolesBase = false) =>
-    (useRolesBase ? rolesAxiosInstance : defaultAxiosInstance).patch(url, data, config),
-  delete: (url, config = {}, useRolesBase = false) =>
-    (useRolesBase ? rolesAxiosInstance : defaultAxiosInstance).delete(url, config),
+  get: (url, config = {}) => defaultAxiosInstance.get(url, config),
+  post: (url, data, config = {}) => defaultAxiosInstance.post(url, data, config),
+  put: (url, data, config = {}) => defaultAxiosInstance.put(url, data, config),
+  patch: (url, data, config = {}) => defaultAxiosInstance.patch(url, data, config),
+  delete: (url, config = {}) => defaultAxiosInstance.delete(url, config),
 };
 
 export default defaultAxiosInstance;
