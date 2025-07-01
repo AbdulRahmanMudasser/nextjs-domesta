@@ -40,77 +40,79 @@ const handleResponse = async (
 
 export const networkService = {
   registerUser: (data: any) =>
-    handleResponse(apiService.post("/user/register", data, {}, false), false)
+    handleResponse(apiService.post("/user/register", data, {}), false)
       .then((response) => response),
   loginUser: (data: any) =>
-    handleResponse(apiService.put("/user/login", data, {}, false), true),
+    handleResponse(apiService.put("/user/login", data, {}), true),
   logoutUser: () =>
-    handleResponse(apiService.get("/user/logout", {}, false), true),
-  getRoles: () =>
-    handleResponse(apiService.get("/roles", {}, true), false),
+    handleResponse(apiService.get("/user/logout", {}), true),
+  getRoles: () => {
+    console.log("Sending GET request to /user/role/list-with-filters");
+    return handleResponse(apiService.get("/user/role/list-with-filters", {}), false);
+  },
   getServices: () => {
-    console.log("Sending GET request to https://api.zoexp.com/service/list-with-filter");
-    return handleResponse(apiService.get("https://api.zoexp.com/service/list-with-filter", {}, true), false);
+    console.log("Sending GET request to /service/list-with-filter");
+    return handleResponse(apiService.get("/service/list-with-filter", {}), false);
   },
   getIntellisenseServices: () => {
-    console.log("Sending GET request to https://api.zoexp.com/service/intellisense-search");
-    return handleResponse(apiService.get("https://api.zoexp.com/service/intellisense-search", {}, true), false);
+    console.log("Sending GET request to /service/intellisense-search");
+    return handleResponse(apiService.get("/service/intellisense-search", {}), false);
   },
   deleteService: (id: number) => {
-    console.log("Sending DELETE request to https://api.zoexp.com/service/delete with IDs:", [id]);
-    return handleResponse(apiService.delete("https://api.zoexp.com/service/delete", { data: { ids: [id] } }, true), true);
+    console.log("Sending DELETE request to /service/delete with IDs:", [id]);
+    return handleResponse(apiService.delete("/service/delete", { data: { ids: [id] } }), true);
   },
   getSingleService: (id: number) => {
-    console.log(`Sending GET request to https://api.zoexp.com/service/single/${id}`);
-    return handleResponse(apiService.get(`https://api.zoexp.com/service/single/${id}`, {}, true), false);
+    console.log(`Sending GET request to /service/single/${id}`);
+    return handleResponse(apiService.get(`/service/single/${id}`, {}), false);
   },
   addService: (data: any) => {
-    console.log("Sending POST request to https://api.zoexp.com/service/add with data:", data);
-    return handleResponse(apiService.post("https://api.zoexp.com/service/add", data, {}, true), true);
+    console.log("Sending POST request to /service/add with data:", data);
+    return handleResponse(apiService.post("/service/add", data, {}), true);
   },
   editService: (data: any) => {
-    console.log("Sending POST request to https://api.zoexp.com/service/edit with data:", data);
-    return handleResponse(apiService.post("https://api.zoexp.com/service/edit", data, {}, true), true);
+    console.log("Sending POST request to /service/edit with data:", data);
+    return handleResponse(apiService.post("/service/edit", data, {}), true);
   },
   forgotPassword: (data: any) => {
-    console.log("Sending POST request to https://api.zoexp.com/user/forgot-password with data:", data);
-    return handleResponse(apiService.post("https://api.zoexp.com/user/forgot-password", data, {}, false), true);
+    console.log("Sending POST request to /user/forgot-password with data:", data);
+    return handleResponse(apiService.post("/user/forgot-password", data, {}), true);
   },
   uploadMedia: (file: File) => {
-    console.log("Sending POST request to https://api.zoexp.com/media/add with file:", file.name);
+    console.log("Sending POST request to /media/add with file:", file.name);
     const formData = new FormData();
     formData.append("media", file);
     return handleResponse(
       apiService.post("/media/add", formData, {
         headers: { "Content-Type": "multipart/form-data" },
-      }, false),
+      }),
       true
     );
   },
   getDropdowns: (types: string) => {
-    console.log(`Sending GET request to https://api.zoexp.com/dropdowns?types=${types}`);
-    return handleResponse(apiService.get(`/dropdowns?types=${types}`, {}, false), false);
+    console.log(`Sending GET request to /dropdowns?types=${types}`);
+    return handleResponse(apiService.get(`/dropdowns?types=${types}`, {}), false);
   },
   get: (endpoint: string, id: any = null, showError = true) =>
     handleResponse(
-      apiService.get(`${endpoint}${id ? "/" + id : ""}`, {}, false),
+      apiService.get(`${endpoint}${id ? "/" + id : ""}`, {}),
       showError
     ),
   post: (endpoint: string, data: any, id: any = null, showError = true) =>
     handleResponse(
-      apiService.post(`${endpoint}${id ? "/" + id : ""}`, data, {}, false),
+      apiService.post(`${endpoint}${id ? "/" + id : ""}`, data, {}),
       showError
     ),
   put: (endpoint: string, data: any, id: any = null, showError = true) =>
     handleResponse(
-      apiService.put(`${endpoint}${id ? "/" + id : ""}`, data, {}, false),
+      apiService.put(`${endpoint}${id ? "/" + id : ""}`, data, {}),
       showError
     ),
   patch: (endpoint: string, data: any, showError = true) =>
-    handleResponse(apiService.patch(endpoint, data, {}, false), showError),
+    handleResponse(apiService.patch(endpoint, data, {}), showError),
   delete: (endpoint: string, id: any = null, showError = true) =>
     handleResponse(
-      apiService.delete(`${endpoint}${id ? "/" + id : ""}`, {}, false),
+      apiService.delete(`${endpoint}${id ? "/" + id : ""}`, {}),
       showError
     ),
   serialize,
