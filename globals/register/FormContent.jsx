@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { userService } from "@/services/user.service";
 import { notificationService } from "@/services/notification.service";
+import Link from "next/link";
 
 // Fallback roles without "User"
 const fallbackRoles = [
@@ -14,7 +15,7 @@ const fallbackRoles = [
 
 const FormContent = ({ onSubmit, loading = false }) => {
   const [formData, setFormData] = useState({
-    role_id: "", // Keep string to allow select placeholder
+    role_id: "",
     first_name: "",
     middle_name: "",
     last_name: "",
@@ -35,7 +36,7 @@ const FormContent = ({ onSubmit, loading = false }) => {
       const fetchedRoles = await userService.getRolesWithFilters();
       console.log("Fetched roles in FormContent:", fetchedRoles);
       if (fetchedRoles && Array.isArray(fetchedRoles)) {
-        setRoles(fetchedRoles); // Already filtered in user.service.jsx
+        setRoles(fetchedRoles);
       } else {
         setRoles(fallbackRoles);
         setError("Failed to load roles from server. Using default roles.");
@@ -77,17 +78,22 @@ const FormContent = ({ onSubmit, loading = false }) => {
       return;
     }
 
-    // Build payload for POST
     const dataToSend = { ...formData };
-    onSubmit(dataToSend); // Let parent send POST request
+    onSubmit(dataToSend);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="needs-validation" noValidate style={{ maxWidth: "600px" }}>
+    <form
+      onSubmit={handleSubmit}
+      className="needs-validation"
+      noValidate
+      style={{ maxWidth: "1000px", margin: "0 auto" }}
+    >
+      {/* Row 1: Role Dropdown */}
       <div className="form-group mb-3">
         <label htmlFor="role_id" className="form-label">Role</label>
         {isLoading ? (
-          <div className="d-flex align-items-center p-2" style={{ backgroundColor: "#f0f5f7", borderRadius: "4px" }}>
+          <div className="d-flex align-items-center p-2" style={{ backgroundColor: "", borderRadius: "4px" }}>
             <div className="spinner-border spinner-border-sm text-primary me-2" role="status">
               <span className="visually-hidden">Loading...</span>
             </div>
@@ -130,106 +136,113 @@ const FormContent = ({ onSubmit, loading = false }) => {
         </div>
       </div>
 
-      <div className="form-group mb-3">
-        <label htmlFor="first_name" className="form-label">First Name</label>
-        <input
-          id="first_name"
-          type="text"
-          name="first_name"
-          required
-          value={formData.first_name}
-          onChange={handleChange}
-          className="form-control"
-          style={{ backgroundColor: "#f0f5f7" }}
-        />
-        <div className="invalid-feedback">
-          Please enter your first name.
+      {/* Row 2: First Name and Middle Name */}
+      <div className="row mb-3">
+        <div className="col-md-6 form-group">
+          <label htmlFor="first_name" className="form-label">First Name</label>
+          <input
+            id="first_name"
+            type="text"
+            name="first_name"
+            required
+            value={formData.first_name}
+            onChange={handleChange}
+            className="form-control"
+            style={{ backgroundColor: "#f0f5f7" }}
+          />
+          <div className="invalid-feedback">
+            Please enter your first name.
+          </div>
+        </div>
+        <div className="col-md-6 form-group">
+          <label htmlFor="middle_name" className="form-label">Middle Name</label>
+          <input
+            id="middle_name"
+            type="text"
+            name="middle_name"
+            value={formData.middle_name}
+            onChange={handleChange}
+            className="form-control"
+            style={{ backgroundColor: "#f0f5f7" }}
+          />
+        </div>
+      </div>
+
+      {/* Row 3: Last Name and Email */}
+      <div className="row mb-3">
+        <div className="col-md-6 form-group">
+          <label htmlFor="last_name" className="form-label">Last Name</label>
+          <input
+            id="last_name"
+            type="text"
+            name="last_name"
+            required
+            value={formData.last_name}
+            onChange={handleChange}
+            className="form-control"
+            style={{ backgroundColor: "#f0f5f7" }}
+          />
+          <div className="invalid-feedback">
+            Please enter your last name.
+          </div>
+        </div>
+        <div className="col-md-6 form-group">
+          <label htmlFor="email" className="form-label">Email</label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            required
+            value={formData.email}
+            onChange={handleChange}
+            className="form-control"
+            style={{ backgroundColor: "#f0f5f7" }}
+          />
+          <div className="invalid-feedback">
+            Please enter a valid email address.
+          </div>
+        </div>
+      </div>
+
+      {/* Row 4: Password and Confirm Password with Forgot Password */}
+      <div className="row mb-3">
+        <div className="col-md-6 form-group">
+          <label htmlFor="password" className="form-label">Password</label>
+          <input
+            id="password"
+            type="password"
+            name="password"
+            required
+            value={formData.password}
+            onChange={handleChange}
+            className="form-control"
+            style={{ backgroundColor: "#f0f5f7" }}
+          />
+          <div className="invalid-feedback">
+            Please enter a password.
+          </div>
+        </div>
+        <div className="col-md-6 form-group">
+          <label htmlFor="password_confirmation" className="form-label">Confirm Password</label>
+          <input
+            id="password_confirmation"
+            type="password"
+            name="password_confirmation"
+            required
+            value={formData.password_confirmation}
+            onChange={handleChange}
+            className="form-control"
+            style={{ backgroundColor: "#f0f5f7" }}
+          />
         </div>
       </div>
 
       <div className="form-group mb-3">
-        <label htmlFor="middle_name" className="form-label">Middle Name</label>
-        <input
-          id="middle_name"
-          type="text"
-          name="middle_name"
-          value={formData.middle_name}
-          onChange={handleChange}
-          className="form-control"
-          style={{ backgroundColor: "#f0f5f7" }}
-        />
-      </div>
-
-      <div className="form-group mb-3">
-        <label htmlFor="last_name" className="form-label">Last Name</label>
-        <input
-          id="last_name"
-          type="text"
-          name="last_name"
-          required
-          value={formData.last_name}
-          onChange={handleChange}
-          className="form-control"
-          style={{ backgroundColor: "#f0f5f7" }}
-        />
-        <div className="invalid-feedback">
-          Please enter your last name.
-        </div>
-      </div>
-
-      <div className="form-group mb-3">
-        <label htmlFor="email" className="form-label">Email</label>
-        <input
-          id="email"
-          type="email"
-          name="email"
-          required
-          value={formData.email}
-          onChange={handleChange}
-          className="form-control"
-          style={{ backgroundColor: "#f0f5f7" }}
-        />
-        <div className="invalid-feedback">
-          Please enter a valid email address.
-        </div>
-      </div>
-
-      <div className="form-group mb-3">
-        <label htmlFor="password" className="form-label">Password</label>
-        <input
-          id="password"
-          type="password"
-          name="password"
-          required
-          value={formData.password}
-          onChange={handleChange}
-          className="form-control"
-          style={{ backgroundColor: "#f0f5f7" }}
-        />
-        <div className="invalid-feedback">
-          Please enter a password.
-        </div>
-      </div>
-
-      <div className="form-group mb-3">
-        <label htmlFor="password_confirmation" className="form-label">Confirm Password</label>
-        <input
-          id="password_confirmation"
-          type="password"
-          name="password_confirmation"
-          required
-          value={formData.password_confirmation}
-          onChange={handleChange}
-          className="form-control"
-          style={{ backgroundColor: "#f0f5f7" }}
-        />
-        <div className="invalid-feedback">
-          Please confirm your password.
-        </div>
-      </div>
-
-      <div className="form-group mb-3">
-        <button className="theme-btn btn-style-one w-100" type="submit" disabled={loading}>
+        <button
+          className="theme-btn btn-style-one w-100"
+          type="submit"
+          disabled={loading}
+        >
           {loading ? "Registering..." : "Register"}
         </button>
       </div>
