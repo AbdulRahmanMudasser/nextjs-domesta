@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
-import HeaderNavContent from "./HeaderNavContent";
-import Image from "next/image";
-import { useSelector, useDispatch } from "react-redux";
-import { logout } from "@/features/auth/authSlice";
-import { useRouter } from "next/navigation";
-import { usePathname } from "next/navigation";
-import headerdropdownmenu from "@/data/headerdropdownmenu";
-import { userService } from "@/services/user.service";
+import Link from 'next/link';
+import { useEffect, useState, useRef } from 'react';
+import HeaderNavContent from './HeaderNavContent';
+import Image from 'next/image';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '@/features/auth/authSlice';
+import { useRouter, usePathname } from 'next/navigation';
+import headerdropdownmenu from '@/data/headerdropdownmenu';
+import { userService } from '@/services/user.service';
+import { modalUtils } from '@/utils/modalUtils';
 
 const WebsiteHeader = () => {
   const dispatch = useDispatch();
@@ -36,61 +36,66 @@ const WebsiteHeader = () => {
     };
 
     if (dropdownOpen) {
-      document.addEventListener("mousedown", handleOutsideClick);
+      document.addEventListener('mousedown', handleOutsideClick);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener('mousedown', handleOutsideClick);
     };
   }, [dropdownOpen]);
 
   useEffect(() => {
-    window.addEventListener("scroll", changeBackground);
-    return () => window.removeEventListener("scroll", changeBackground);
+    window.addEventListener('scroll', changeBackground);
+    return () => window.removeEventListener('scroll', changeBackground);
   }, []);
 
   const handleLogout = async () => {
     try {
       await userService.logoutUser();
       dispatch(logout());
-      router.push("/");
+      router.push('/');
     } catch (error) {
       dispatch(logout());
-      router.push("/");
+      router.push('/');
     }
   };
 
   const handleClick = (item, e) => {
     e.preventDefault();
-    if (item.name !== "Logout") {
+    if (item.name !== 'Logout') {
       switch (user?.role?.slug) {
-        case "employer":
-          router.push("/panels/employer/dashboard");
+        case 'employer':
+          router.push('/panels/employer/dashboard');
           break;
-        case "employee":
-          router.push("/panels/employee/dashboard");
+        case 'employee':
+          router.push('/panels/employee/dashboard');
           break;
-        case "agency":
-          router.push("/panels/agency/dashboard");
+        case 'agency':
+          router.push('/panels/agency/dashboard');
           break;
-        case "super-admin":
-          router.push("/panels/superadmin/dashboard");
+        case 'super-admin':
+          router.push('/panels/superadmin/dashboard');
           break;
         default:
-          router.push("/login");
+          router.push('/login');
       }
     }
   };
 
+  const handleOpenLoginModal = (e) => {
+    e.preventDefault();
+    modalUtils.openModal('loginPopupModal');
+  };
+
   return (
     <header
-      className={`main-header ${navbar ? "fixed-header animated slideInDown" : ""}`}
+      className={`main-header ${navbar ? 'fixed-header animated slideInDown' : ''}`}
     >
       <div className="main-box">
         <div className="nav-outer">
           <div className="logo-box">
             <div className="logo">
-              <Link href="/" style={{ display: "flex", gap: "10px" }}>
+              <Link href="/" style={{ display: 'flex', gap: '10px' }}>
                 <Image
                   alt="brand"
                   src="/images/domesta_icon_2.png"
@@ -123,21 +128,24 @@ const WebsiteHeader = () => {
                 <Image
                   alt="avatar"
                   className="thumb"
-                  src={user?.image || "/images/profession.jpeg"}
+                  src={user?.image || '/images/profession.jpeg'}
                   width={50}
                   height={50}
                 />
                 <span className="name">{user?.name}</span>
               </button>
 
-              <ul className={`dropdown-menu ${dropdownOpen ? "show" : ""}`}>
+              <ul className={`dropdown-menu ${dropdownOpen ? 'show' : ''}`}>
                 {dropdownOpen &&
                   headerdropdownmenu.map((item, index) => (
                     <li key={item.id || index}>
-                      {item.name === "Logout" ? (
+                      {item.name === 'Logout' ? (
                         <Link
                           href="#"
-                          onClick={(e) => { e.preventDefault(); handleLogout(); }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleLogout();
+                          }}
                           className="dropdown-item"
                         >
                           <i className={`la ${item.icon}`}></i> {item.name}
@@ -160,8 +168,7 @@ const WebsiteHeader = () => {
               <a
                 href="#"
                 className="theme-btn btn-style-three call-modal"
-                data-bs-toggle="modal"
-                data-bs-target="#loginPopupModal"
+                onClick={handleOpenLoginModal}
               >
                 Login / Register
               </a>
