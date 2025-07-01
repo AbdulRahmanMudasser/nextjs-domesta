@@ -83,7 +83,7 @@ const FormContent = ({ onSubmit, loading = false }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="needs-validation" noValidate>
+    <form onSubmit={handleSubmit} className="needs-validation" noValidate style={{ maxWidth: "600px" }}>
       <div className="form-group mb-3">
         <label htmlFor="role_id" className="form-label">Role</label>
         {isLoading ? (

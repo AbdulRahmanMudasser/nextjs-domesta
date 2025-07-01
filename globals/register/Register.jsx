@@ -83,7 +83,7 @@ const Register = () => {
   return (
     <div className="relative">
       <Notification />
-      <div className="form-inner">
+      <div className="form-inner" style={{ maxWidth: "800px", margin: "0 auto" }}>
         <h3>Create a Domesta Account</h3>
         <Form onSubmit={handleFormSubmit} loading={loading} />
         <div className="bottom-box">
