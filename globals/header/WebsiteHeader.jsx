@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
@@ -9,6 +9,7 @@ import { logout } from "@/features/auth/authSlice";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import headerdropdownmenu from "@/data/headerdropdownmenu";
+import { userService } from "@/services/user.service";
 
 const WebsiteHeader = () => {
   const dispatch = useDispatch();
@@ -17,9 +18,8 @@ const WebsiteHeader = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const pathname = usePathname();
-  const dropdownRef = useRef(null); // Ref for dropdown menu
+  const dropdownRef = useRef(null);
 
-  // Handle scroll for fixed header
   const changeBackground = () => {
     if (window.scrollY >= 10) {
       setNavbar(true);
@@ -28,9 +28,7 @@ const WebsiteHeader = () => {
     }
   };
 
-  // Close dropdown on outside click
   useEffect(() => {
-    // const dropdownRef=null;
     const handleOutsideClick = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
@@ -46,23 +44,26 @@ const WebsiteHeader = () => {
     };
   }, [dropdownOpen]);
 
-  // Handle scroll event
   useEffect(() => {
     window.addEventListener("scroll", changeBackground);
     return () => window.removeEventListener("scroll", changeBackground);
   }, []);
 
-  // Handle logout
-  const handleLogout = () => {
-    dispatch(logout());
-    router.push("/");
+  const handleLogout = async () => {
+    try {
+      await userService.logoutUser();
+      dispatch(logout());
+      router.push("/");
+    } catch (error) {
+      dispatch(logout());
+      router.push("/");
+    }
   };
 
-  // Handle menu item click
   const handleClick = (item, e) => {
     e.preventDefault();
     if (item.name !== "Logout") {
-      switch (user?.role?.slug) { // Use `user` instead of `userData`
+      switch (user?.role?.slug) {
         case "employer":
           router.push("/panels/employer/dashboard");
           break;
@@ -76,17 +77,14 @@ const WebsiteHeader = () => {
           router.push("/panels/superadmin/dashboard");
           break;
         default:
-          router.push("/login"); // If role not found, redirect to login
-          console.log("Unknown role:", user?.role);
+          router.push("/login");
       }
-      console.log("User role:", user?.role); // Debugging log
     }
   };
 
   return (
     <header
-      className={`main-header ${navbar ? "fixed-header animated slideInDown" : ""
-        }`}
+      className={`main-header ${navbar ? "fixed-header animated slideInDown" : ""}`}
     >
       <div className="main-box">
         <div className="nav-outer">
@@ -134,30 +132,27 @@ const WebsiteHeader = () => {
 
               <ul className={`dropdown-menu ${dropdownOpen ? "show" : ""}`}>
                 {dropdownOpen &&
-                  headerdropdownmenu.map((item, index) => {
-                    console.log("Rendering item with key:", item.id || index); // Debugging log
-                    return (
-                      <li key={item.id || index}>
-                        {item.name === "Logout" ? (
-                          <Link
-                            href="#"
-                            onClick={(e) => { e.preventDefault(); handleLogout(); }}
-                            className="dropdown-item"
-                          >
-                            <i className={`la ${item.icon}`}></i> {item.name}
-                          </Link>
-                        ) : (
-                          <Link
-                            href={item.routePath}
-                            onClick={(e) => handleClick(item, e)}
-                            className="dropdown-item"
-                          >
-                            <i className={`la ${item.icon}`}></i> {item.name}
-                          </Link>
-                        )}
-                      </li>
-                    );
-                  })}
+                  headerdropdownmenu.map((item, index) => (
+                    <li key={item.id || index}>
+                      {item.name === "Logout" ? (
+                        <Link
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); handleLogout(); }}
+                          className="dropdown-item"
+                        >
+                          <i className={`la ${item.icon}`}></i> {item.name}
+                        </Link>
+                      ) : (
+                        <Link
+                          href={item.routePath}
+                          onClick={(e) => handleClick(item, e)}
+                          className="dropdown-item"
+                        >
+                          <i className={`la ${item.icon}`}></i> {item.name}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
               </ul>
             </div>
           ) : (

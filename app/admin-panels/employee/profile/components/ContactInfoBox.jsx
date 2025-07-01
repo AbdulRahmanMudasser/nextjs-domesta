@@ -1,10 +1,12 @@
-'use client'
+"use client";
 
+import { useState, useEffect } from "react";
 import Select from "react-select";
-import { useState } from "react";
 import CardForm from "@/templates/forms/card-form";
+import { networkService } from "@/services/network.service";
+import { utilityService } from "@/services/utility.service";
 
-// Define buttonStyle at the top level for consistent styling
+// Define buttonStyle for consistent styling
 const buttonStyle = {
   padding: "0.75rem 1.5rem",
   border: "none",
@@ -23,13 +25,16 @@ const ContactInfoBox = () => {
     whatsapp_number: "",
     preferred_language: "",
     address: "",
-    houseType: "",
-    buildingNo: "",
-    roadNo: "",
-    blockNo: "",
+    house_flat_apartment_villa: "",
+    building_no: "",
+    road_no_1: "",
+    road_no_2: "",
     city: "",
     country: "",
   });
+  const [dialCodeOptions, setDialCodeOptions] = useState([]);
+  const [languageOptions, setLanguageOptions] = useState([]);
+  const [countryOptions, setCountryOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -39,39 +44,80 @@ const ContactInfoBox = () => {
     setFormData({ ...formData, [field]: selectedOption ? selectedOption.value : "" });
   };
 
-  // Gulf countries and their dial codes
-  const gulfCountriesDialCodeOptions = [
-    { value: "+973", label: "+973 (Bahrain)" },
-    { value: "+965", label: "+965 (Kuwait)" },
-    { value: "+968", label: "+968 (Oman)" },
-    { value: "+974", label: "+974 (Qatar)" },
-    { value: "+966", label: "+966 (Saudi Arabia)" },
-    { value: "+971", label: "+971 (United Arab Emirates)" },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        const employeeId = user?.id;
+        if (!employeeId) {
+          throw new Error("User ID not found in localStorage");
+        }
 
-  const languageOptions = [
-    { value: "English", label: "English" },
-    { value: "Arabic", label: "Arabic" },
-    { value: "Hindi", label: "Hindi" },
-    { value: "Urdu", label: "Urdu" },
-    { value: "Other", label: "Other" },
-  ];
+        // Fetch contact info
+        const contactResponse = await networkService.get(`/employee/contact-info-single/${employeeId}`);
+        if (contactResponse) {
+          setFormData({
+            dialCode: contactResponse.dial_code || "",
+            phoneNumber: contactResponse.phone_number || "",
+            whatsapp_number: contactResponse.whatsapp_number || "",
+            preferred_language: contactResponse.language?.value || "",
+            address: contactResponse.address || "",
+            house_flat_apartment_villa: contactResponse.house_flat_apartment_villa || "",
+            building_no: contactResponse.building_no || "",
+            road_no_1: contactResponse.road_no_1 || "",
+            road_no_2: contactResponse.road_no_2 || "",
+            city: contactResponse.city || "",
+            country: contactResponse.country?.name || "",
+          });
+        }
 
-  const gulfCountriesOptions = [
-    { value: "Bahrain", label: "Bahrain" },
-    { value: "Kuwait", label: "Kuwait" },
-    { value: "Oman", label: "Oman" },
-    { value: "Qatar", label: "Qatar" },
-    { value: "Saudi Arabia", label: "Saudi Arabia" },
-    { value: "United Arab Emirates", label: "United Arab Emirates" },
-  ];
+        // Fetch language options
+        const languageResponse = await networkService.getDropdowns("language");
+        if (languageResponse?.language) {
+          setLanguageOptions(languageResponse.language.map(item => ({
+            value: item.value,
+            label: item.value,
+            id: item.id,
+          })));
+        } else {
+          throw new Error("No language options returned");
+        }
+
+        // Fetch country options for country and dialCode
+        const countryResponse = await networkService.get("/country");
+        if (countryResponse) {
+          setCountryOptions(countryResponse.map(item => ({
+            value: item.name,
+            label: item.name,
+            id: item.id,
+          })));
+          setDialCodeOptions(countryResponse.map(item => ({
+            value: item.dial_code,
+            label: `${item.dial_code} (${item.name})`,
+            id: item.id,
+          })));
+        } else {
+          throw new Error("No country options returned");
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        await utilityService.showAlert(
+          "Error",
+          error.message || "Failed to load contact information.",
+          "error"
+        );
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const fields = [
     {
       type: "select",
       name: "dialCode",
       label: "Dial Code",
-      options: gulfCountriesDialCodeOptions,
+      options: dialCodeOptions,
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select Dial Code",
       required: true,
@@ -119,7 +165,7 @@ const ContactInfoBox = () => {
     },
     {
       type: "text",
-      name: "houseType",
+      name: "house_flat_apartment_villa",
       label: "House/Flat/Apartment/Villa",
       placeholder: "E.g., Villa",
       colClass: "col-lg-3 col-md-12",
@@ -127,7 +173,7 @@ const ContactInfoBox = () => {
     },
     {
       type: "text",
-      name: "buildingNo",
+      name: "building_no",
       label: "Building No",
       placeholder: "E.g., 123",
       colClass: "col-lg-3 col-md-12",
@@ -139,8 +185,8 @@ const ContactInfoBox = () => {
     },
     {
       type: "text",
-      name: "roadNo",
-      label: "Road No",
+      name: "road_no_1",
+      label: "Road No 1",
       placeholder: "E.g., 456",
       colClass: "col-lg-3 col-md-12",
       required: true,
@@ -151,8 +197,8 @@ const ContactInfoBox = () => {
     },
     {
       type: "text",
-      name: "blockNo",
-      label: "Block No",
+      name: "road_no_2",
+      label: "Road No 2",
       placeholder: "E.g., 789",
       colClass: "col-lg-3 col-md-12",
       required: true,
@@ -173,17 +219,54 @@ const ContactInfoBox = () => {
       type: "select",
       name: "country",
       label: "Country",
-      options: gulfCountriesOptions,
+      options: countryOptions,
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select Country",
       required: true,
     },
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted with data:", formData);
-    // Add your form submission logic here, such as API calls
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const employeeId = user?.id;
+      if (!employeeId) {
+        throw new Error("User ID not found in localStorage");
+      }
+
+      // Map form values to API expected IDs
+      const getIdFromValue = (options, value) => {
+        const option = options.find(opt => opt.value === value);
+        return option ? option.id : null;
+      };
+
+      const data = {
+        employee_id: employeeId,
+        dial_code: formData.dialCode,
+        phone_number: formData.phoneNumber,
+        preferred_language_id: getIdFromValue(languageOptions, formData.preferred_language),
+        address: formData.address,
+        house_flat_apartment_villa: formData.house_flat_apartment_villa,
+        building_no: formData.building_no,
+        road_no_1: formData.road_no_1,
+        road_no_2: formData.road_no_2,
+        city: formData.city,
+        country_id: getIdFromValue(countryOptions, formData.country),
+      };
+
+      const response = await networkService.post("/employee/contact-info-edit", data);
+      if (response) {
+        await utilityService.showAlert("Success", "Contact information updated successfully!", "success");
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      await utilityService.showAlert(
+        "Error",
+        error.message || "Failed to update contact information. Please try again.",
+        "error"
+      );
+    }
   };
 
   return (

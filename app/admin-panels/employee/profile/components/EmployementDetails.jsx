@@ -1,8 +1,10 @@
-'use client'
+"use client";
 
 import CardForm from "@/templates/forms/card-form";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Select from "react-select";
+import { networkService } from "@/services/network.service";
+import { utilityService } from "@/services/utility.service";
 
 // Define buttonStyle at the top level so it can be used across all components
 const buttonStyle = {
@@ -23,7 +25,7 @@ const inputStyle = {
   borderRadius: "0.5rem",
   backgroundColor: "#F0F5F7",
   boxSizing: "border-box",
-  height:"60px",
+  height: "60px",
 };
 
 // Define tickBoxStyle for the tick container
@@ -49,7 +51,7 @@ const EmploymentDetails = () => {
     experience: "",
     employers: "",
     skills: "",
-    workingHours: "9 AM - 5 PM",
+    workingHours: "9:00 am to 5:00pm",
     salary: "",
     noticePeriod: "",
     needAirTicket: "",
@@ -66,6 +68,11 @@ const EmploymentDetails = () => {
     flexibleWeekends: "",
     otherBenefits: "",
   });
+  const [employmentPreferenceOptions, setEmploymentPreferenceOptions] = useState([]);
+  const [workingHoursOptions, setWorkingHoursOptions] = useState([]);
+  const [verificationStatusOptions, setVerificationStatusOptions] = useState([]);
+  const [employeeTypeOptions, setEmployeeTypeOptions] = useState([]);
+  const [willingToLiveInOptions, setWillingToLiveInOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -80,42 +87,89 @@ const EmploymentDetails = () => {
     setSupportingDocs(e.target.files);
   };
 
-  const workingHoursOptions = [
-    { value: "9 AM - 5 PM", label: "9 AM - 5 PM" },
-    { value: "Flexible Hours", label: "Flexible Hours" },
-    { value: "Part-Time Morning", label: "Part-Time Morning" },
-    { value: "Part-Time Evening", label: "Part-Time Evening" },
-  ];
+  useEffect(() => {
+    const fetchDropdowns = async () => {
+      try {
+        // Fetch type_of_employment_prefernce options
+        const employmentResponse = await networkService.getDropdowns("type_of_employment_prefernce");
+        if (employmentResponse?.type_of_employment_prefernce) {
+          const options = employmentResponse.type_of_employment_prefernce.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setEmploymentPreferenceOptions(options);
+        } else {
+          throw new Error("No employment preference options returned");
+        }
+
+        // Fetch prefered_working_hours options
+        const workingHoursResponse = await networkService.getDropdowns("prefered_working_hours");
+        if (workingHoursResponse?.prefered_working_hours) {
+          const options = workingHoursResponse.prefered_working_hours.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setWorkingHoursOptions(options);
+        } else {
+          throw new Error("No working hours options returned");
+        }
+
+        // Fetch document_verification_status options
+        const verificationStatusResponse = await networkService.getDropdowns("document_verification_status");
+        if (verificationStatusResponse?.document_verification_status) {
+          const options = verificationStatusResponse.document_verification_status.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setVerificationStatusOptions(options);
+        } else {
+          throw new Error("No document verification status options returned");
+        }
+
+        // Fetch employee_type options
+        const employeeTypeResponse = await networkService.getDropdowns("employee_type");
+        if (employeeTypeResponse?.employee_type) {
+          const options = employeeTypeResponse.employee_type.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setEmployeeTypeOptions(options);
+        } else {
+          throw new Error("No employee type options returned");
+        }
+
+        // Fetch willing_to_live_in options
+        const willingToLiveInResponse = await networkService.getDropdowns("willing_to_live_in");
+        if (willingToLiveInResponse?.willing_to_live_in) {
+          const options = willingToLiveInResponse.willing_to_live_in.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setWillingToLiveInOptions(options);
+        } else {
+          throw new Error("No willing to live-in options returned");
+        }
+      } catch (error) {
+        console.error("Error fetching dropdowns:", error);
+        await utilityService.showAlert(
+          "Error",
+          error.message || "Failed to load dropdown options.",
+          "error"
+        );
+      }
+    };
+
+    fetchDropdowns();
+  }, []);
 
   const yesNoOptions = [
     { value: "Yes", label: "Yes" },
     { value: "No", label: "No" },
   ];
 
-  const employmentPreferenceOptions = [
-    { value: "Live in", label: "Live in" },
-    { value: "Full-Time", label: "Full-Time" },
-    { value: "Live-out", label: "Live-out" },
-    { value: "Part-Time", label: "Part-Time" },
-    { value: "Monthly", label: "Monthly" },
-    { value: "Temporary", label: "Temporary" },
-    { value: "Nanny for Newborns", label: "Nanny for Newborns" },
-  ];
-
   const availabilityOptions = [
     { value: "available", label: "Available" },
     { value: "not_available", label: "Not Available" },
-  ];
-
-  const verificationStatusOptions = [
-    { value: "pending", label: "Pending" },
-    { value: "verified", label: "Verified" },
-    { value: "rejected", label: "Rejected" },
-  ];
-
-  const employeeTypeOptions = [
-    { value: "Independent", label: "Independent" },
-    { value: "Agency Managed", label: "Agency Managed" },
   ];
 
   const employeeCategoryOptions = [
@@ -129,12 +183,6 @@ const EmploymentDetails = () => {
   const visaStatusOptions = [
     { value: "Own Visa", label: "Own Visa" },
     { value: "Needs Sponsorship", label: "Needs Sponsorship" },
-  ];
-
-  const willingToLiveInOptions = [
-    { value: "Yes", label: "Yes" },
-    { value: "No", label: "No" },
-    { value: "Conditional", label: "Conditional" },
   ];
 
   const fields = [

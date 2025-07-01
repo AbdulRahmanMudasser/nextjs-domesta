@@ -1,90 +1,77 @@
+"use client";
+
 import { useState } from "react";
 import Link from "next/link";
 
-const FormContent = ({ onSubmit, onSwitchRegister }) => {
-  const [email, setUsername] = useState("");
+const FormContent = ({ onSubmit, onSwitchRegister, onSwitchForgotPassword, loading = false }) => {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Handle form submission
   const handleSubmit = (e) => {
-    e.preventDefault(); // Prevent page reload on form submit
-
-    const formData = {
-      email,
-      password,
-      rememberMe,
-    };
-
-    console.log("FormContent submitting:", formData); // Debug log
+    e.preventDefault();
+    const formData = { email, password, rememberMe };
+    console.log("Submitting login form:", formData);
     onSubmit(formData);
   };
 
   const handleSignup = () => {
-    onSwitchRegister(); // Call the function to switch to the registration form
+    console.log("Clicked Signup link");
+    onSwitchRegister();
+  };
+
+  const handleForgotPassword = () => {
+    console.log("Clicked Forgot Password link");
+    onSwitchForgotPassword();
   };
 
   return (
     <div className="form-inner">
-      <h3>Login to Domesta</h3>
-
-      {/* Login Form */}
+      <h3 style={{ margin: "0 0 1.5rem 0" }}>Login to Domesta</h3>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Email</label>
+          <label style={{ marginBottom: "0.5rem" }}>Email</label>
           <input
-            type="text"
-            name="username"
-            placeholder="email"
+            type="email"
+            name="email"
+            placeholder="Email"
             required
-            value={email} // Controlled input
-            onChange={(e) => setUsername(e.target.value)} // Update state on input change
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
-
         <div className="form-group">
-          <label>Password</label>
+          <label style={{ marginBottom: "0.5rem" }}>Password</label>
           <input
             type="password"
             name="password"
             placeholder="Password"
             required
-            value={password} // Controlled input
-            onChange={(e) => setPassword(e.target.value)} // Update state on input change
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
         </div>
 
-        <div className="form-group">
-          <div className="field-outer">
-            <div className="input-group checkboxes square">
-              <input
-                type="checkbox"
-                name="remember-me"
-                id="remember"
-                checked={rememberMe} // Controlled input
-                onChange={(e) => setRememberMe(e.target.checked)} // Update state on checkbox change
-              />
-              {/* <label htmlFor="remember" className="remember">
-                <span className="custom-checkbox"></span> Remember me
-              </label> */}
-            </div>
-            {/* <a href="#" className="pwd">
-              Forgot password?
-            </a> */}
-          </div>
+        <div className="form-group" style={{ textAlign: "right" }}>
+          <span
+            className="call-modal text"
+            onClick={handleForgotPassword}
+            style={{ cursor: "pointer", textDecoration: "underline", display: "block", margin: "0 0 1rem 0" }}
+          >
+            Forgot Password?
+          </span>
         </div>
-
         <div className="form-group">
           <button
             className="theme-btn btn-style-one"
             type="submit"
             name="log-in"
+            disabled={loading}
           >
-            Log In
+            {loading ? "Logging in..." : "Log In"}
           </button>
         </div>
       </form>
-
       <div className="bottom-box">
         <div className="text">
           Don't have an account?{" "}
@@ -102,118 +89,3 @@ const FormContent = ({ onSubmit, onSwitchRegister }) => {
 };
 
 export default FormContent;
-
-
-
-
-// "use client";
-
-// import { useState } from "react";
-// import Link from "next/link";
-
-// const FormContent = ({ onSubmit, onSwitchRegister }) => {
-//   const [email, setUsername] = useState("");
-//   const [password, setPassword] = useState("");
-//   const [rememberMe, setRememberMe] = useState(false);
-
-//   // Handle form submission
-//   const handleSubmit = (e) => {
-//     e.preventDefault(); // Prevent page reload on form submit
-
-//     const formData = {
-//       email,
-//       password,
-//       rememberMe,
-//     };
-
-//     console.log("FormContent submitting:", formData); // Debug log
-//     onSubmit(formData);
-//   };
-
-//   const handleSignup = () => {
-//     onSwitchRegister(); // Call the function to switch to the registration form
-//   };
-
-//   return (
-//     <div className="form-inner">
-//       <h3>Login to Domesta</h3>
-
-//       {/* Login Form */}
-//       <form onSubmit={handleSubmit}>
-//         <div className="form-group">
-//           <label>Email</label>
-//           <input
-//             type="text"
-//             name="username"
-//             placeholder="email"
-//             required
-//             value={email} // Controlled input
-//             onChange={(e) => setUsername(e.target.value)} // Update state on input change
-//           />
-//         </div>
-
-//         <div className="form-group">
-//           <label>Password</label>
-//           <input
-//             type="password"
-//             name="password"
-//             placeholder="Password"
-//             required
-//             value={password} // Controlled input
-//             onChange={(e) => setPassword(e.target.value)} // Update state on input change
-//           />
-//         </div>
-
-//         <div className="form-group">
-//           <div className="field-outer">
-//             <div className="input-group checkboxes square">
-//               <input
-//                 type="checkbox"
-//                 name="remember-me"
-//                 id="remember"
-//                 checked={rememberMe} // Controlled input
-//                 onChange={(e) => setRememberMe(e.target.checked)} // Update state on checkbox change
-//               />
-//               <label htmlFor="remember" className="remember">
-//                 <span className="custom-checkbox"></span> Remember me
-//               </label>
-//             </div>
-//             <a href="#" className="pwd">
-//               Forgot password?
-//             </a>
-//           </div>
-//         </div>
-
-//         <div className="form-group">
-//           <button
-//             className="theme-btn btn-style-one"
-//             type="submit"
-//             name="log-in"
-//             onClick={(e) => {
-//               e.preventDefault();
-//               handleLogin();
-//             }}
-//           >
-//             Log In
-//           </button>
-//         </div>
-//       </form>
-
-//       <div className="bottom-box">
-//         <div className="text">
-//           Don't have an account?{" "}
-//           <span
-//             className="call-modal signup"
-//             onClick={handleSignup}
-//             style={{ cursor: "pointer", color: "blue", textDecoration: "underline" }}
-//           >
-//             Signup
-//           </span>
-//         </div>
-//       </div>
-      
-//     </div>
-//   );
-// };
-
-// export default FormContent;

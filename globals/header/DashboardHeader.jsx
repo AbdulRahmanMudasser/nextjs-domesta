@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/features/auth/authSlice";
 import { useRouter } from "next/navigation";
+import { userService } from "@/services/user.service";
 
 const DashboardHeader = ({ headerType }) => {
   const [navbar, setNavbar] = useState(false);
@@ -17,9 +18,8 @@ const DashboardHeader = ({ headerType }) => {
   const { user } = useSelector((state) => state.auth);
   const pathname = usePathname();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null); // Ref for dropdown menu
+  const dropdownRef = useRef(null);
 
-  // Handle scroll for fixed header
   const changeBackground = () => {
     if (window.scrollY >= 0) {
       setNavbar(true);
@@ -28,7 +28,6 @@ const DashboardHeader = ({ headerType }) => {
     }
   };
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -45,7 +44,6 @@ const DashboardHeader = ({ headerType }) => {
     };
   }, [dropdownOpen]);
 
-  // Handle scroll event
   useEffect(() => {
     window.addEventListener("scroll", changeBackground);
     return () => {
@@ -53,10 +51,15 @@ const DashboardHeader = ({ headerType }) => {
     };
   }, []);
 
-  // Handle logout
-  const handleLogout = () => {
-    dispatch(logout());
-    router.push("/");
+  const handleLogout = async () => {
+    try {
+      await userService.logoutUser();
+      dispatch(logout());
+      router.push("/");
+    } catch (error) {
+      dispatch(logout());
+      router.push("/");
+    }
   };
 
   return (
@@ -67,7 +70,7 @@ const DashboardHeader = ({ headerType }) => {
         <div className="main-box">
           <div className="nav-outer">
             <div className="logo-box">
-              <div className="logo" >
+              <div className="logo">
                 <Link href="/" style={{ display: "flex", gap: "10px" }}>
                   <Image
                     alt="brand"

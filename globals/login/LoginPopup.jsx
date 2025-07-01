@@ -1,5 +1,6 @@
-'use client'
+"use client";
 
+import React, { useState } from "react";
 import Register from "../register/Register";
 import FormContent from "./FormContent";
 import { userService } from "@/services/user.service";
@@ -8,32 +9,37 @@ import { useDispatch } from "react-redux";
 import { login } from "@/features/auth/authSlice";
 import { useRouter } from "next/navigation";
 
+const roleIdToSlug = {
+  1: "super-admin", // Admin
+  2: "admin",       // Employer
+  3: "hr",          // Agency
+  4: "employee",    // Employee
+  null: "user",     // User with no role_id
+};
+
 const LoginPopup = () => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [forgotPasswordData, setForgotPasswordData] = useState({
+    email: "",
+    type_id: "",
+  });
 
-  // Handle registration form submission
   const handleRegisterSubmit = async (formData) => {
-    console.log("Received registration data:", formData);
     try {
-      const res = await userService.registerUser(formData); // Fix: Using registerUser instead of loginUser
-      console.log("Registration API Response:", res);
-
-      if (!res || !res.success) {
+      const res = await userService.registerUser(formData);
+      if (!res || !res.token || !res.role_id) {
         await utilityService.showAlert(
           "Error",
-          res?.message || "Something went wrong, please try again later",
+          "Registration failed: Invalid response from server.",
           "error"
         );
         return;
       }
 
-      await utilityService.showAlert(
-        "Success",
-        "Registration successful!",
-        "success"
-      );
-      // Close modal
+      await utilityService.showAlert("Success", "Registration successful!", "success");
+
       const modal = document.getElementById("registerModal");
       if (modal) {
         const modalInstance = bootstrap.Modal.getInstance(modal);
@@ -42,16 +48,10 @@ const LoginPopup = () => {
         }
       }
     } catch (error) {
-      console.error("Registration Error:", error);
-      await utilityService.showAlert(
-        "Error",
-        error.message || "Something went wrong, please try again later",
-        "error"
-      );
+      await utilityService.showAlert("Error", error.message || "Registration failed. Please try again.", "error");
     }
   };
 
-  // Handle switching to the register modal
   const handleSwitchRegister = () => {
     const loginModal = document.getElementById("loginPopupModal");
     const registerModal = document.getElementById("registerModal");
@@ -62,8 +62,8 @@ const LoginPopup = () => {
         loginModalInstance.hide();
       }
 
-      document.querySelector(".modal-backdrop").classList.remove("show");
-      document.querySelector(".modal-backdrop").remove();
+      document.querySelector(".modal-backdrop")?.classList.remove("show");
+      document.querySelector(".modal-backdrop")?.remove();
     }
 
     if (registerModal) {
@@ -72,31 +72,64 @@ const LoginPopup = () => {
     }
   };
 
-  // Handle login form submission
+  const handleSwitchForgotPassword = () => {
+    const loginModal = document.getElementById("loginPopupModal");
+    const forgotPasswordModal = document.getElementById("forgotPasswordModal");
+
+    if (loginModal) {
+      const loginModalInstance = bootstrap.Modal.getInstance(loginModal);
+      if (loginModalInstance) {
+        loginModalInstance.hide();
+      }
+
+      document.querySelector(".modal-backdrop")?.classList.remove("show");
+      document.querySelector(".modal-backdrop")?.remove();
+    }
+
+    if (forgotPasswordModal) {
+      const forgotPasswordModalInstance = new bootstrap.Modal(forgotPasswordModal);
+      forgotPasswordModalInstance.show();
+    }
+  };
+
   const handleFormSubmit = async (formData) => {
-    console.log("Received login data in LoginPopup:", formData);
-    if (!formData || !formData.email || !formData.password) {
-      console.error("Invalid login data:", formData);
-      await utilityService.showAlert(
-        "Error",
-        "Please provide username and password",
-        "error"
-      );
+    if (!formData?.email || !formData?.password) {
+      await utilityService.showAlert("Error", "Please provide email and password", "error");
       return;
     }
 
     try {
+      setLoading(true);
       const res = await userService.loginUser(formData);
-      console.log("Login API Response:", res);
+      setLoading(false);
 
-      if (!res || !res.user) {
+      if (!res || !res.token) {
+        await utilityService.showAlert(
+          "Error",
+          `Login failed: ${res?.error || "Invalid response from server."}`,
+          "error"
+        );
         return;
       }
 
-      // Dispatch login action
-      dispatch(login(res));
+      const roleId = res.role_id ?? null;
+      const slug = roleIdToSlug[roleId] || "user";
+      const loginData = {
+        token: res.token,
+        user: {
+          id: res.id,
+          email: res.email,
+          first_name: res.first_name,
+          last_name: res.last_name,
+          role: {
+            id: roleId,
+            slug,
+          },
+        },
+      };
 
-      // Close modal
+      dispatch(login(loginData));
+
       const modal = document.getElementById("loginPopupModal");
       if (modal) {
         const modalInstance = bootstrap.Modal.getInstance(modal);
@@ -105,58 +138,85 @@ const LoginPopup = () => {
         }
       }
 
-      // Remove modal-backdrop if it remains
-      const backdrop = document.querySelector(".modal-backdrop.fade.show");
-      if (backdrop) {
-        backdrop.parentNode.removeChild(backdrop);
-      }
+      document.querySelector(".modal-backdrop")?.classList.remove("show");
+      document.querySelector(".modal-backdrop")?.remove();
+      document.body.classList.remove("modal-open");
 
-      document.body.classList.remove("modal-open"); // Remove Bootstrap's modal-open class
-      document.querySelector(".modal-backdrop").classList.remove("show");
-      document.querySelector(".modal-backdrop").remove();
-
-      const userData = res.user; // Use 'res' instead of 'd'
-      console.log("User data:", userData);
-
-      // Navigate based on role
-      switch (userData.role.slug) {
-        case "employer":
+      switch (slug) {
+        case "super-admin":
+          router.push("/panels/superadmin/dashboard");
+          break;
+        case "admin":
           router.push("/panels/employer/dashboard");
+          break;
+        case "hr":
+          router.push("/panels/agency/dashboard");
           break;
         case "employee":
           router.push("/panels/employee/dashboard");
           break;
-        case "agency":
-          router.push("/panels/agency/dashboard");
-          break;
-        case "super-admin":
-          router.push("/panels/superadmin/dashboard");
+        case "user":
+          await utilityService.showAlert("Info", "User role logged in. Please proceed.", "info");
+          router.push("/login");
           break;
         default:
-          router.push("/login"); // If role not found, redirect to login
-          console.log("Unknown role:", userData.role);
+          await utilityService.showAlert("Error", "Unknown role. Please contact support.", "error");
+          router.push("/login");
       }
     } catch (error) {
-      console.error("Login Error:", error);
+      setLoading(false);
+      await utilityService.showAlert("Error", error.message || "Login failed. Please try again.", "error");
     }
   };
 
-  return (
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!forgotPasswordData.email || !forgotPasswordData.type_id) {
+      await utilityService.showAlert("Error", "Please provide email and select a role", "error");
+      return;
+    }
+
+    try {
+      const res = await userService.forgotPassword(forgotPasswordData);
+      if (res?.status) {
+        await utilityService.showAlert("Success", "Reset password link sent to your email.", "success");
+        const modal = document.getElementById("forgotPasswordModal");
+        if (modal) {
+          const modalInstance = bootstrap.Modal.getInstance(modal);
+          if (modalInstance) {
+            modalInstance.hide();
+          }
+        }
+        setForgotPasswordData({ email: "", type_id: "" });
+      } else {
+        await utilityService.showAlert("Error", "Failed to send reset password request.", "error");
+      }
+    } catch (error) {
+      await utilityService.showAlert("Error", error.message || "Failed to send reset password request.", "error");
+    }
+  };
+
+  const handleForgotPasswordChange = (e) => {
+    const { name, value } = e.target;
+    setForgotPasswordData((prev) => ({ ...prev, [name]: value }));
+  };
+
+ return (
     <>
       <div className="modal fade" id="loginPopupModal">
         <div className="modal-dialog modal-lg modal-dialog-centered login-modal modal-dialog-scrollable">
           <div className="modal-content">
-            <button
-              type="button"
-              className="closed-modal"
-              data-bs-dismiss="modal"
-            ></button>
-            {/* End close modal btn */}
-
+            <button type="button" className="closed-modal" data-bs-dismiss="modal"></button>
             <div className="modal-body">
               <div id="login-modal">
                 <div className="login-form default-form">
-                  <FormContent onSubmit={handleFormSubmit} onSwitchRegister={handleSwitchRegister} />
+                  <FormContent
+                    onSubmit={handleFormSubmit}
+                    onSwitchRegister={handleSwitchRegister}
+                    onSwitchForgotPassword={handleSwitchForgotPassword}
+                    loading={loading}
+                  />
                 </div>
               </div>
             </div>
@@ -164,20 +224,65 @@ const LoginPopup = () => {
         </div>
       </div>
 
+      {/* Register Modal */}
       <div className="modal fade" id="registerModal">
         <div className="modal-dialog modal-lg modal-dialog-centered login-modal modal-dialog-scrollable">
           <div className="modal-content">
-            <button
-              type="button"
-              className="closed-modal"
-              data-bs-dismiss="modal"
-            ></button>
-            {/* End close modal btn */}
-
+            <button type="button" className="closed-modal" data-bs-dismiss="modal"></button>
             <div className="modal-body">
               <div id="login-modal">
                 <div className="login-form default-form">
                   <Register onSubmit={handleRegisterSubmit} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Forgot Password Modal */}
+      <div className="modal fade" id="forgotPasswordModal">
+        <div className="modal-dialog modal-lg modal-dialog-centered login-modal modal-dialog-scrollable">
+          <div className="modal-content">
+            <button type="button" className="closed-modal" data-bs-dismiss="modal"></button>
+            <div className="modal-body" style={{ padding: "2rem" }}>
+              <div id="forgot-password-modal">
+                <div className="login-form default-form">
+                  <h3 style={{ margin: "0 0 1.5rem 0" }}>Forgot Password</h3>
+                  <form onSubmit={handleForgotPasswordSubmit}>
+                    <div className="form-group">
+                      <label style={{ marginBottom: "0.5rem" }}>Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={forgotPasswordData.email}
+                        onChange={handleForgotPasswordChange}
+                        placeholder="Email"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label style={{ marginBottom: "0.5rem" }}>Role</label>
+                      <select
+                        name="type_id"
+                        value={forgotPasswordData.type_id}
+                        onChange={handleForgotPasswordChange}
+                        required
+                      >
+                        <option value="" disabled>Select Role</option>
+                        <option value="1">Admin</option>
+                        <option value="2">Employer</option>
+                        <option value="3">Agency</option>
+                        <option value="4">Employee</option>
+                        <option value="5">User</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <button className="theme-btn btn-style-one" type="submit">
+                        Send Reset Request
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>

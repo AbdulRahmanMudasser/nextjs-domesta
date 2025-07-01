@@ -1,8 +1,9 @@
 "use client";
 
-import Select from "react-select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CardForm from "@/templates/forms/card-form";
+import { networkService } from "@/services/network.service";
+import { utilityService } from "@/services/utility.service";
 
 // Define inputStyle for file inputs (matching Document.jsx)
 const inputStyle = {
@@ -27,7 +28,24 @@ const MyProfile = () => {
     visaCopy: null,
     cprCopy: null,
     dob: "",
+    gender: "",
+    address: "",
+    catOptions: "",
+    nationality: "",
+    religion: "",
+    maritalStatus: "",
+    in_bahrain: "",
+    outside_country: "",
+    work_available: "",
+    current_location: "",
+    profileImageUrl: "",
+    passportCopyUrl: "",
+    visaCopyUrl: "",
+    cprCopyUrl: "",
   });
+  const [catOptions, setCatOptions] = useState([]);
+  const [genderOptions, setGenderOptions] = useState([]);
+  const [religionOptions, setReligionOptions] = useState([]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -44,16 +62,56 @@ const MyProfile = () => {
     setFormData({ ...formData, [field]: e.target.files[0] });
   };
 
-  const catOptions = [
-    { value: "Banking", label: "Banking" },
-    { value: "Digital & Creative", label: "Digital & Creative" },
-    { value: "Retail", label: "Retail" },
-    { value: "Human Resources", label: "Human Resources" },
-    { value: "Managemnet", label: "Managemnet" },
-    { value: "Accounting & Finance", label: "Accounting & Finance" },
-    { value: "Digital", label: "Digital" },
-    { value: "Creative Art", label: "Creative Art" },
-  ];
+  useEffect(() => {
+    const fetchDropdowns = async () => {
+      try {
+        // Fetch cat_options
+        const catResponse = await networkService.getDropdowns("cat_options");
+        if (catResponse?.cat_options) {
+          const catOptions = catResponse.cat_options.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setCatOptions(catOptions);
+        } else {
+          throw new Error("No category options returned");
+        }
+
+        // Fetch gender options
+        const genderResponse = await networkService.getDropdowns("gender");
+        if (genderResponse?.gender) {
+          const genderOptions = genderResponse.gender.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setGenderOptions(genderOptions);
+        } else {
+          throw new Error("No gender options returned");
+        }
+
+        // Fetch religion options
+        const religionResponse = await networkService.getDropdowns("religion");
+        if (religionResponse?.religion) {
+          const religionOptions = religionResponse.religion.map((item) => ({
+            value: item.value,
+            label: item.value,
+          }));
+          setReligionOptions(religionOptions);
+        } else {
+          throw new Error("No religion options returned");
+        }
+      } catch (error) {
+        console.error("Error fetching dropdowns:", error);
+        await utilityService.showAlert(
+          "Error",
+          error.message || "Failed to load dropdown options.",
+          "error"
+        );
+      }
+    };
+
+    fetchDropdowns();
+  }, []);
 
   const nationalityOptions = [
     { value: "Bahraini", label: "Bahraini" },
@@ -73,14 +131,6 @@ const MyProfile = () => {
     { value: "United Arab Emirates", label: "United Arab Emirates" },
   ];
 
-  const religionOptions = [
-    { value: "Islam", label: "Islam" },
-    { value: "Christianity", label: "Christianity" },
-    { value: "Hinduism", label: "Hinduism" },
-    { value: "Sikh", label: "Sikh" },
-    { value: "Other", label: "Other" },
-  ];
-
   const maritalStatusOptions = [
     { value: "Single", label: "Single" },
     { value: "Married", label: "Married" },
@@ -91,12 +141,6 @@ const MyProfile = () => {
   const workAvailableOptions = [
     { value: "Immediately", label: "Immediately" },
     { value: "After Days", label: "After Days" },
-  ];
-
-  const genderOptions = [
-    { value: "Male", label: "Male" },
-    { value: "Female", label: "Female" },
-    { value: "Other", label: "Other" },
   ];
 
   const yesNoOptions = [
@@ -166,7 +210,7 @@ const MyProfile = () => {
     {
       type: "select",
       name: "catOptions",
-      label: "catOptions",
+      label: "Category",
       options: catOptions,
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select category",
@@ -263,7 +307,7 @@ const MyProfile = () => {
     },
     {
       type: "file",
-      name: "passport_copy",
+      name: "passportCopy",
       label: "Passport Copy",
       accept: ".pdf,.jpg,.png",
       colClass: "col-lg-6 col-md-12",
@@ -272,7 +316,7 @@ const MyProfile = () => {
     },
     {
       type: "file",
-      name: "visa_copy",
+      name: "visaCopy",
       label: "Visa Copy",
       accept: ".pdf,.jpg,.png",
       colClass: "col-lg-6 col-md-12",
@@ -281,7 +325,7 @@ const MyProfile = () => {
     },
     {
       type: "file",
-      name: "cpr_copy",
+      name: "cprCopy",
       label: "CPR Copy",
       accept: ".pdf,.jpg,.png",
       colClass: "col-lg-6 col-md-12",
@@ -290,10 +334,43 @@ const MyProfile = () => {
     },
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted with data:", formData);
-    // Add your form submission logic here, such as API calls
+    try {
+      const uploadedFiles = {};
+
+      // Handle file uploads
+      const fileFields = ["profileImage", "passportCopy", "visaCopy", "cprCopy"];
+      for (const field of fileFields) {
+        if (formData[field]) {
+          const response = await networkService.uploadMedia(formData[field]);
+          if (response && response[0]?.base_url && response[0]?.unique_name) {
+            uploadedFiles[`${field}Url`] = `${response[0].base_url}${response[0].unique_name}`;
+          } else {
+            throw new Error(`Failed to upload ${field}`);
+          }
+        }
+      }
+
+      // Combine form data with uploaded file URLs
+      const updatedFormData = {
+        ...formData,
+        ...uploadedFiles,
+      };
+
+      console.log("Form submitted with data:", updatedFormData);
+      await utilityService.showAlert("Success", "Profile updated successfully!", "success");
+
+      // Add additional API call to save profile data if needed
+      // Example: await networkService.post("/user/profile", updatedFormData);
+    } catch (error) {
+      console.error("Form submission error:", error);
+      await utilityService.showAlert(
+        "Error",
+        error.message || "Failed to update profile. Please try again.",
+        "error"
+      );
+    }
   };
 
   return (
