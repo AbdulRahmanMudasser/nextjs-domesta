@@ -14,7 +14,6 @@ const roleIdToSlug = {
   2: "admin",       // Employer
   3: "hr",          // Agency
   4: "employee",    // Employee
-  null: "user",     // User with no role_id
 };
 
 const LoginPopup = () => {
@@ -23,7 +22,7 @@ const LoginPopup = () => {
   const [loading, setLoading] = useState(false);
   const [forgotPasswordData, setForgotPasswordData] = useState({
     email: "",
-    type_id: "",
+    type_id: 1,
   });
 
   const handleRegisterSubmit = async (formData) => {
@@ -172,8 +171,8 @@ const LoginPopup = () => {
   const handleForgotPasswordSubmit = async (e) => {
     e.preventDefault();
 
-    if (!forgotPasswordData.email || !forgotPasswordData.type_id) {
-      await utilityService.showAlert("Error", "Please provide email and select a role", "error");
+    if (!forgotPasswordData.email) {
+      await utilityService.showAlert("Error", "Please provide email", "error");
       return;
     }
 
@@ -188,7 +187,7 @@ const LoginPopup = () => {
             modalInstance.hide();
           }
         }
-        setForgotPasswordData({ email: "", type_id: "" });
+        setForgotPasswordData({ email: "", type_id: 1 });
       } else {
         await utilityService.showAlert("Error", "Failed to send reset password request.", "error");
       }
@@ -202,7 +201,7 @@ const LoginPopup = () => {
     setForgotPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
- return (
+  return (
     <>
       <div className="modal fade" id="loginPopupModal">
         <div className="modal-dialog modal-lg modal-dialog-centered login-modal modal-dialog-scrollable">
@@ -259,23 +258,12 @@ const LoginPopup = () => {
                         onChange={handleForgotPasswordChange}
                         placeholder="Email"
                         required
+                        className="form-control"
+                        style={{ backgroundColor: "#f0f5f7" }}
                       />
-                    </div>
-                    <div className="form-group">
-                      <label style={{ marginBottom: "0.5rem" }}>Role</label>
-                      <select
-                        name="type_id"
-                        value={forgotPasswordData.type_id}
-                        onChange={handleForgotPasswordChange}
-                        required
-                      >
-                        <option value="" disabled>Select Role</option>
-                        <option value="1">Admin</option>
-                        <option value="2">Employer</option>
-                        <option value="3">Agency</option>
-                        <option value="4">Employee</option>
-                        <option value="5">User</option>
-                      </select>
+                      <div className="invalid-feedback">
+                        Please enter a valid email address.
+                      </div>
                     </div>
                     <div className="form-group">
                       <button className="theme-btn btn-style-one" type="submit">
