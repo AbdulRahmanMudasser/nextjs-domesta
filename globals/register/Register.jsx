@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useDispatch } from "react-redux";
 import { userService } from "@/services/user.service";
-import { utilityService } from "@/services/utility.service";
-import { login } from "@/features/auth/authSlice";
+import { notificationService } from "@/services/notification.service";
 import Form from "./FormContent";
 import Link from "next/link";
+import Notification from "../Notifications";
 
 const roleIdToSlug = {
   1: "super-admin",
@@ -17,7 +16,6 @@ const roleIdToSlug = {
 };
 
 const Register = () => {
-  const dispatch = useDispatch();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -38,28 +36,25 @@ const Register = () => {
   const handleFormSubmit = async (formData) => {
     try {
       setLoading(true);
-      const res = await userService.registerUser(formData); // 🔥 POST method
+      const res = await userService.registerUser(formData);
       setLoading(false);
 
       if (!res || !res.token) {
-        await utilityService.showAlert("Error", "Registration failed. Invalid response.", "error");
+        await notificationService.showToast("Registration failed. Invalid response.", "error");
         return;
       }
 
-      const slug = roleIdToSlug[res.role_id] || "user"; // Fallback to 'user' if no role_id
+      const slug = roleIdToSlug[res.role_id] || "user";
 
-      const loginData = {
-        token: res.token,
-        user: {
-          id: res.id,
-          email: res.email,
-          first_name: res.first_name,
-          last_name: res.last_name,
-          role: { slug },
-        },
-      };
+      localStorage.setItem("user", JSON.stringify({
+        id: res.id,
+        email: res.email,
+        first_name: res.first_name,
+        last_name: res.last_name,
+        role_id: res.role_id,
+      }));
+      localStorage.setItem("token", res.token);
 
-      dispatch(login(loginData));
       closeModal();
 
       switch (slug) {
@@ -76,32 +71,35 @@ const Register = () => {
           router.push("/panels/employee/dashboard");
           break;
         default:
-          await utilityService.showAlert("Info", "Registration successful. Please log in.", "info");
+          await notificationService.showToast("Registration successful. Please log in.", "info");
           router.push("/login");
       }
     } catch (error) {
       setLoading(false);
-      await utilityService.showAlert("Error", `Registration failed: ${error.message || "Server error"}`, "error");
+      await notificationService.showToast(`Registration failed: ${error.message || "Server error"}`, "error");
     }
   };
 
   return (
-    <div className="form-inner">
-      <h3>Create a Domesta Account</h3>
-      <Form onSubmit={handleFormSubmit} loading={loading} />
-      <div className="bottom-box">
-        <div className="text">
-          Already have an account?{" "}
-          <Link
-            href="#"
-            className="call-modal login"
-            data-bs-toggle="modal"
-            data-bs-dismiss="modal"
-            data-bs-target="#loginPopupModal"
-            style={{ cursor: "pointer", textDecoration: "underline" }}
-          >
-            LogIn
-          </Link>
+    <div className="relative">
+      <Notification />
+      <div className="form-inner">
+        <h3>Create a Domesta Account</h3>
+        <Form onSubmit={handleFormSubmit} loading={loading} />
+        <div className="bottom-box">
+          <div className="text">
+            Already have an account?{" "}
+            <Link
+              href="#"
+              className="call-modal login"
+              data-bs-toggle="modal"
+              data-bs-dismiss="modal"
+              data-bs-target="#loginPopupModal"
+              style={{ cursor: "pointer", textDecoration: "underline" }}
+            >
+              LogIn
+            </Link>
+          </div>
         </div>
       </div>
     </div>
