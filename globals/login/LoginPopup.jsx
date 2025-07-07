@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Register from '../register/Register';
 import FormContent from './FormContent';
 import { userService } from '@/services/user.service';
-import { utilityService } from '@/services/utility.service';
+import { notificationService } from '@/services/notification.service';
 import { useDispatch } from 'react-redux';
 import { login } from '@/features/auth/authSlice';
 import { useRouter } from 'next/navigation';
@@ -30,18 +30,20 @@ const LoginPopup = () => {
     try {
       const res = await userService.registerUser(formData);
       if (!res || !res.token || !res.role_id) {
-        await utilityService.showAlert(
-          'Error',
+        await notificationService.showToast(
           'Registration failed: Invalid response from server.',
           'error'
         );
         return;
       }
 
-      await utilityService.showAlert('Success', 'Registration successful!', 'success');
+      await notificationService.showToast('Registration successful!', 'success');
       modalUtils.closeModal('registerModal');
     } catch (error) {
-      await utilityService.showAlert('Error', error.message || 'Registration failed. Please try again.', 'error');
+      await notificationService.showToast(
+        error.message || 'Registration failed. Please try again.',
+        'error'
+      );
     }
   };
 
@@ -53,9 +55,13 @@ const LoginPopup = () => {
     modalUtils.switchModal('loginPopupModal', 'forgotPasswordModal');
   };
 
+  const handleSwitchLogin = () => {
+    modalUtils.switchModal('forgotPasswordModal', 'loginPopupModal');
+  };
+
   const handleFormSubmit = async (formData) => {
     if (!formData?.email || !formData?.password) {
-      await utilityService.showAlert('Error', 'Please provide email and password', 'error');
+      await notificationService.showToast('Please provide email and password', 'error');
       return;
     }
 
@@ -65,8 +71,7 @@ const LoginPopup = () => {
       setLoading(false);
 
       if (!res || !res.token) {
-        await utilityService.showAlert(
-          'Error',
+        await notificationService.showToast(
           `Login failed: ${res?.error || 'Invalid response from server.'}`,
           'error'
         );
@@ -90,6 +95,7 @@ const LoginPopup = () => {
       };
 
       dispatch(login(loginData));
+      await notificationService.showToast('Login successful!', 'success');
       modalUtils.closeModal('loginPopupModal');
 
       switch (slug) {
@@ -106,16 +112,19 @@ const LoginPopup = () => {
           router.push('/panels/employee/dashboard');
           break;
         case 'user':
-          await utilityService.showAlert('Info', 'User role logged in. Please proceed.', 'info');
+          await notificationService.showToast('User role logged in. Please proceed.', 'info');
           router.push('/login');
           break;
         default:
-          await utilityService.showAlert('Error', 'Unknown role. Please contact support.', 'error');
+          await notificationService.showToast('Unknown role. Please contact support.', 'error');
           router.push('/login');
       }
     } catch (error) {
       setLoading(false);
-      await utilityService.showAlert('Error', error.message || 'Login failed. Please try again.', 'error');
+      await notificationService.showToast(
+        error.message || 'Login failed. Please try again.',
+        'error'
+      );
     }
   };
 
@@ -123,21 +132,24 @@ const LoginPopup = () => {
     e.preventDefault();
 
     if (!forgotPasswordData.email) {
-      await utilityService.showAlert('Error', 'Please provide email', 'error');
+      await notificationService.showToast('Please provide email', 'error');
       return;
     }
 
     try {
       const res = await userService.forgotPassword(forgotPasswordData);
       if (res?.status) {
-        await utilityService.showAlert('Success', 'Reset password link sent to your email.', 'success');
+        await notificationService.showToast('Reset password link sent to your email.', 'success');
         modalUtils.closeModal('forgotPasswordModal');
         setForgotPasswordData({ email: '', type_id: 1 });
       } else {
-        await utilityService.showAlert('Error', 'Failed to send reset password request.', 'error');
+        await notificationService.showToast('Failed to send reset password request.', 'error');
       }
     } catch (error) {
-      await utilityService.showAlert('Error', error.message || 'Failed to send reset password request.', 'error');
+      await notificationService.showToast(
+        error.message || 'Failed to send reset password request.',
+        'error'
+      );
     }
   };
 
@@ -207,6 +219,15 @@ const LoginPopup = () => {
                       <div className="invalid-feedback">
                         Please enter a valid email address.
                       </div>
+                    </div>
+                    <div className="form-group" style={{ textAlign: 'right' }}>
+                      <span
+                        className="call-modal text"
+                        onClick={handleSwitchLogin}
+                        style={{ cursor: 'pointer', textDecoration: 'underline', display: 'block', margin: '0 0 1rem 0' }}
+                      >
+                        Back to Login
+                      </span>
                     </div>
                     <div className="form-group">
                       <button className="theme-btn btn-style-one" type="submit">
