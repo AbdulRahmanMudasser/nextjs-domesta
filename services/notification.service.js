@@ -4,6 +4,8 @@ class NotificationService {
   constructor() {}
 
   async showToast(message, type = "info") {
+    const backgroundColor = type === "success" ? "#28a745" : type === "error" ? "#dc3545" : "#FF6666";
+
     toast(message, {
       type,
       position: "top-right",
@@ -13,7 +15,7 @@ class NotificationService {
       pauseOnHover: true,
       draggable: true,
       style: {
-        background: "#6e7b49",
+        background: backgroundColor,
         color: "#ffffff",
         fontFamily: "'Jost', sans-serif",
       },

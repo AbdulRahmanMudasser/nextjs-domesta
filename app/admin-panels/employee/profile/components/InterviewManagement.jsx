@@ -72,11 +72,12 @@ const InterviewManagement = () => {
 
           setFormData({
             interviewTime: interviewResponse.preferred_interview_time || "",
+            householdType: interviewResponse.house_hold_type?.value || "",
             liveInWithFamily: normalizeValue(interviewResponse.willing_family?.value, "willing_to_live_in") || "",
             relocationInsideCountry: interviewResponse.comfortable_with_relocation === null ? "" : interviewResponse.comfortable_with_relocation ? "Yes" : "No",
             maxHoursPerDay: interviewResponse.maximum_hours_per_day || "",
             flexibleWeekends: interviewResponse.flexible_with_weekends === null ? "" : interviewResponse.flexible_with_weekends ? "Yes" : "No",
-            householdType: normalizeValue(interviewResponse.house_hold_type?.value, "prefered_household_tpye") || "",
+            // householdType: normalizeValue(interviewResponse.house_hold_type?.value, "prefered_household_tpye") || "",
             communicationLanguage: normalizeValue(interviewResponse.language?.value, "language") || "",
           });
         }

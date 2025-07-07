@@ -1,0 +1,11 @@
+.file-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  transition: background-color 0.2s;
+}
+
+.file-placeholder:hover {
+  background-color: #e5e7eb;
+}
