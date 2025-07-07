@@ -14,15 +14,15 @@ const ImageBox = () => {
       </figure>
       {/* hero image */}
       {/* <!-- Info BLock One --> */}
-      <div className="info_block" data-aos="fade-in" data-aos-delay="1000">
+      {/* <div className="info_block" data-aos="fade-in" data-aos-delay="1000">
         <span className="icon flaticon-email-3"></span>
         <p>
           Work Inquiry From <br />
           Ali Tufan
         </p>
-      </div>
+      </div> */}
       {/* <!-- Info BLock Two --> */}
-      <div className="info_block_two" data-aos="fade-in" data-aos-delay="2000">
+      {/* <div className="info_block_two" data-aos="fade-in" data-aos-delay="2000">
         <p>10k+ Employees</p>
         <div className="image">
           <Image
@@ -32,9 +32,9 @@ const ImageBox = () => {
             alt="mulit people"
           />
         </div>
-      </div>
+      </div> */}
       {/* <!-- Info BLock Three --> */}
-      <div
+      {/* <div
         className="info_block_three"
         data-aos="fade-in"
         data-aos-delay="1500"
@@ -43,15 +43,15 @@ const ImageBox = () => {
         <p>Creative Agency</p>
         <span className="sub-text">Startup</span>
         <span className="right_icon fa fa-check"></span>
-      </div>
+      </div> */}
       {/* <!-- Info BLock Four --> */}
-      <div className="info_block_four" data-aos="fade-in" data-aos-delay="2500">
+      {/* <div className="info_block_four" data-aos="fade-in" data-aos-delay="2500">
         <span className="icon flaticon-file"></span>
         <div className="inner">
           <p>Upload Your CV</p>
           <span className="sub-text">It only takes a few seconds</span>
         </div>
-      </div>{" "}
+      </div>{" "} */}
     </div>
   );
 };

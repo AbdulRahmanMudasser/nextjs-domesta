@@ -16,7 +16,7 @@ const Notification = () => {
       draggable
       pauseOnHover
       toastStyle={{
-        backgroundColor: "#6e7b49",
+        backgroundColor: "#FF9999",
         color: "#ffffff",
         fontFamily: "'Jost', sans-serif",
       }}

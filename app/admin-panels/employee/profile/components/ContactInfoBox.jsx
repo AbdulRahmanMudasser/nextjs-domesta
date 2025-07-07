@@ -59,7 +59,7 @@ const ContactInfoBox = () => {
           setFormData({
             dialCode: contactResponse.dial_code || "",
             phoneNumber: contactResponse.phone_number || "",
-            whatsapp_number: contactResponse.whatsapp_number || "",
+            whatsapp_number: contactResponse.whats_app_no || "",
             preferred_language: contactResponse.language?.value || "",
             address: contactResponse.address || "",
             house_flat_apartment_villa: contactResponse.house_flat_apartment_villa || "",

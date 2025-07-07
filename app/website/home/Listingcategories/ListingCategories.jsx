@@ -23,9 +23,9 @@ const ListingCategories = ({ categories = [], editAction, deleteAction }) => {
                 <Link href="/candidates">{item.catTitle}</Link>
               </h4>
               <p>{item.jobDescription}</p>
-              <p className="mt-2">
+              {/* <p className="mt-2">
                 <strong>({item.jobNumber} open positions)</strong>
-              </p>
+              </p> */}
               {(editAction || deleteAction) && (
                 <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
                   {editAction && (
