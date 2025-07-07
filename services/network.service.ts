@@ -21,10 +21,10 @@ const handleResponse = async (
     const err = error.response?.data || error;
 
     if (showError && err?.message) {
-      utilityService.showToast(
-        err.message || "An error occurred. Please try again.",
-        "error"
-      );
+      // utilityService.showToast(
+      //   err.message || "An error occurred. Please try again.",
+      //   "error"
+      // );
     }
 
     if (error.response?.status === 401) {
