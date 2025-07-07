@@ -8,6 +8,8 @@ import jobCatContent from "@/data/job-catergories";
 import Shimmer from "@/templates/misc/Shimmer";
 import { userService } from "@/services/user.service";
 import { utilityService } from "@/services/utility.service";
+// Optional: Uncomment for react-select implementation
+// import Select from "react-select";
 
 const AddServiceModal = ({ isOpen, onClose, onSave, currentEntry, handleChange }) => {
   const buttonStyle = {
@@ -34,6 +36,7 @@ const AddServiceModal = ({ isOpen, onClose, onSave, currentEntry, handleChange }
     ...inputStyle,
     appearance: "none",
     background: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"6\" viewBox=\"0 0 10 6\"><path fill=\"%23555\" d=\"M0 0l5 6 5-6H0z\"/></svg>') no-repeat right 1rem center",
+    color: "#333", // Ensure text is visible
   };
 
   const formFields = [
@@ -52,6 +55,34 @@ const AddServiceModal = ({ isOpen, onClose, onSave, currentEntry, handleChange }
       required: true,
     },
   ];
+
+  // Debug jobCatContent
+  useEffect(() => {
+    console.log("jobCatContent:", jobCatContent);
+  }, []);
+
+  // Optional: react-select implementation for icon + text dropdown
+  /*
+  const selectOptions = jobCatContent.map((cat) => ({
+    value: cat.icon,
+    label: cat.name,
+    icon: cat.icon,
+  }));
+
+  const customOption = ({ innerProps, label, data }) => (
+    <div {...innerProps} style={{ display: "flex", alignItems: "center", padding: "0.5rem" }}>
+      <i className={data.icon} style={{ marginRight: "0.5rem", fontSize: "16px", color: "#555" }}></i>
+      {label}
+    </div>
+  );
+
+  const customSingleValue = ({ data }) => (
+    <div style={{ display: "flex", alignItems: "center" }}>
+      <i className={data.icon} style={{ marginRight: "0.5rem", fontSize: "16px", color: "#555" }}></i>
+      {data.label}
+    </div>
+  );
+  */
 
   return (
     <div
@@ -127,6 +158,7 @@ const AddServiceModal = ({ isOpen, onClose, onSave, currentEntry, handleChange }
             >
               Icon
             </label>
+            {/* Native select */}
             <select
               name="icon"
               value={currentEntry.icon || ""}
@@ -139,10 +171,32 @@ const AddServiceModal = ({ isOpen, onClose, onSave, currentEntry, handleChange }
               </option>
               {jobCatContent.map((cat) => (
                 <option key={cat.id} value={cat.icon}>
-                  {cat.name}
+                  {cat.catTitle || "Unnamed Category"}
                 </option>
               ))}
             </select>
+            {/* Optional: react-select implementation */}
+            {/*
+            <Select
+              options={selectOptions}
+              value={selectOptions.find((option) => option.value === currentEntry.icon) || null}
+              onChange={(selected) => handleChange("icon", selected ? selected.value : "")}
+              components={{ Option: customOption, SingleValue: customSingleValue }}
+              placeholder="Select an icon"
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  ...inputStyle,
+                  borderRadius: "0.25rem",
+                  border: "1px solid #ddd",
+                }),
+                menu: (base) => ({
+                  ...base,
+                  zIndex: 1000,
+                }),
+              }}
+            />
+            */}
             {currentEntry.icon && (
               <div
                 style={{
@@ -212,6 +266,7 @@ const EditServiceModal = ({ isOpen, onClose, onSave, currentEntry, handleChange 
     ...inputStyle,
     appearance: "none",
     background: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"6\" viewBox=\"0 0 10 6\"><path fill=\"%23555\" d=\"M0 0l5 6 5-6H0z\"/></svg>') no-repeat right 1rem center",
+    color: "#333", // Ensure text is visible
   };
 
   const formFields = [
@@ -230,6 +285,34 @@ const EditServiceModal = ({ isOpen, onClose, onSave, currentEntry, handleChange 
       required: true,
     },
   ];
+
+  // Debug jobCatContent
+  useEffect(() => {
+    console.log("jobCatContent:", jobCatContent);
+  }, []);
+
+  // Optional: react-select implementation for icon + text dropdown
+  /*
+  const selectOptions = jobCatContent.map((cat) => ({
+    value: cat.icon,
+    label: cat.name,
+    icon: cat.icon,
+  }));
+
+  const customOption = ({ innerProps, label, data }) => (
+    <div {...innerProps} style={{ display: "flex", alignItems: "center", padding: "0.5rem" }}>
+      <i className={data.icon} style={{ marginRight: "0.5rem", fontSize: "16px", color: "#555" }}></i>
+      {label}
+    </div>
+  );
+
+  const customSingleValue = ({ data }) => (
+    <div style={{ display: "flex", alignItems: "center" }}>
+      <i className={data.icon} style={{ marginRight: "0.5rem", fontSize: "16px", color: "#555" }}></i>
+      {data.label}
+    </div>
+  );
+  */
 
   return (
     <div
@@ -305,6 +388,7 @@ const EditServiceModal = ({ isOpen, onClose, onSave, currentEntry, handleChange 
             >
               Icon
             </label>
+            {/* Native select */}
             <select
               name="icon"
               value={currentEntry.icon || ""}
@@ -317,10 +401,32 @@ const EditServiceModal = ({ isOpen, onClose, onSave, currentEntry, handleChange 
               </option>
               {jobCatContent.map((cat) => (
                 <option key={cat.id} value={cat.icon}>
-                  {cat.name}
+                  {cat.name || "Unnamed Category"}
                 </option>
               ))}
             </select>
+            {/* Optional: react-select implementation */}
+            {/*
+            <Select
+              options={selectOptions}
+              value={selectOptions.find((option) => option.value === currentEntry.icon) || null}
+              onChange={(selected) => handleChange("icon", selected ? selected.value : "")}
+              components={{ Option: customOption, SingleValue: customSingleValue }}
+              placeholder="Select an icon"
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  ...inputStyle,
+                  borderRadius: "0.25rem",
+                  border: "1px solid #ddd",
+                }),
+                menu: (base) => ({
+                  ...base,
+                  zIndex: 1000,
+                }),
+              }}
+            />
+            */}
             {currentEntry.icon && (
               <div
                 style={{
@@ -373,7 +479,6 @@ const ServicesList = () => {
     id: null,
     catTitle: "",
     jobDescription: "",
-    jobNumber: "",
     icon: "",
   });
 
@@ -388,7 +493,6 @@ const ServicesList = () => {
             id: service.id,
             catTitle: service.name,
             jobDescription: service.description,
-            jobNumber: service.employee_counter,
             icon: service.class_name,
           }))
         );
@@ -425,7 +529,7 @@ const ServicesList = () => {
 
   const saveCategory = async (isEditing) => {
     console.log("Saving category:", currentEntry);
-    if (!currentEntry.catTitle || !currentEntry.jobDescription || !currentEntry.jobNumber || !currentEntry.icon) {
+    if (!currentEntry.catTitle || !currentEntry.jobDescription || !currentEntry.icon) {
       console.error("Validation failed: Missing required fields");
       await utilityService.showAlert("Error", "All fields are required.", "error");
       return;
@@ -435,7 +539,6 @@ const ServicesList = () => {
       name: currentEntry.catTitle,
       description: currentEntry.jobDescription,
       class_name: currentEntry.icon,
-      employee_counter: parseInt(currentEntry.jobNumber, 10),
     };
 
     try {
@@ -460,10 +563,8 @@ const ServicesList = () => {
       }
     } catch (error) {
       console.error("Error saving service:", error);
-      // Display specific validation errors
       const errorMessage = error.message || "Failed to save service.";
       await utilityService.showAlert("Error", errorMessage, "error");
-      // Keep modal open to allow user to correct errors
     }
   };
 
@@ -477,7 +578,6 @@ const ServicesList = () => {
           id: service.id,
           catTitle: service.name,
           jobDescription: service.description,
-          jobNumber: service.employee_counter,
           icon: service.class_name,
         });
         setIsEditModalOpen(true);
@@ -515,7 +615,6 @@ const ServicesList = () => {
       id: null,
       catTitle: "",
       jobDescription: "",
-      jobNumber: "",
       icon: "",
     });
   };
