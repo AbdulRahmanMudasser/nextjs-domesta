@@ -51,14 +51,6 @@ const AddServiceModal = ({ isOpen, onClose, onSave, currentEntry, handleChange }
       placeholder: "Enter description",
       required: true,
     },
-    {
-      type: "number",
-      name: "jobNumber",
-      label: "Open Positions",
-      placeholder: "Enter number",
-      min: "0",
-      required: true,
-    },
   ];
 
   return (
@@ -235,14 +227,6 @@ const EditServiceModal = ({ isOpen, onClose, onSave, currentEntry, handleChange 
       name: "jobDescription",
       label: "Description",
       placeholder: "Enter description",
-      required: true,
-    },
-    {
-      type: "number",
-      name: "jobNumber",
-      label: "Open Positions",
-      placeholder: "Enter number",
-      min: "0",
       required: true,
     },
   ];
