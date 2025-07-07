@@ -51,6 +51,7 @@ const MyProfile = () => {
   const [nationalityOptions, setNationalityOptions] = useState([]);
   const [maritalStatusOptions, setMaritalStatusOptions] = useState([]);
   const [workAvailableOptions, setWorkAvailableOptions] = useState([]);
+  const [countryOptions, setCountryOptions] = useState([]);
   
   // State for image previews
   const [imagePreviews, setImagePreviews] = useState({
@@ -183,7 +184,8 @@ const MyProfile = () => {
           fetchReligionOptions(),
           fetchNationalityOptions(),
           fetchMaritalStatusOptions(),
-          fetchWorkAvailableOptions()
+          fetchWorkAvailableOptions(),
+          fetchCountryOptions()
         ]);
 
       } catch (error) {
@@ -245,19 +247,19 @@ const MyProfile = () => {
 
     const fetchNationalityOptions = async () => {
       try {
-        // Use hardcoded nationality options since API might not have this dropdown
-        const staticNationalityOptions = [
-          { value: "Bahraini", label: "Bahraini", id: 1 },
-          { value: "Kuwaiti", label: "Kuwaiti", id: 2 },
-          { value: "Omani", label: "Omani", id: 3 },
-          { value: "Qatari", label: "Qatari", id: 4 },
-          { value: "Saudi", label: "Saudi", id: 5 },
-          { value: "Emirati", label: "Emirati", id: 6 },
-          { value: "Egyptian", label: "Egyptian", id: 7 },
-        ];
-        setNationalityOptions(staticNationalityOptions);
+        const countryResponse = await networkService.get("/country");
+        if (countryResponse) {
+          const nationalityOptions = countryResponse.map(item => ({
+            value: item.name,
+            label: item.name,
+            id: item.id,
+          }));
+          setNationalityOptions(nationalityOptions);
+        } else {
+          throw new Error("No nationality options returned");
+        }
       } catch (error) {
-        console.error("Error setting nationality options:", error);
+        console.error("Error fetching nationality options:", error);
       }
     };
 
@@ -293,17 +295,26 @@ const MyProfile = () => {
       }
     };
 
+    const fetchCountryOptions = async () => {
+      try {
+        const countryResponse = await networkService.get("/country");
+        if (countryResponse) {
+          const countryOptions = countryResponse.map(item => ({
+            value: item.name,
+            label: item.name,
+            id: item.id,
+          }));
+          setCountryOptions(countryOptions);
+        } else {
+          throw new Error("No country options returned");
+        }
+      } catch (error) {
+        console.error("Error fetching country options:", error);
+      }
+    };
+
     fetchData();
   }, []);
-
-  const gulfCountries = [
-    { value: "Bahrain", label: "Bahrain" },
-    { value: "Kuwait", label: "Kuwait" },
-    { value: "Oman", label: "Oman" },
-    { value: "Qatar", label: "Qatar" },
-    { value: "Saudi Arabia", label: "Saudi Arabia" },
-    { value: "United Arab Emirates", label: "United Arab Emirates" },
-  ];
 
   const yesNoOptions = [
     { value: "true", label: "Yes" },
@@ -435,7 +446,7 @@ const MyProfile = () => {
       type: "select",
       name: "outside_country",
       label: "If outside Bahrain, specify country",
-      options: gulfCountries,
+      options: countryOptions,
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select Country",
       required: true,
@@ -461,7 +472,7 @@ const MyProfile = () => {
       type: "select",
       name: "current_location",
       label: "Current Location",
-      options: gulfCountries,
+      options: countryOptions,
       colClass: "col-lg-6 col-md-12",
       placeholder: "Select Country",
       required: true,
@@ -517,23 +528,10 @@ const MyProfile = () => {
         throw new Error("User ID not found in localStorage");
       }
 
-      // Map form values to API expected IDs (similar to InterviewManagement)
+      // Map form values to API expected IDs
       const getIdFromValue = (options, value) => {
         const option = options.find(opt => opt.value === value || opt.label === value);
         return option ? option.id : null;
-      };
-
-      // Get country ID from gulf countries (you might need to adjust this based on your API)
-      const getCountryId = (countryName) => {
-        const countryMap = {
-          "Bahrain": 1,
-          "Kuwait": 2, 
-          "Oman": 3,
-          "Qatar": 4,
-          "Saudi Arabia": 5,
-          "United Arab Emirates": 6
-        };
-        return countryMap[countryName] || null;
       };
 
       // Prepare data for API
@@ -552,10 +550,10 @@ const MyProfile = () => {
         marital_status_id: getIdFromValue(maritalStatusOptions, formData.maritalStatus),
         number_of_children: parseInt(formData.childrenCount) || 0,
         currently_in_bahrain: formData.in_bahrain === "true",
-        outside_country_id: getCountryId(formData.outside_country),
+        outside_country_id: getIdFromValue(countryOptions, formData.outside_country),
         work_available_id: getIdFromValue(workAvailableOptions, formData.work_available),
         available_for_work_after_days: parseInt(formData.no_of_days_available) || null,
-        current_location_id: getCountryId(formData.current_location),
+        current_location_id: getIdFromValue(countryOptions, formData.current_location),
         // Add media IDs (use existing ones if no new files uploaded)
         profile_media_id: formData.profileImageId,
         passport_media_id: formData.passportCopyId,
