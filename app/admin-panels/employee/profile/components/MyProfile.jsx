@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ProfileCardForm from "@/templates/forms/ProfileCardForm";
+import UploadCardForm from "@/templates/forms/UploadCardForm";
+import InputField from "@/templates/inputs/input-field";
+import SelectField from "@/templates/inputs/select-field";
 import { networkService } from "@/services/network.service";
 import { notificationService } from "@/services/notification.service";
 
-// Define inputStyle for file inputs and textarea (matching Document.jsx)
+// Define inputStyle for file inputs and textarea (matching provided MyProfile.jsx)
 const inputStyle = {
   width: "100%",
   padding: "0.75rem",
@@ -15,7 +17,7 @@ const inputStyle = {
   height: "60px",
 };
 
-// Define preview image style
+// Define preview image style (matching provided MyProfile.jsx)
 const previewImageStyle = {
   maxWidth: "100px",
   maxHeight: "100px",
@@ -24,10 +26,48 @@ const previewImageStyle = {
   objectFit: "cover",
 };
 
-// Define preview link style for PDFs
+// Define preview link style for PDFs (matching provided MyProfile.jsx)
 const previewLinkStyle = {
   marginTop: "10px",
-  color: "#1a73e8", textDecoration: "underline", fontSize: "14px", };
+  color: "#1a73e8",
+  textDecoration: "underline",
+  fontSize: "14px",
+};
+
+// Define common input style for non-file fields (matching provided ProfileCardForm.jsx)
+const commonInputStyle = {
+  border: "1px solid #d1d5db",
+  borderRadius: "0.5rem",
+  padding: "0.75rem",
+  width: "100%",
+  boxSizing: "border-box",
+  transition: "border-color 0.2s",
+};
+
+// Define label style (matching provided ProfileCardForm.jsx)
+const labelStyle = {
+  color: "#69697C",
+  fontWeight: "450",
+  marginBottom: "0.5rem",
+  display: "block",
+};
+
+// Define input container style (matching provided ProfileCardForm.jsx)
+const inputContainerStyle = {
+  marginBottom: "1rem",
+};
+
+// Define submit button style (matching provided ProfileCardForm.jsx)
+const buttonStyle = {
+  backgroundColor: "#8C956B",
+  color: "#fff",
+  border: "none",
+  padding: "0.5rem 1rem",
+  borderRadius: "4px",
+  cursor: "pointer",
+  transition: "background-color 0.2s",
+};
+
 const MyProfile = () => {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -116,6 +156,20 @@ const MyProfile = () => {
         );
       }
     }
+  };
+
+  // Handler to remove files
+  const handleRemoveFile = (field) => () => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: null,
+      [`${field}Url`]: "",
+      [`${field}Id`]: null,
+    }));
+    setImagePreviews(prev => ({
+      ...prev,
+      [field]: "",
+    }));
   };
 
   useEffect(() => {
@@ -392,7 +446,7 @@ const MyProfile = () => {
       colClass: "col-lg-4 col-md-12",
       required: true,
     },
-        {
+    {
       type: "textarea",
       name: "aboutMe",
       label: "About Me",
@@ -406,69 +460,125 @@ const MyProfile = () => {
       name: "email",
       label: "Email",
       placeholder: "employee@gmail.com",
-      colClass: "col-lg-4 col-md-12", readOnly: true, }, { type: "text",
+      colClass: "col-lg-4 col-md-12",
+      readOnly: true,
+    },
+    {
+      type: "text",
       name: "address",
       label: "Address",
       placeholder: "Enter your address",
-      colClass: "col-lg-4 col-md-12", required: true, }, { type: "select",
+      colClass: "col-lg-4 col-md-12",
+      required: true,
+    },
+    {
+      type: "select",
       name: "gender",
       label: "Gender",
       options: genderOptions,
-      colClass: "col-lg-4 col-md-12", placeholder: "Select Gender", required: true, }, {
+      colClass: "col-lg-4 col-md-12",
+      placeholder: "Select Gender",
+      required: true,
+    },
+    {
       type: "number",
       name: "age",
       label: "Age",
       placeholder: "Enter age",
-      colClass: "col-lg-4 col-md-12", min: "18", required: true, }, {
+      colClass: "col-lg-4 col-md-12",
+      min: "18",
+      required: true,
+    },
+    {
       type: "date",
       name: "dob",
       label: "Date of Birth",
-      colClass: "col-lg-4 col-md-12", required: true, style: inputStyle, }, {
+      colClass: "col-lg-4 col-md-12",
+      required: true,
+      style: inputStyle,
+    },
+    {
       type: "select",
       name: "catOptions",
       label: "Category",
       options: catOptions,
-      colClass: "col-lg-4 col-md-12", placeholder: "Select category", required: true, }, {
+      colClass: "col-lg-4 col-md-12",
+      placeholder: "Select category",
+      required: true,
+    },
+    {
       type: "select",
       name: "nationality",
       label: "Nationality",
       options: nationalityOptions,
-      colClass: "col-lg-4 col-md-12", placeholder: "Select Nationality", required: true, }, {
+      colClass: "col-lg-4 col-md-12",
+      placeholder: "Select Nationality",
+      required: true,
+    },
+    {
       type: "select",
       name: "religion",
       label: "Religion",
       options: religionOptions,
-      colClass: "col-lg-4 col-md-12", placeholder: "Select Religion", required: true, }, {
+      colClass: "col-lg-4 col-md-12",
+      placeholder: "Select Religion",
+      required: true,
+    },
+    {
       type: "select",
       name: "maritalStatus",
       label: "Marital Status",
       options: maritalStatusOptions,
-      colClass: "col-lg-4 col-md-12", placeholder: "Select Marital Status", required: true, }, {
+      colClass: "col-lg-4 col-md-12",
+      placeholder: "Select Marital Status",
+      required: true,
+    },
+    {
       type: "text",
       name: "childrenCount",
       label: "Number of Children",
       placeholder: "0",
-      colClass: "col-lg-4 col-md-12", min: "0", required: true, }, {
+      colClass: "col-lg-4 col-md-12",
+      min: "0",
+      required: true,
+    },
+    {
       type: "select",
       name: "in_bahrain",
       label: "Currently in Bahrain?",
       options: yesNoOptions,
-      colClass: "col-lg-4 col-md-12", placeholder: "Select Option", required: true, }, {
+      colClass: "col-lg-4 col-md-12",
+      placeholder: "Select Option",
+      required: true,
+    },
+    {
       type: "select",
       name: "outside_country",
       label: "If outside Bahrain, specify country",
       options: countryOptions,
-      colClass: "col-lg-4 col-md-12", placeholder: "Select Country", required: true, }, {
+      colClass: "col-lg-4 col-md-12",
+      placeholder: "Select Country",
+      required: true,
+    },
+    {
       type: "select",
       name: "work_available",
       label: "Work Available",
       options: workAvailableOptions,
-      colClass: "col-lg-4 col-md-12", placeholder: "Select availability", required: true, }, {
+      colClass: "col-lg-4 col-md-12",
+      placeholder: "Select availability",
+      required: true,
+    },
+    {
       type: "text",
       name: "no_of_days_available",
       label: "Available after how many days?",
       placeholder: "Number of days",
-      colClass: "col-lg-4 col-md-12", required: true, }, { type: "select",
+      colClass: "col-lg-4 col-md-12",
+      required: true,
+    },
+    {
+      type: "select",
       name: "current_location",
       label: "Current Location",
       options: countryOptions,
@@ -485,15 +595,37 @@ const MyProfile = () => {
       required: !formData.profileImageUrl,
       style: inputStyle,
       preview: imagePreviews.profileImage,
-      previewComponent: (
+      previewComponent: ({ openViewer }) => (
         <div className="file-placeholder" style={{ cursor: "pointer" }} onClick={() => document.getElementById("profileImageInput").click()}>
           {imagePreviews.profileImage ? (
-            <img
-              src={imagePreviews.profileImage}
-              alt="Profile Picture Preview"
-              style={previewImageStyle}
-              onError={() => console.error('Error loading profile image')}
-            />
+            <>
+              <img
+                src={imagePreviews.profileImage}
+                alt="Profile Picture Preview"
+                style={previewImageStyle}
+                onError={() => console.error('Error loading profile image')}
+              />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveFile("profileImage")();
+                }}
+                style={{ color: "red", marginLeft: "10px" }}
+                title="Remove Profile Picture"
+              >
+                ×
+              </button>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  openViewer(imagePreviews.profileImage, false);
+                }}
+                style={previewLinkStyle}
+              >
+                View Profile Picture
+              </button>
+            </>
           ) : (
             <div className="file-placeholder" style={{ ...inputStyle }}>
               Choose Profile Picture
@@ -510,7 +642,6 @@ const MyProfile = () => {
         </div>
       ),
     },
-
     {
       type: "file",
       name: "passportCopy",
@@ -520,26 +651,64 @@ const MyProfile = () => {
       required: !formData.passportCopyUrl,
       style: inputStyle,
       preview: imagePreviews.passportCopy,
-      previewComponent: (
+      previewComponent: ({ openViewer }) => (
         <div className="file-placeholder" style={{ cursor: "pointer" }} onClick={() => document.getElementById("passportCopyInput").click()}>
           {imagePreviews.passportCopy ? (
-            formData.passportCopyUrl.endsWith('.pdf') ? (
-              <a
-                href={formData.passportCopyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={previewLinkStyle}
-              >
-                View Passport Copy (PDF)
-              </a>
-            ) : (
-              <img
-                src={imagePreviews.passportCopy}
-                alt="Passport Copy Preview"
-                style={previewImageStyle}
-                onError={() => console.error('Error loading passport image')}
-              />
-            )
+            <>
+              {formData.passportCopyUrl.endsWith('.pdf') ? (
+                <>
+                  <a
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openViewer(formData.passportCopyUrl, true);
+                    }}
+                    style={previewLinkStyle}
+                  >
+                    View Passport Copy (PDF)
+                  </a>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFile("passportCopy")();
+                    }}
+                    style={{ color: "red", marginLeft: "10px" }}
+                    title="Remove Passport Copy"
+                  >
+                    ×
+                  </button>
+                </>
+              ) : (
+                <>
+                  <img
+                    src={imagePreviews.passportCopy}
+                    alt="Passport Copy Preview"
+                    style={previewImageStyle}
+                    onError={() => console.error('Error loading passport image')}
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFile("passportCopy")();
+                    }}
+                    style={{ color: "red", marginLeft: "10px" }}
+                    title="Remove Passport Copy"
+                  >
+                    ×
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openViewer(imagePreviews.passportCopy, false);
+                    }}
+                    style={previewLinkStyle}
+                  >
+                    View Passport Copy
+                  </button>
+                </>
+              )}
+            </>
           ) : (
             <div className="file-placeholder" style={{ ...inputStyle }}>
               Choose Passport Copy
@@ -565,26 +734,64 @@ const MyProfile = () => {
       required: !formData.visaCopyUrl,
       style: inputStyle,
       preview: imagePreviews.visaCopy,
-      previewComponent: (
+      previewComponent: ({ openViewer }) => (
         <div className="file-placeholder" style={{ cursor: "pointer" }} onClick={() => document.getElementById("visaCopyInput").click()}>
           {imagePreviews.visaCopy ? (
-            formData.visaCopyUrl.endsWith('.pdf') ? (
-              <a
-                href={formData.visaCopyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={previewLinkStyle}
-              >
-                View Visa Copy (PDF)
-              </a>
-            ) : (
-              <img
-                src={imagePreviews.visaCopy}
-                alt="Visa Copy Preview"
-                style={previewImageStyle}
-                onError={() => console.error('Error loading visa image')}
-              />
-            )
+            <>
+              {formData.visaCopyUrl.endsWith('.pdf') ? (
+                <>
+                  <a
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openViewer(formData.visaCopyUrl, true);
+                    }}
+                    style={previewLinkStyle}
+                  >
+                    View Visa Copy (PDF)
+                  </a>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFile("visaCopy")();
+                    }}
+                    style={{ color: "red", marginLeft: "10px" }}
+                    title="Remove Visa Copy"
+                  >
+                    ×
+                  </button>
+                </>
+              ) : (
+                <>
+                  <img
+                    src={imagePreviews.visaCopy}
+                    alt="Visa Copy Preview"
+                    style={previewImageStyle}
+                    onError={() => console.error('Error loading visa image')}
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFile("visaCopy")();
+                    }}
+                    style={{ color: "red", marginLeft: "10px" }}
+                    title="Remove Visa Copy"
+                  >
+                    ×
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openViewer(imagePreviews.visaCopy, false);
+                    }}
+                    style={previewLinkStyle}
+                  >
+                    View Visa Copy
+                  </button>
+                </>
+              )}
+            </>
           ) : (
             <div className="file-placeholder" style={{ ...inputStyle }}>
               Choose Visa Copy
@@ -610,26 +817,64 @@ const MyProfile = () => {
       required: !formData.cprCopyUrl,
       style: inputStyle,
       preview: imagePreviews.cprCopy,
-      previewComponent: (
+      previewComponent: ({ openViewer }) => (
         <div className="file-placeholder" style={{ cursor: "pointer" }} onClick={() => document.getElementById("cprCopyInput").click()}>
           {imagePreviews.cprCopy ? (
-            formData.cprCopyUrl.endsWith('.pdf') ? (
-              <a
-                href={formData.cprCopyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={previewLinkStyle}
-              >
-                View CPR Copy (PDF)
-              </a>
-            ) : (
-              <img
-                src={imagePreviews.cprCopy}
-                alt="CPR Copy Preview"
-                style={previewImageStyle}
-                onError={() => console.error('Error loading CPR image')}
-              />
-            )
+            <>
+              {formData.cprCopyUrl.endsWith('.pdf') ? (
+                <>
+                  <a
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openViewer(formData.cprCopyUrl, true);
+                    }}
+                    style={previewLinkStyle}
+                  >
+                    View CPR Copy (PDF)
+                  </a>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFile("cprCopy")();
+                    }}
+                    style={{ color: "red", marginLeft: "10px" }}
+                    title="Remove CPR Copy"
+                  >
+                    ×
+                  </button>
+                </>
+              ) : (
+                <>
+                  <img
+                    src={imagePreviews.cprCopy}
+                    alt="CPR Copy Preview"
+                    style={previewImageStyle}
+                    onError={() => console.error('Error loading CPR image')}
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFile("cprCopy")();
+                    }}
+                    style={{ color: "red", marginLeft: "10px" }}
+                    title="Remove CPR Copy"
+                  >
+                    ×
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openViewer(imagePreviews.cprCopy, false);
+                    }}
+                    style={previewLinkStyle}
+                  >
+                    View CPR Copy
+                  </button>
+                </>
+              )}
+            </>
           ) : (
             <div className="file-placeholder" style={{ ...inputStyle }}>
               Choose CPR Copy
@@ -647,6 +892,9 @@ const MyProfile = () => {
       ),
     },
   ];
+
+  const uploadFields = fields.filter(field => field.type === "file");
+  const nonUploadFields = fields.filter(field => field.type !== "file");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -708,15 +956,82 @@ const MyProfile = () => {
     }
   };
 
+  const renderNonUploadField = (field) => {
+    return (
+      <>
+        {field.type === "text" || field.type === "number" || field.type === "date" || field.type === "email" || field.type === "tel" ? (
+          <InputField
+            field={{ ...field, style: { ...field.style, ...commonInputStyle } }}
+            value={formData[field.name] || ""}
+            handleChange={handleChange}
+          />
+        ) : field.type === "textarea" ? (
+          <textarea
+            name={field.name}
+            placeholder={field.placeholder}
+            value={formData[field.name] || ""}
+            onChange={(e) => handleChange(field.name, e.target.value)}
+            required={field.required}
+            readOnly={field.readOnly}
+            style={{ ...field.style, ...commonInputStyle }}
+          />
+        ) : field.type === "select" ? (
+          <SelectField
+            field={{ ...field, style: { ...field.style, ...commonInputStyle }, isMulti: field.isMulti || false }}
+            value={formData[field.name]}
+            handleSelectChange={(name) => (option) => {
+              handleSelectChange(name)(option);
+            }}
+          />
+        ) : field.type === "custom" && field.render ? (
+          field.render()
+        ) : null}
+      </>
+    );
+  };
+
   return (
-    <ProfileCardForm
-      fields={fields}
-      formData={formData}
-      handleChange={handleChange}
-      handleSelectChange={handleSelectChange}
-      handleFileChange={handleFileChange}
+    <form
+      className="default-form card p-4"
       onSubmit={handleSubmit}
-    />
+      style={{
+        padding: "1rem",
+        backgroundColor: "#F0F5F7",
+      }}
+    >
+      <div className="row">
+        {nonUploadFields.map((field, index) => (
+          <div
+            key={index}
+            className={`form-group ${field.colClass}`}
+            style={inputContainerStyle}
+          >
+            <label style={labelStyle}>
+              {field.label} {field.required && <span style={{ color: "red" }}>*</span>}
+            </label>
+            {renderNonUploadField(field)}
+          </div>
+        ))}
+        <UploadCardForm
+          fields={uploadFields}
+          formData={formData}
+          handleFileChange={handleFileChange}
+        />
+        <div
+          className="form-group col-lg-12 col-md-12"
+          style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}
+        >
+          <button
+            type="submit"
+            style={buttonStyle}
+            onMouseOver={(e) => (e.target.style.backgroundColor = "#7a815d")}
+            onMouseOut={(e) => (e.target.style.backgroundColor = "#8C956B")}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </form>
   );
 };
 
