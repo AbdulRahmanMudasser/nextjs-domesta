@@ -32,7 +32,7 @@ const Modal = ({ isOpen, onClose, children, isWide = false }) => {
     position: "absolute",
     top: "10px",
     right: "10px",
-    backgroundColor: "#ff4d4f",
+    backgroundColor: "#8C956B",
     color: "white",
     border: "none",
     borderRadius: "50%",

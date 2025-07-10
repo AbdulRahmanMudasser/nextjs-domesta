@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import UploadCardForm from "@/templates/forms/UploadCardForm";
-import InputField from "@/templates/inputs/input-field";
-import SelectField from "@/templates/inputs/select-field";
+import ProfileCardForm from "@/templates/forms/ProfileCardForm";
 import { networkService } from "@/services/network.service";
 import { notificationService } from "@/services/notification.service";
+import Modal from "./Modal";
+import Select from "react-select";
 
-// Define inputStyle for file inputs and textarea (matching provided MyProfile.jsx)
+// Define inputStyle for file inputs and textarea (matching Document.jsx)
 const inputStyle = {
   width: "100%",
   padding: "0.75rem",
@@ -17,7 +17,7 @@ const inputStyle = {
   height: "60px",
 };
 
-// Define preview image style (matching provided MyProfile.jsx)
+// Define preview image style
 const previewImageStyle = {
   maxWidth: "100px",
   maxHeight: "100px",
@@ -26,46 +26,33 @@ const previewImageStyle = {
   objectFit: "cover",
 };
 
-// Define preview link style for PDFs (matching provided MyProfile.jsx)
-const previewLinkStyle = {
+// Define preview button style for document buttons
+const previewButtonStyle = {
   marginTop: "10px",
-  color: "#1a73e8",
-  textDecoration: "underline",
+  backgroundColor: "#8C956B",
+  color: "white",
+  border: "none",
+  padding: "0.5rem 1rem",
+  borderRadius: "0.5rem",
+  cursor: "pointer",
   fontSize: "14px",
 };
 
-// Define common input style for non-file fields (matching provided ProfileCardForm.jsx)
-const commonInputStyle = {
-  border: "1px solid #d1d5db",
-  borderRadius: "0.5rem",
-  padding: "0.75rem",
-  width: "100%",
-  boxSizing: "border-box",
-  transition: "border-color 0.2s",
-};
-
-// Define label style (matching provided ProfileCardForm.jsx)
-const labelStyle = {
-  color: "#69697C",
-  fontWeight: "450",
-  marginBottom: "0.5rem",
-  display: "block",
-};
-
-// Define input container style (matching provided ProfileCardForm.jsx)
-const inputContainerStyle = {
-  marginBottom: "1rem",
-};
-
-// Define submit button style (matching provided ProfileCardForm.jsx)
-const buttonStyle = {
+// Define remove button style
+const removeButtonStyle = {
+  position: "absolute",
+  top: "0px",
+  right: "-1px",
   backgroundColor: "#8C956B",
-  color: "#fff",
-  border: "none",
-  padding: "0.5rem 1rem",
-  borderRadius: "4px",
+  color: "white",
+  borderRadius: "50%",
+  width: "28px",
+  height: "28px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   cursor: "pointer",
-  transition: "background-color 0.2s",
+  fontSize: "18px",
 };
 
 const MyProfile = () => {
@@ -106,14 +93,14 @@ const MyProfile = () => {
   const [maritalStatusOptions, setMaritalStatusOptions] = useState([]);
   const [workAvailableOptions, setWorkAvailableOptions] = useState([]);
   const [countryOptions, setCountryOptions] = useState([]);
-  
-  // State for image previews
   const [imagePreviews, setImagePreviews] = useState({
     profileImage: "",
     passportCopy: "",
     visaCopy: "",
     cprCopy: "",
   });
+  const [modalContent, setModalContent] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -158,18 +145,45 @@ const MyProfile = () => {
     }
   };
 
-  // Handler to remove files
   const handleRemoveFile = (field) => () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: null,
       [`${field}Url`]: "",
       [`${field}Id`]: null,
     }));
-    setImagePreviews(prev => ({
+    setImagePreviews((prev) => ({
       ...prev,
       [field]: "",
     }));
+  };
+
+  const handlePreviewClick = (field, url) => () => {
+    if (url) {
+      if (url.endsWith(".pdf")) {
+        setModalContent(
+          <iframe
+            src={url}
+            style={{ width: "100%", height: "80vh", border: "none" }}
+            title={`${field} Preview`}
+          />
+        );
+      } else {
+        setModalContent(
+          <img
+            src={url}
+            alt={`${field} Preview`}
+            style={{ maxWidth: "100%", maxHeight: "80vh", borderRadius: "0.5rem" }}
+          />
+        );
+      }
+      setIsModalOpen(true);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalContent(null);
   };
 
   useEffect(() => {
@@ -479,6 +493,7 @@ const MyProfile = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Gender",
       required: true,
+      component: Select,
     },
     {
       type: "number",
@@ -505,6 +520,7 @@ const MyProfile = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select category",
       required: true,
+      component: Select,
     },
     {
       type: "select",
@@ -514,6 +530,7 @@ const MyProfile = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Nationality",
       required: true,
+      component: Select,
     },
     {
       type: "select",
@@ -523,6 +540,7 @@ const MyProfile = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Religion",
       required: true,
+      component: Select,
     },
     {
       type: "select",
@@ -532,6 +550,7 @@ const MyProfile = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Marital Status",
       required: true,
+      component: Select,
     },
     {
       type: "text",
@@ -550,6 +569,7 @@ const MyProfile = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Option",
       required: true,
+      component: Select,
     },
     {
       type: "select",
@@ -559,6 +579,7 @@ const MyProfile = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Country",
       required: true,
+      component: Select,
     },
     {
       type: "select",
@@ -568,6 +589,7 @@ const MyProfile = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select availability",
       required: true,
+      component: Select,
     },
     {
       type: "text",
@@ -585,6 +607,7 @@ const MyProfile = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Country",
       required: true,
+      component: Select,
     },
     {
       type: "file",
@@ -595,39 +618,30 @@ const MyProfile = () => {
       required: !formData.profileImageUrl,
       style: inputStyle,
       preview: imagePreviews.profileImage,
-      previewComponent: ({ openViewer }) => (
-        <div className="file-placeholder" style={{ cursor: "pointer" }} onClick={() => document.getElementById("profileImageInput").click()}>
+      previewComponent: (
+        <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
           {imagePreviews.profileImage ? (
             <>
               <img
                 src={imagePreviews.profileImage}
                 alt="Profile Picture Preview"
                 style={previewImageStyle}
+                onClick={handlePreviewClick("profileImage", formData.profileImageUrl)}
                 onError={() => console.error('Error loading profile image')}
               />
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemoveFile("profileImage")();
-                }}
-                style={{ color: "red", marginLeft: "10px" }}
+                onClick={handleRemoveFile("profileImage")}
+                style={removeButtonStyle}
                 title="Remove Profile Picture"
               >
                 ×
               </button>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  openViewer(imagePreviews.profileImage, false);
-                }}
-                style={previewLinkStyle}
-              >
-                View Profile Picture
-              </button>
             </>
           ) : (
-            <div className="file-placeholder" style={{ ...inputStyle }}>
+            <div
+              style={{ ...inputStyle, textAlign: "center", lineHeight: "60px" }}
+              onClick={() => document.getElementById("profileImageInput").click()}
+            >
               Choose Profile Picture
             </div>
           )}
@@ -651,66 +665,39 @@ const MyProfile = () => {
       required: !formData.passportCopyUrl,
       style: inputStyle,
       preview: imagePreviews.passportCopy,
-      previewComponent: ({ openViewer }) => (
-        <div className="file-placeholder" style={{ cursor: "pointer" }} onClick={() => document.getElementById("passportCopyInput").click()}>
+      previewComponent: (
+        <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
           {imagePreviews.passportCopy ? (
             <>
               {formData.passportCopyUrl.endsWith('.pdf') ? (
-                <>
-                  <a
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      openViewer(formData.passportCopyUrl, true);
-                    }}
-                    style={previewLinkStyle}
-                  >
-                    View Passport Copy (PDF)
-                  </a>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFile("passportCopy")();
-                    }}
-                    style={{ color: "red", marginLeft: "10px" }}
-                    title="Remove Passport Copy"
-                  >
-                    ×
-                  </button>
-                </>
+                <button
+                  onClick={handlePreviewClick("passportCopy", formData.passportCopyUrl)}
+                  style={previewButtonStyle}
+                >
+                  View Document
+                </button>
               ) : (
-                <>
-                  <img
-                    src={imagePreviews.passportCopy}
-                    alt="Passport Copy Preview"
-                    style={previewImageStyle}
-                    onError={() => console.error('Error loading passport image')}
-                  />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFile("passportCopy")();
-                    }}
-                    style={{ color: "red", marginLeft: "10px" }}
-                    title="Remove Passport Copy"
-                  >
-                    ×
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      openViewer(imagePreviews.passportCopy, false);
-                    }}
-                    style={previewLinkStyle}
-                  >
-                    View Passport Copy
-                  </button>
-                </>
+                <img
+                  src={imagePreviews.passportCopy}
+                  alt="Passport Copy Preview"
+                  style={previewImageStyle}
+                  onClick={handlePreviewClick("passportCopy", formData.passportCopyUrl)}
+                  onError={() => console.error('Error loading passport image')}
+                />
               )}
+              <button
+                onClick={handleRemoveFile("passportCopy")}
+                style={removeButtonStyle}
+                title="Remove Passport Copy"
+              >
+                ×
+              </button>
             </>
           ) : (
-            <div className="file-placeholder" style={{ ...inputStyle }}>
+            <div
+              style={{ ...inputStyle, textAlign: "center", lineHeight: "60px" }}
+              onClick={() => document.getElementById("passportCopyInput").click()}
+            >
               Choose Passport Copy
             </div>
           )}
@@ -734,66 +721,39 @@ const MyProfile = () => {
       required: !formData.visaCopyUrl,
       style: inputStyle,
       preview: imagePreviews.visaCopy,
-      previewComponent: ({ openViewer }) => (
-        <div className="file-placeholder" style={{ cursor: "pointer" }} onClick={() => document.getElementById("visaCopyInput").click()}>
+      previewComponent: (
+        <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
           {imagePreviews.visaCopy ? (
             <>
               {formData.visaCopyUrl.endsWith('.pdf') ? (
-                <>
-                  <a
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      openViewer(formData.visaCopyUrl, true);
-                    }}
-                    style={previewLinkStyle}
-                  >
-                    View Visa Copy (PDF)
-                  </a>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFile("visaCopy")();
-                    }}
-                    style={{ color: "red", marginLeft: "10px" }}
-                    title="Remove Visa Copy"
-                  >
-                    ×
-                  </button>
-                </>
+                <button
+                  onClick={handlePreviewClick("visaCopy", formData.visaCopyUrl)}
+                  style={previewButtonStyle}
+                >
+                  View Document
+                </button>
               ) : (
-                <>
-                  <img
-                    src={imagePreviews.visaCopy}
-                    alt="Visa Copy Preview"
-                    style={previewImageStyle}
-                    onError={() => console.error('Error loading visa image')}
-                  />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFile("visaCopy")();
-                    }}
-                    style={{ color: "red", marginLeft: "10px" }}
-                    title="Remove Visa Copy"
-                  >
-                    ×
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      openViewer(imagePreviews.visaCopy, false);
-                    }}
-                    style={previewLinkStyle}
-                  >
-                    View Visa Copy
-                  </button>
-                </>
+                <img
+                  src={imagePreviews.visaCopy}
+                  alt="Visa Copy Preview"
+                  style={previewImageStyle}
+                  onClick={handlePreviewClick("visaCopy", formData.visaCopyUrl)}
+                  onError={() => console.error('Error loading visa image')}
+                />
               )}
+              <button
+                onClick={handleRemoveFile("visaCopy")}
+                style={removeButtonStyle}
+                title="Remove Visa Copy"
+              >
+                ×
+              </button>
             </>
           ) : (
-            <div className="file-placeholder" style={{ ...inputStyle }}>
+            <div
+              style={{ ...inputStyle, textAlign: "center", lineHeight: "60px" }}
+              onClick={() => document.getElementById("visaCopyInput").click()}
+            >
               Choose Visa Copy
             </div>
           )}
@@ -817,66 +777,39 @@ const MyProfile = () => {
       required: !formData.cprCopyUrl,
       style: inputStyle,
       preview: imagePreviews.cprCopy,
-      previewComponent: ({ openViewer }) => (
-        <div className="file-placeholder" style={{ cursor: "pointer" }} onClick={() => document.getElementById("cprCopyInput").click()}>
+      previewComponent: (
+        <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
           {imagePreviews.cprCopy ? (
             <>
               {formData.cprCopyUrl.endsWith('.pdf') ? (
-                <>
-                  <a
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      openViewer(formData.cprCopyUrl, true);
-                    }}
-                    style={previewLinkStyle}
-                  >
-                    View CPR Copy (PDF)
-                  </a>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFile("cprCopy")();
-                    }}
-                    style={{ color: "red", marginLeft: "10px" }}
-                    title="Remove CPR Copy"
-                  >
-                    ×
-                  </button>
-                </>
+                <button
+                  onClick={handlePreviewClick("cprCopy", formData.cprCopyUrl)}
+                  style={previewButtonStyle}
+                >
+                  View Document
+                </button>
               ) : (
-                <>
-                  <img
-                    src={imagePreviews.cprCopy}
-                    alt="CPR Copy Preview"
-                    style={previewImageStyle}
-                    onError={() => console.error('Error loading CPR image')}
-                  />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFile("cprCopy")();
-                    }}
-                    style={{ color: "red", marginLeft: "10px" }}
-                    title="Remove CPR Copy"
-                  >
-                    ×
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      openViewer(imagePreviews.cprCopy, false);
-                    }}
-                    style={previewLinkStyle}
-                  >
-                    View CPR Copy
-                  </button>
-                </>
+                <img
+                  src={imagePreviews.cprCopy}
+                  alt="CPR Copy Preview"
+                  style={previewImageStyle}
+                  onClick={handlePreviewClick("cprCopy", formData.cprCopyUrl)}
+                  onError={() => console.error('Error loading CPR image')}
+                />
               )}
+              <button
+                onClick={handleRemoveFile("cprCopy")}
+                style={removeButtonStyle}
+                title="Remove CPR Copy"
+              >
+                ×
+              </button>
             </>
           ) : (
-            <div className="file-placeholder" style={{ ...inputStyle }}>
+            <div
+              style={{ ...inputStyle, textAlign: "center", lineHeight: "60px" }}
+              onClick={() => document.getElementById("cprCopyInput").click()}
+            >
               Choose CPR Copy
             </div>
           )}
@@ -892,9 +825,6 @@ const MyProfile = () => {
       ),
     },
   ];
-
-  const uploadFields = fields.filter(field => field.type === "file");
-  const nonUploadFields = fields.filter(field => field.type !== "file");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -956,82 +886,20 @@ const MyProfile = () => {
     }
   };
 
-  const renderNonUploadField = (field) => {
-    return (
-      <>
-        {field.type === "text" || field.type === "number" || field.type === "date" || field.type === "email" || field.type === "tel" ? (
-          <InputField
-            field={{ ...field, style: { ...field.style, ...commonInputStyle } }}
-            value={formData[field.name] || ""}
-            handleChange={handleChange}
-          />
-        ) : field.type === "textarea" ? (
-          <textarea
-            name={field.name}
-            placeholder={field.placeholder}
-            value={formData[field.name] || ""}
-            onChange={(e) => handleChange(field.name, e.target.value)}
-            required={field.required}
-            readOnly={field.readOnly}
-            style={{ ...field.style, ...commonInputStyle }}
-          />
-        ) : field.type === "select" ? (
-          <SelectField
-            field={{ ...field, style: { ...field.style, ...commonInputStyle }, isMulti: field.isMulti || false }}
-            value={formData[field.name]}
-            handleSelectChange={(name) => (option) => {
-              handleSelectChange(name)(option);
-            }}
-          />
-        ) : field.type === "custom" && field.render ? (
-          field.render()
-        ) : null}
-      </>
-    );
-  };
-
   return (
-    <form
-      className="default-form card p-4"
-      onSubmit={handleSubmit}
-      style={{
-        padding: "1rem",
-        backgroundColor: "#F0F5F7",
-      }}
-    >
-      <div className="row">
-        {nonUploadFields.map((field, index) => (
-          <div
-            key={index}
-            className={`form-group ${field.colClass}`}
-            style={inputContainerStyle}
-          >
-            <label style={labelStyle}>
-              {field.label} {field.required && <span style={{ color: "red" }}>*</span>}
-            </label>
-            {renderNonUploadField(field)}
-          </div>
-        ))}
-        <UploadCardForm
-          fields={uploadFields}
-          formData={formData}
-          handleFileChange={handleFileChange}
-        />
-        <div
-          className="form-group col-lg-12 col-md-12"
-          style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}
-        >
-          <button
-            type="submit"
-            style={buttonStyle}
-            onMouseOver={(e) => (e.target.style.backgroundColor = "#7a815d")}
-            onMouseOut={(e) => (e.target.style.backgroundColor = "#8C956B")}
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    </form>
+    <>
+      <ProfileCardForm
+        fields={fields}
+        formData={formData}
+        handleChange={handleChange}
+        handleSelectChange={handleSelectChange}
+        handleFileChange={handleFileChange}
+        onSubmit={handleSubmit}
+      />
+      <Modal isOpen={isModalOpen} onClose={closeModal} isWide={modalContent?.type === "iframe"}>
+        {modalContent}
+      </Modal>
+    </>
   );
 };
 
