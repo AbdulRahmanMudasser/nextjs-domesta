@@ -101,6 +101,7 @@ const MyProfile = () => {
   });
   const [modalContent, setModalContent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false); // Added loading state
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -120,6 +121,7 @@ const MyProfile = () => {
       
       // Upload file and get preview image
       try {
+        setLoading(true); // Set loading during file upload
         const response = await networkService.uploadMedia(file);
         if (response && response[0]?.base_url && response[0]?.thumb_size) {
           const previewUrl = `${response[0].base_url}${response[0].thumb_size}`;
@@ -141,6 +143,8 @@ const MyProfile = () => {
           `Failed to upload ${field}. Please try again.`,
           "error"
         );
+      } finally {
+        setLoading(false); // Reset loading after upload
       }
     }
   };
@@ -222,7 +226,7 @@ const MyProfile = () => {
             }
           };
 
-          // Fetch thumbnails for all media, falling back to original URL if thumbnail fails
+          // Fetch thumbnails for all media, falling
           const [profileThumb, passportThumb, visaThumb, cprThumb] = await Promise.all([
             fetchMediaThumbnail(
               profileResponse.profile_media_id,
@@ -298,7 +302,7 @@ const MyProfile = () => {
           fetchReligionOptions(),
           fetchNationalityOptions(),
           fetchMaritalStatusOptions(),
-          fetchWorkAvailableOptions(),
+  fetchWorkAvailableOptions(),
           fetchCountryOptions()
         ]);
 
@@ -829,6 +833,7 @@ const MyProfile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      setLoading(true); // Set loading during submission
       const user = JSON.parse(localStorage.getItem("user"));
       const employeeId = user?.id;
       if (!employeeId) {
@@ -883,6 +888,8 @@ const MyProfile = () => {
         error.message || "Failed to update profile. Please try again.",
         "error"
       );
+    } finally {
+      setLoading(false); // Reset loading after submission
     }
   };
 
@@ -895,6 +902,7 @@ const MyProfile = () => {
         handleSelectChange={handleSelectChange}
         handleFileChange={handleFileChange}
         onSubmit={handleSubmit}
+        loading={loading} // Pass loading state
       />
       <Modal isOpen={isModalOpen} onClose={closeModal} isWide={modalContent?.type === "iframe"}>
         {modalContent}

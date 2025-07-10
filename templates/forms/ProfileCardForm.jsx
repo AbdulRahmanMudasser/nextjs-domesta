@@ -11,6 +11,7 @@ const ProfileCardForm = ({
   handleSelectChange = () => () => {},
   handleFileChange = () => () => {},
   onSubmit = (e) => e.preventDefault(),
+  loading = false,
 }) => {
   const buttonStyle = {
     backgroundColor: "#8C956B",
@@ -18,7 +19,7 @@ const ProfileCardForm = ({
     border: "none",
     padding: "0.5rem 1rem",
     borderRadius: "4px",
-    cursor: "pointer",
+    cursor: loading ? "not-allowed" : "pointer",
     transition: "background-color 0.2s",
   };
 
@@ -126,10 +127,11 @@ const ProfileCardForm = ({
           <button
             type="submit"
             style={buttonStyle}
-            onMouseOver={(e) => (e.target.style.backgroundColor = "#7a815d")}
-            onMouseOut={(e) => (e.target.style.backgroundColor = "#8C956B")}
+            onMouseOver={(e) => !loading && (e.target.style.backgroundColor = "#7a815d")}
+            onMouseOut={(e) => !loading && (e.target.style.backgroundColor = "#8C956B")}
+            disabled={loading}
           >
-            Save
+            {loading ? "Saving..." : "Save"}
           </button>
         </div>
       </div>
@@ -161,6 +163,7 @@ ProfileCardForm.propTypes = {
   handleSelectChange: PropTypes.func,
   handleFileChange: PropTypes.func,
   onSubmit: PropTypes.func,
+  loading: PropTypes.bool,
 };
 
 export default ProfileCardForm;
