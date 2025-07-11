@@ -36,7 +36,6 @@ const ProfileCardForm = ({
 
   const renderField = (field) => {
     const commonInputStyle = {
-      border: "1px solid #d1d5db",
       borderRadius: "0.5rem",
       padding: "0.75rem",
       width: "100%",

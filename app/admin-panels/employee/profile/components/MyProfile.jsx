@@ -564,6 +564,7 @@ const MyProfile = () => {
       colClass: "col-lg-4 col-md-12",
       min: "0",
       required: true,
+      style: inputStyle,
     },
     {
       type: "select",
