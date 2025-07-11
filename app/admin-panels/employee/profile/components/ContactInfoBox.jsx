@@ -2,16 +2,45 @@
 
 import { useState, useEffect } from "react";
 import Select from "react-select";
-import CardForm from "@/templates/forms/card-form";
+import ContactCardForm from "@/templates/forms/ContactCardForm";
 import { networkService } from "@/services/network.service";
-import { utilityService } from "@/services/utility.service";
+import { notificationService } from "@/services/notification.service";
+
+// Fallback CSS for loader in case Tailwind fails
+const loaderStyles = {
+  overlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+  spinner: {
+    width: "50px",
+    height: "50px",
+    border: "5px solid #ccc",
+    borderTop: "5px solid #8C956B",
+    borderRadius: "50%",
+    animation: "spin 1s linear infinite",
+  },
+  text: {
+    color: "#fff",
+    fontSize: "18px",
+    marginTop: "10px",
+  },
+};
 
 // Define buttonStyle for consistent styling
 const buttonStyle = {
   padding: "0.75rem 1.5rem",
   border: "none",
   borderRadius: "0.5rem",
-  backgroundColor: "#1a73e8",
+  backgroundColor: "#8C956B",
   color: "white",
   cursor: "pointer",
   fontSize: "1rem",
@@ -35,6 +64,7 @@ const ContactInfoBox = () => {
   const [dialCodeOptions, setDialCodeOptions] = useState([]);
   const [languageOptions, setLanguageOptions] = useState([]);
   const [countryOptions, setCountryOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -53,7 +83,7 @@ const ContactInfoBox = () => {
           throw new Error("User ID not found in localStorage");
         }
 
-        // Fetch contact info
+        console.log("Fetching contact info...");
         const contactResponse = await networkService.get(`/employee/contact-info-single/${employeeId}`);
         if (contactResponse) {
           setFormData({
@@ -71,38 +101,41 @@ const ContactInfoBox = () => {
           });
         }
 
-        // Fetch language options
         const languageResponse = await networkService.getDropdowns("language");
         if (languageResponse?.language) {
-          setLanguageOptions(languageResponse.language.map(item => ({
-            value: item.value,
-            label: item.value,
-            id: item.id,
-          })));
+          setLanguageOptions(
+            languageResponse.language.map((item) => ({
+              value: item.value,
+              label: item.value,
+              id: item.id,
+            }))
+          );
         } else {
           throw new Error("No language options returned");
         }
 
-        // Fetch country options for country and dialCode
         const countryResponse = await networkService.get("/country");
         if (countryResponse) {
-          setCountryOptions(countryResponse.map(item => ({
-            value: item.name,
-            label: item.name,
-            id: item.id,
-          })));
-          setDialCodeOptions(countryResponse.map(item => ({
-            value: item.dial_code,
-            label: `${item.dial_code} (${item.name})`,
-            id: item.id,
-          })));
+          setCountryOptions(
+            countryResponse.map((item) => ({
+              value: item.name,
+              label: item.name,
+              id: item.id,
+            }))
+          );
+          setDialCodeOptions(
+            countryResponse.map((item) => ({
+              value: item.dial_code,
+              label: `${item.dial_code} (${item.name})`,
+              id: item.id,
+            }))
+          );
         } else {
           throw new Error("No country options returned");
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-        await utilityService.showAlert(
-          "Error",
+        await notificationService.showToast(
           error.message || "Failed to load contact information.",
           "error"
         );
@@ -121,6 +154,8 @@ const ContactInfoBox = () => {
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select Dial Code",
       required: true,
+      component: Select,
+      disabled: loading,
     },
     {
       type: "text",
@@ -133,6 +168,7 @@ const ContactInfoBox = () => {
         WebkitAppearance: "none",
         MozAppearance: "textfield",
       },
+      disabled: loading,
     },
     {
       type: "text",
@@ -145,6 +181,7 @@ const ContactInfoBox = () => {
         WebkitAppearance: "none",
         MozAppearance: "textfield",
       },
+      disabled: loading,
     },
     {
       type: "select",
@@ -154,6 +191,8 @@ const ContactInfoBox = () => {
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select Language",
       required: true,
+      component: Select,
+      disabled: loading,
     },
     {
       type: "text",
@@ -162,6 +201,7 @@ const ContactInfoBox = () => {
       placeholder: "123 Example Street, Manama, Bahrain",
       colClass: "col-lg-12 col-md-12",
       required: true,
+      disabled: loading,
     },
     {
       type: "text",
@@ -170,6 +210,7 @@ const ContactInfoBox = () => {
       placeholder: "E.g., Villa",
       colClass: "col-lg-3 col-md-12",
       required: true,
+      disabled: loading,
     },
     {
       type: "text",
@@ -182,6 +223,7 @@ const ContactInfoBox = () => {
         WebkitAppearance: "none",
         MozAppearance: "textfield",
       },
+      disabled: loading,
     },
     {
       type: "text",
@@ -194,6 +236,7 @@ const ContactInfoBox = () => {
         WebkitAppearance: "none",
         MozAppearance: "textfield",
       },
+      disabled: loading,
     },
     {
       type: "text",
@@ -206,6 +249,7 @@ const ContactInfoBox = () => {
         WebkitAppearance: "none",
         MozAppearance: "textfield",
       },
+      disabled: loading,
     },
     {
       type: "text",
@@ -214,6 +258,7 @@ const ContactInfoBox = () => {
       placeholder: "E.g., Manama",
       colClass: "col-lg-3 col-md-12",
       required: true,
+      disabled: loading,
     },
     {
       type: "select",
@@ -223,21 +268,24 @@ const ContactInfoBox = () => {
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select Country",
       required: true,
+      component: Select,
+      disabled: loading,
     },
   ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      console.log("Submitting form, loading: true");
+      setLoading(true);
       const user = JSON.parse(localStorage.getItem("user"));
       const employeeId = user?.id;
       if (!employeeId) {
         throw new Error("User ID not found in localStorage");
       }
 
-      // Map form values to API expected IDs
       const getIdFromValue = (options, value) => {
-        const option = options.find(opt => opt.value === value);
+        const option = options.find((opt) => opt.value === value);
         return option ? option.id : null;
       };
 
@@ -245,6 +293,7 @@ const ContactInfoBox = () => {
         employee_id: employeeId,
         dial_code: formData.dialCode,
         phone_number: formData.phoneNumber,
+        whats_app_no: formData.whatsapp_number,
         preferred_language_id: getIdFromValue(languageOptions, formData.preferred_language),
         address: formData.address,
         house_flat_apartment_villa: formData.house_flat_apartment_villa,
@@ -257,26 +306,59 @@ const ContactInfoBox = () => {
 
       const response = await networkService.post("/employee/contact-info-edit", data);
       if (response) {
-        await utilityService.showAlert("Success", "Contact information updated successfully!", "success");
+        await notificationService.showToast("Contact information updated successfully!", "success");
       }
     } catch (error) {
       console.error("Form submission error:", error);
-      await utilityService.showAlert(
-        "Error",
+      await notificationService.showToast(
         error.message || "Failed to update contact information. Please try again.",
         "error"
       );
+    } finally {
+      setTimeout(() => {
+        setLoading(false);
+        console.log("Submission complete, loading: false");
+      }, 500);
     }
   };
 
+  console.log("Rendering ContactInfoBox, loading:", loading);
+
   return (
-    <CardForm
-      fields={fields}
-      formData={formData}
-      handleChange={handleChange}
-      handleSelectChange={handleSelectChange}
-      onSubmit={handleSubmit}
-    />
+    <div className="relative min-h-screen">
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+      {loading && (
+        <div
+          className="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-70 flex items-center justify-center z-[1000]"
+          style={loaderStyles.overlay}
+        >
+          <div className="flex flex-col items-center gap-4">
+            <div
+              className="w-12 h-12 border-4 border-t-4 border-t-[#8C956B] border-gray-300 rounded-full animate-spin"
+              style={loaderStyles.spinner}
+            ></div>
+            <p className="text-white text-xl font-semibold" style={loaderStyles.text}>
+              Saving...
+            </p>
+          </div>
+        </div>
+      )}
+      <ContactCardForm
+        fields={fields}
+        formData={formData}
+        handleChange={handleChange}
+        handleSelectChange={handleSelectChange}
+        onSubmit={handleSubmit}
+        loading={loading}
+      />
+    </div>
   );
 };
 
