@@ -21,6 +21,7 @@ const ProfileCardForm = ({
     borderRadius: "4px",
     cursor: loading ? "not-allowed" : "pointer",
     transition: "background-color 0.2s",
+    opacity: loading ? 0.6 : 1,
   };
 
   const labelStyle = {
@@ -41,6 +42,7 @@ const ProfileCardForm = ({
       width: "100%",
       boxSizing: "border-box",
       transition: "border-color 0.2s",
+      opacity: loading ? 0.6 : 1,
     };
 
     switch (field.type) {
@@ -51,7 +53,7 @@ const ProfileCardForm = ({
       case "tel":
         return (
           <InputField
-            field={{ ...field, style: { ...field.style, ...commonInputStyle } }}
+            field={{ ...field, style: { ...field.style, ...commonInputStyle }, disabled: loading }}
             value={formData[field.name] || ""}
             handleChange={handleChange}
           />
@@ -64,14 +66,14 @@ const ProfileCardForm = ({
             value={formData[field.name] || ""}
             onChange={(e) => handleChange(field.name, e.target.value)}
             required={field.required}
-            readOnly={field.readOnly}
+            readOnly={field.readOnly || loading}
             style={{ ...field.style, ...commonInputStyle }}
           />
         );
       case "select":
         return (
           <SelectField
-            field={{ ...field, style: { ...field.style, ...commonInputStyle }, isMulti: field.isMulti || false }}
+            field={{ ...field, style: { ...field.style, ...commonInputStyle }, isMulti: field.isMulti || false, disabled: loading }}
             value={formData[field.name]}
             handleSelectChange={(name) => (option) => {
               handleSelectChange(name)(option);
@@ -82,14 +84,14 @@ const ProfileCardForm = ({
         return (
           <div>
             <ImageField
-              field={{ ...field, style: { ...field.style, ...commonInputStyle } }}
+              field={{ ...field, style: { ...field.style, ...commonInputStyle }, disabled: loading }}
               value={formData[field.name]}
               handleFileChange={(name, event) => {
                 handleFileChange(name)(event);
               }}
             />
             {field.previewComponent && (
-              <div style={{ marginTop: "10px" }}>
+              <div style={{ marginTop: "10px", opacity: loading ? 0.6 : 1 }}>
                 {field.previewComponent}
               </div>
             )}
@@ -103,22 +105,29 @@ const ProfileCardForm = ({
   };
 
   return (
-    <form className="default-form card p-4" onSubmit={onSubmit} style={{ padding: "1rem" }}>
+    <form
+      className="default-form card p-4"
+      onSubmit={onSubmit}
+      style={{ padding: "1rem", opacity: loading ? 0.6 : 1 }}
+    >
       <div className="row">
         {fields.map((field, index) => (
           <div
             key={index}
             className={`form-group ${field.colClass}`}
-            style={field.type === "file" ? { position: "relative", minHeight: "60px", ...inputContainerStyle } : inputContainerStyle}
+            style={
+              field.type === "file"
+                ? { position: "relative", minHeight: "60px", ...inputContainerStyle }
+                : inputContainerStyle
+            }
           >
-            <label style={labelStyle}>
+            <label style={{ ...labelStyle, opacity: loading ? 0.6 : 1 }}>
               {field.label} {field.required && <span style={{ color: "red" }}>*</span>}
             </label>
             {renderField(field)}
           </div>
         ))}
 
-        {/* Submit Button */}
         <div
           className="form-group col-lg-12 col-md-12"
           style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}
@@ -155,6 +164,7 @@ ProfileCardForm.propTypes = {
       isMulti: PropTypes.bool,
       preview: PropTypes.string,
       previewComponent: PropTypes.node,
+      disabled: PropTypes.bool,
     })
   ).isRequired,
   formData: PropTypes.object.isRequired,

@@ -7,6 +7,35 @@ import { notificationService } from "@/services/notification.service";
 import Modal from "./Modal";
 import Select from "react-select";
 
+// Fallback CSS for loader in case Tailwind fails
+const loaderStyles = {
+  overlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+  spinner: {
+    width: "50px",
+    height: "50px",
+    border: "5px solid #ccc",
+    borderTop: "5px solid #8C956B",
+    borderRadius: "50%",
+    animation: "spin 1s linear infinite",
+  },
+  text: {
+    color: "#fff",
+    fontSize: "18px",
+    marginTop: "10px",
+  },
+};
+
 // Define inputStyle for file inputs and textarea (matching Document.jsx)
 const inputStyle = {
   width: "100%",
@@ -101,7 +130,7 @@ const MyProfile = () => {
   });
   const [modalContent, setModalContent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false); // Added loading state
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -118,23 +147,20 @@ const MyProfile = () => {
     const file = e.target.files[0];
     if (file) {
       setFormData({ ...formData, [field]: file });
-      
-      // Upload file and get preview image
       try {
-        setLoading(true); // Set loading during file upload
+        console.log(`Starting upload for ${field}, loading: true`);
+        setLoading(true);
         const response = await networkService.uploadMedia(file);
         if (response && response[0]?.base_url && response[0]?.thumb_size) {
           const previewUrl = `${response[0].base_url}${response[0].thumb_size}`;
-          setImagePreviews(prev => ({
+          setImagePreviews((prev) => ({
             ...prev,
-            [field]: previewUrl
+            [field]: previewUrl,
           }));
-          
-          // Also update the main URL for saving
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             [`${field}Url`]: `${response[0].base_url}${response[0].unique_name}`,
-            [`${field}Id`]: response[0].id
+            [`${field}Id`]: response[0].id,
           }));
         }
       } catch (error) {
@@ -144,7 +170,11 @@ const MyProfile = () => {
           "error"
         );
       } finally {
-        setLoading(false); // Reset loading after upload
+        // Add slight delay to ensure loader is visible for testing
+        setTimeout(() => {
+          setLoading(false);
+          console.log(`Finished upload for ${field}, loading: false`);
+        }, 500);
       }
     }
   };
@@ -199,19 +229,15 @@ const MyProfile = () => {
           throw new Error("User ID not found in localStorage");
         }
 
-        // Fetch profile data first
+        console.log("Fetching profile data...");
         const profileResponse = await networkService.get(`/employee/profile-single/${employeeId}`);
         if (profileResponse) {
-          // Helper function to get value from nested object
           const getValue = (obj, fallback = "") => obj?.value || obj?.name || fallback;
-          
-          // Format date for input field
           const formatDate = (dateString) => {
             if (!dateString) return "";
-            return new Date(dateString).toISOString().split('T')[0];
+            return new Date(dateString).toISOString().split("T")[0];
           };
 
-          // Fetch thumbnail URLs for media
           const fetchMediaThumbnail = async (mediaId, originalUrl) => {
             if (!mediaId) return "";
             try {
@@ -226,23 +252,30 @@ const MyProfile = () => {
             }
           };
 
-          // Fetch thumbnails for all media, falling
           const [profileThumb, passportThumb, visaThumb, cprThumb] = await Promise.all([
             fetchMediaThumbnail(
               profileResponse.profile_media_id,
-              profileResponse.profile_media ? `${profileResponse.profile_media.base_url}${profileResponse.profile_media.unique_name}` : ""
+              profileResponse.profile_media
+                ? `${profileResponse.profile_media.base_url}${profileResponse.profile_media.unique_name}`
+                : ""
             ),
             fetchMediaThumbnail(
               profileResponse.passport_media_id,
-              profileResponse.passport_media ? `${profileResponse.passport_media.base_url}${profileResponse.passport_media.unique_name}` : ""
+              profileResponse.passport_media
+                ? `${profileResponse.passport_media.base_url}${profileResponse.passport_media.unique_name}`
+                : ""
             ),
             fetchMediaThumbnail(
               profileResponse.visa_media_id,
-              profileResponse.visa_media ? `${profileResponse.visa_media.base_url}${profileResponse.visa_media.unique_name}` : ""
+              profileResponse.visa_media
+                ? `${profileResponse.visa_media.base_url}${profileResponse.visa_media.unique_name}`
+                : ""
             ),
             fetchMediaThumbnail(
               profileResponse.cpr_media_id,
-              profileResponse.cpr_media ? `${profileResponse.cpr_media.base_url}${profileResponse.cpr_media.unique_name}` : ""
+              profileResponse.cpr_media
+                ? `${profileResponse.cpr_media.base_url}${profileResponse.cpr_media.unique_name}`
+                : ""
             ),
           ]);
 
@@ -265,28 +298,29 @@ const MyProfile = () => {
             outside_country: getValue(profileResponse.outside_country),
             work_available: getValue(profileResponse.work_available),
             current_location: getValue(profileResponse.current_location),
-            profileImageUrl: profileResponse.profile_media ? 
-              `${profileResponse.profile_media.base_url}${profileResponse.profile_media.unique_name}` : "",
-            passportCopyUrl: profileResponse.passport_media ? 
-              `${profileResponse.passport_media.base_url}${profileResponse.passport_media.unique_name}` : "",
-            visaCopyUrl: profileResponse.visa_media ? 
-              `${profileResponse.visa_media.base_url}${profileResponse.visa_media.unique_name}` : "",
-            cprCopyUrl: profileResponse.cpr_media ? 
-              `${profileResponse.cpr_media.base_url}${profileResponse.cpr_media.unique_name}` : "",
+            profileImageUrl: profileResponse.profile_media
+              ? `${profileResponse.profile_media.base_url}${profileResponse.profile_media.unique_name}`
+              : "",
+            passportCopyUrl: profileResponse.passport_media
+              ? `${profileResponse.passport_media.base_url}${profileResponse.passport_media.unique_name}`
+              : "",
+            visaCopyUrl: profileResponse.visa_media
+              ? `${profileResponse.visa_media.base_url}${profileResponse.visa_media.unique_name}`
+              : "",
+            cprCopyUrl: profileResponse.cpr_media
+              ? `${profileResponse.cpr_media.base_url}${profileResponse.cpr_media.unique_name}`
+              : "",
             aboutMe: profileResponse.about_me || "",
-            // Store media IDs for API calls
             profileImageId: profileResponse.profile_media?.id || null,
             passportCopyId: profileResponse.passport_media?.id || null,
             visaCopyId: profileResponse.visa_media?.id || null,
             cprCopyId: profileResponse.cpr_media?.id || null,
-            // Keep file fields as null since we only show existing files, don't pre-populate file inputs
             profileImage: null,
             passportCopy: null,
             visaCopy: null,
             cprCopy: null,
           });
 
-          // Set existing image previews with thumbnails
           setImagePreviews({
             profileImage: profileThumb,
             passportCopy: passportThumb,
@@ -295,23 +329,18 @@ const MyProfile = () => {
           });
         }
 
-        // Fetch all dropdown options
         await Promise.all([
           fetchCatOptions(),
           fetchGenderOptions(),
           fetchReligionOptions(),
           fetchNationalityOptions(),
           fetchMaritalStatusOptions(),
-  fetchWorkAvailableOptions(),
-          fetchCountryOptions()
+          fetchWorkAvailableOptions(),
+          fetchCountryOptions(),
         ]);
-
       } catch (error) {
         console.error("Error fetching profile data:", error);
-        await notificationService.showToast(
-          error.message || "Failed to load profile data.",
-          "error"
-        );
+        await notificationService.showToast(error.message || "Failed to load profile data.", "error");
       }
     };
 
@@ -367,7 +396,7 @@ const MyProfile = () => {
       try {
         const countryResponse = await networkService.get("/country");
         if (countryResponse) {
-          const nationalityOptions = countryResponse.map(item => ({
+          const nationalityOptions = countryResponse.map((item) => ({
             value: item.name,
             label: item.name,
             id: item.id,
@@ -417,7 +446,7 @@ const MyProfile = () => {
       try {
         const countryResponse = await networkService.get("/country");
         if (countryResponse) {
-          const countryOptions = countryResponse.map(item => ({
+          const countryOptions = countryResponse.map((item) => ({
             value: item.name,
             label: item.name,
             id: item.id,
@@ -472,7 +501,7 @@ const MyProfile = () => {
       colClass: "col-lg-12 col-md-12",
       required: false,
       style: { ...inputStyle, height: "120px" },
-    },  
+    },
     {
       type: "text",
       name: "email",
@@ -632,7 +661,7 @@ const MyProfile = () => {
                 alt="Profile Picture Preview"
                 style={previewImageStyle}
                 onClick={handlePreviewClick("profileImage", formData.profileImageUrl)}
-                onError={() => console.error('Error loading profile image')}
+                onError={() => console.error("Error loading profile image")}
               />
               <button
                 onClick={handleRemoveFile("profileImage")}
@@ -657,6 +686,7 @@ const MyProfile = () => {
             accept="image/*"
             onChange={handleFileChange("profileImage")}
             style={{ display: "none" }}
+            disabled={loading}
           />
         </div>
       ),
@@ -674,7 +704,7 @@ const MyProfile = () => {
         <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
           {imagePreviews.passportCopy ? (
             <>
-              {formData.passportCopyUrl.endsWith('.pdf') ? (
+              {formData.passportCopyUrl.endsWith(".pdf") ? (
                 <button
                   onClick={handlePreviewClick("passportCopy", formData.passportCopyUrl)}
                   style={previewButtonStyle}
@@ -687,7 +717,7 @@ const MyProfile = () => {
                   alt="Passport Copy Preview"
                   style={previewImageStyle}
                   onClick={handlePreviewClick("passportCopy", formData.passportCopyUrl)}
-                  onError={() => console.error('Error loading passport image')}
+                  onError={() => console.error("Error loading passport image")}
                 />
               )}
               <button
@@ -713,6 +743,7 @@ const MyProfile = () => {
             accept=".pdf,.jpg,.png"
             onChange={handleFileChange("passportCopy")}
             style={{ display: "none" }}
+            disabled={loading}
           />
         </div>
       ),
@@ -730,7 +761,7 @@ const MyProfile = () => {
         <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
           {imagePreviews.visaCopy ? (
             <>
-              {formData.visaCopyUrl.endsWith('.pdf') ? (
+              {formData.visaCopyUrl.endsWith(".pdf") ? (
                 <button
                   onClick={handlePreviewClick("visaCopy", formData.visaCopyUrl)}
                   style={previewButtonStyle}
@@ -743,7 +774,7 @@ const MyProfile = () => {
                   alt="Visa Copy Preview"
                   style={previewImageStyle}
                   onClick={handlePreviewClick("visaCopy", formData.visaCopyUrl)}
-                  onError={() => console.error('Error loading visa image')}
+                  onError={() => console.error("Error loading visa image")}
                 />
               )}
               <button
@@ -769,6 +800,7 @@ const MyProfile = () => {
             accept=".pdf,.jpg,.png"
             onChange={handleFileChange("visaCopy")}
             style={{ display: "none" }}
+            disabled={loading}
           />
         </div>
       ),
@@ -786,7 +818,7 @@ const MyProfile = () => {
         <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
           {imagePreviews.cprCopy ? (
             <>
-              {formData.cprCopyUrl.endsWith('.pdf') ? (
+              {formData.cprCopyUrl.endsWith(".pdf") ? (
                 <button
                   onClick={handlePreviewClick("cprCopy", formData.cprCopyUrl)}
                   style={previewButtonStyle}
@@ -799,7 +831,7 @@ const MyProfile = () => {
                   alt="CPR Copy Preview"
                   style={previewImageStyle}
                   onClick={handlePreviewClick("cprCopy", formData.cprCopyUrl)}
-                  onError={() => console.error('Error loading CPR image')}
+                  onError={() => console.error("Error loading CPR image")}
                 />
               )}
               <button
@@ -825,6 +857,7 @@ const MyProfile = () => {
             accept=".pdf,.jpg,.png"
             onChange={handleFileChange("cprCopy")}
             style={{ display: "none" }}
+            disabled={loading}
           />
         </div>
       ),
@@ -834,20 +867,19 @@ const MyProfile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      setLoading(true); // Set loading during submission
+      console.log("Submitting form, loading: true");
+      setLoading(true);
       const user = JSON.parse(localStorage.getItem("user"));
       const employeeId = user?.id;
       if (!employeeId) {
         throw new Error("User ID not found in localStorage");
       }
 
-      // Map form values to API expected IDs
       const getIdFromValue = (options, value) => {
-        const option = options.find(opt => opt.value === value || opt.label === value);
+        const option = options.find((opt) => opt.value === value || opt.label === value);
         return option ? option.id : null;
       };
 
-      // Prepare data for API
       const data = {
         employee_id: employeeId,
         first_name: formData.firstName,
@@ -868,7 +900,6 @@ const MyProfile = () => {
         work_available_id: getIdFromValue(workAvailableOptions, formData.work_available),
         available_for_work_after_days: parseInt(formData.no_of_days_available) || null,
         current_location_id: getIdFromValue(countryOptions, formData.current_location),
-        // Add media IDs (use existing ones if no new files uploaded)
         profile_media_id: formData.profileImageId,
         passport_media_id: formData.passportCopyId,
         visa_media_id: formData.visaCopyId,
@@ -877,12 +908,10 @@ const MyProfile = () => {
 
       console.log("Profile data to submit:", data);
 
-      // Call the profile update API endpoint
       const response = await networkService.post("/employee/profile-edit", data);
       if (response) {
         await notificationService.showToast("Profile updated successfully!", "success");
       }
-
     } catch (error) {
       console.error("Form submission error:", error);
       await notificationService.showToast(
@@ -890,12 +919,38 @@ const MyProfile = () => {
         "error"
       );
     } finally {
-      setLoading(false); // Reset loading after submission
+      setTimeout(() => {
+        setLoading(false);
+        console.log("Submission complete, loading: false");
+      }, 500);
     }
   };
 
+  console.log("Rendering MyProfile, loading:", loading);
+
   return (
-    <>
+    <div className="relative min-h-screen">
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+      {loading && (
+        <div
+          className="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-70 flex items-center justify-center z-[1000]"
+          style={loaderStyles.overlay}
+        >
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-t-4 border-t-[#8C956B] border-gray-300 rounded-full animate-spin" style={loaderStyles.spinner}></div>
+            <p className="text-white text-xl font-semibold" style={loaderStyles.text}>
+              Saving...
+            </p>
+          </div>
+        </div>
+      )}
       <ProfileCardForm
         fields={fields}
         formData={formData}
@@ -903,12 +958,12 @@ const MyProfile = () => {
         handleSelectChange={handleSelectChange}
         handleFileChange={handleFileChange}
         onSubmit={handleSubmit}
-        loading={loading} // Pass loading state
+        loading={loading}
       />
       <Modal isOpen={isModalOpen} onClose={closeModal} isWide={modalContent?.type === "iframe"}>
         {modalContent}
       </Modal>
-    </>
+    </div>
   );
 };
 
