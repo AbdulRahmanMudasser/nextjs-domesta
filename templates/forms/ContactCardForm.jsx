@@ -1,15 +1,14 @@
+
 import React from "react";
 import PropTypes from "prop-types";
 import InputField from "@/templates/inputs/input-field";
 import SelectField from "@/templates/inputs/select-field";
-import ImageField from "@/templates/inputs/image-field";
 
-const ProfileCardForm = ({
+const ContactCardForm = ({
   fields,
   formData,
   handleChange = () => {},
   handleSelectChange = () => () => {},
-  handleFileChange = () => () => {},
   onSubmit = (e) => e.preventDefault(),
   loading = false,
 }) => {
@@ -58,47 +57,16 @@ const ProfileCardForm = ({
             handleChange={handleChange}
           />
         );
-      case "textarea":
-        return (
-          <textarea
-            name={field.name}
-            placeholder={field.placeholder}
-            value={formData[field.name] || ""}
-            onChange={(e) => handleChange(field.name, e.target.value)}
-            required={field.required}
-            readOnly={field.readOnly || loading}
-            style={{ ...field.style, ...commonInputStyle }}
-          />
-        );
       case "select":
         return (
           <SelectField
-            field={{ ...field, style: { ...field.style, ...commonInputStyle }, isMulti: field.isMulti || false, disabled: loading }}
+            field={{ ...field, style: { ...field.style, ...commonInputStyle }, disabled: loading }}
             value={formData[field.name]}
             handleSelectChange={(name) => (option) => {
               handleSelectChange(name)(option);
             }}
           />
         );
-      case "file":
-        return (
-          <div>
-            <ImageField
-              field={{ ...field, style: { ...field.style, ...commonInputStyle }, disabled: loading }}
-              value={formData[field.name]}
-              handleFileChange={(name, event) => {
-                handleFileChange(name)(event);
-              }}
-            />
-            {field.previewComponent && (
-              <div style={{ marginTop: "10px", opacity: loading ? 0.6 : 1 }}>
-                {field.previewComponent}
-              </div>
-            )}
-          </div>
-        );
-      case "custom":
-        return field.render ? field.render() : null;
       default:
         return null;
     }
@@ -115,11 +83,7 @@ const ProfileCardForm = ({
           <div
             key={index}
             className={`form-group ${field.colClass}`}
-            style={
-              field.type === "file"
-                ? { position: "relative", minHeight: "60px", ...inputContainerStyle }
-                : inputContainerStyle
-            }
+            style={inputContainerStyle}
           >
             <label style={{ ...labelStyle, opacity: loading ? 0.6 : 1 }}>
               {field.label} {field.required && <span style={{ color: "red" }}>*</span>}
@@ -147,7 +111,7 @@ const ProfileCardForm = ({
   );
 };
 
-ProfileCardForm.propTypes = {
+ContactCardForm.propTypes = {
   fields: PropTypes.arrayOf(
     PropTypes.shape({
       name: PropTypes.string.isRequired,
@@ -155,24 +119,18 @@ ProfileCardForm.propTypes = {
       type: PropTypes.string.isRequired,
       placeholder: PropTypes.string,
       required: PropTypes.bool,
-      readOnly: PropTypes.bool,
       colClass: PropTypes.string,
       options: PropTypes.array,
-      accept: PropTypes.string,
       style: PropTypes.object,
-      render: PropTypes.func,
-      isMulti: PropTypes.bool,
-      preview: PropTypes.string,
-      previewComponent: PropTypes.node,
       disabled: PropTypes.bool,
+      component: PropTypes.elementType,
     })
   ).isRequired,
   formData: PropTypes.object.isRequired,
   handleChange: PropTypes.func,
   handleSelectChange: PropTypes.func,
-  handleFileChange: PropTypes.func,
   onSubmit: PropTypes.func,
   loading: PropTypes.bool,
 };
 
-export default ProfileCardForm;
+export default ContactCardForm;

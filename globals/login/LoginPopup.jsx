@@ -26,6 +26,11 @@ const LoginPopup = () => {
     type_id: 1,
   });
 
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleRegisterSubmit = async (formData) => {
     try {
       const res = await userService.registerUser(formData);
@@ -62,6 +67,11 @@ const LoginPopup = () => {
   const handleFormSubmit = async (formData) => {
     if (!formData?.email || !formData?.password) {
       await notificationService.showToast('Please provide email and password', 'error');
+      return;
+    }
+
+    if (!validateEmail(formData.email)) {
+      await notificationService.showToast('Please enter a valid email address', 'error');
       return;
     }
 
@@ -133,6 +143,11 @@ const LoginPopup = () => {
 
     if (!forgotPasswordData.email) {
       await notificationService.showToast('Please provide email', 'error');
+      return;
+    }
+
+    if (!validateEmail(forgotPasswordData.email)) {
+      await notificationService.showToast('Please enter a valid email address', 'error');
       return;
     }
 
