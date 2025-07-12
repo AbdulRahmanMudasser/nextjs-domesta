@@ -1,50 +1,62 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { userService } from "@/services/user.service";
-import { notificationService } from "@/services/notification.service";
-import Link from "next/link";
+import { useState, useEffect } from 'react';
+import { userService } from '@/services/user.service';
+import { notificationService } from '@/services/notification.service';
+import Link from 'next/link';
 
 // Fallback roles without "User"
 const fallbackRoles = [
-  { id: 1, name: "Admin", slug: "super-admin" },
-  { id: 2, name: "Employer", slug: "admin" },
-  { id: 3, name: "Agency", slug: "hr" },
-  { id: 4, name: "Employee", slug: "employee" },
+  { id: 1, name: 'Admin', slug: 'super-admin' },
+  { id: 2, name: 'Employer', slug: 'admin' },
+  { id: 3, name: 'Agency', slug: 'hr' },
+  { id: 4, name: 'Employee', slug: 'employee' },
 ];
 
 const FormContent = ({ onSubmit, loading = false }) => {
   const [formData, setFormData] = useState({
-    role_id: "",
-    first_name: "",
-    middle_name: "",
-    last_name: "",
-    email: "",
-    password: "",
-    password_confirmation: "",
+    role_id: '',
+    first_name: '',
+    middle_name: '',
+    last_name: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
   });
-
   const [roles, setRoles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password) => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return passwordRegex.test(password);
+  };
 
   const fetchRoles = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log("Fetching roles from /user/role/list-with-filters");
+      console.log('Fetching roles from /user/role/list-with-filters');
       const fetchedRoles = await userService.getRolesWithFilters();
-      console.log("Fetched roles in FormContent:", fetchedRoles);
+      console.log('Fetched roles in FormContent:', fetchedRoles);
       if (fetchedRoles && Array.isArray(fetchedRoles)) {
         setRoles(fetchedRoles);
       } else {
         setRoles(fallbackRoles);
-        setError("Failed to load roles from server. Using default roles.");
+        setError('Failed to load roles from server. Using default roles.');
       }
     } catch (error) {
-      console.error("Error fetching roles in FormContent:", error);
+      console.error('Error fetching roles in FormContent:', error);
       setRoles(fallbackRoles);
-      setError("Failed to fetch roles. Using default roles.");
+      setError('Failed to fetch roles. Using default roles.');
     } finally {
       setIsLoading(false);
     }
@@ -56,30 +68,58 @@ const FormContent = ({ onSubmit, loading = false }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const newValue = name === "role_id" ? (value ? parseInt(value, 10) : "") : value;
+    const newValue = name === 'role_id' ? (value ? parseInt(value, 10) : '') : value;
     setFormData((prev) => ({ ...prev, [name]: newValue }));
+
+    // Clear errors when user types
+    if (name === 'email') setEmailError('');
+    if (name === 'password') setPasswordError('');
+    if (name === 'password_confirmation') setConfirmPasswordError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setEmailError('');
+    setPasswordError('');
+    setConfirmPasswordError('');
 
-    if (formData.role_id === "") {
-      await notificationService.showToast("Please select a role.", "error");
-      return;
+    let isValid = true;
+
+    if (formData.role_id === '') {
+      await notificationService.showToast('Please select a role.', 'error');
+      isValid = false;
     }
 
-    if (!formData.email.includes("@")) {
-      await notificationService.showToast("Invalid email address.", "error");
-      return;
+    if (!formData.email) {
+      setEmailError('Email is required');
+      isValid = false;
+    } else if (!validateEmail(formData.email)) {
+      setEmailError('Please enter a valid email address');
+      isValid = false;
     }
 
-    if (formData.password !== formData.password_confirmation) {
-      await notificationService.showToast("Passwords do not match.", "error");
-      return;
+    if (!formData.password) {
+      setPasswordError('Password is required');
+      isValid = false;
+    } else if (!validatePassword(formData.password)) {
+      setPasswordError(
+        'Password must be at least 8 characters long, contain one uppercase letter, one lowercase letter, one number, and one special character'
+      );
+      isValid = false;
     }
 
-    const dataToSend = { ...formData };
-    onSubmit(dataToSend);
+    if (!formData.password_confirmation) {
+      setConfirmPasswordError('Please confirm your password');
+      isValid = false;
+    } else if (formData.password !== formData.password_confirmation) {
+      setConfirmPasswordError('Passwords do not match');
+      isValid = false;
+    }
+
+    if (isValid) {
+      const dataToSend = { ...formData };
+      onSubmit(dataToSend);
+    }
   };
 
   return (
@@ -87,13 +127,13 @@ const FormContent = ({ onSubmit, loading = false }) => {
       onSubmit={handleSubmit}
       className="needs-validation"
       noValidate
-      style={{ maxWidth: "1000px", margin: "0 auto" }}
+      style={{ maxWidth: '1000px', margin: '0 auto' }}
     >
       {/* Row 1: Role Dropdown */}
       <div className="form-group mb-3">
         <label htmlFor="role_id" className="form-label">Role</label>
         {isLoading ? (
-          <div className="d-flex align-items-center p-2" style={{ backgroundColor: "", borderRadius: "4px" }}>
+          <div className="d-flex align-items-center p-2" style={{ backgroundColor: '', borderRadius: '4px' }}>
             <div className="spinner-border spinner-border-sm text-primary me-2" role="status">
               <span className="visually-hidden">Loading...</span>
             </div>
@@ -122,7 +162,7 @@ const FormContent = ({ onSubmit, loading = false }) => {
           onChange={handleChange}
           className="form-control"
           disabled={isLoading}
-          style={{ backgroundColor: "#f0f5f7" }}
+          style={{ backgroundColor: '#f0f5f7' }}
         >
           <option value="">Select Role</option>
           {roles.map((role) => (
@@ -148,7 +188,7 @@ const FormContent = ({ onSubmit, loading = false }) => {
             value={formData.first_name}
             onChange={handleChange}
             className="form-control"
-            style={{ backgroundColor: "#f0f5f7" }}
+            style={{ backgroundColor: '#f0f5f7' }}
           />
           <div className="invalid-feedback">
             Please enter your first name.
@@ -163,7 +203,7 @@ const FormContent = ({ onSubmit, loading = false }) => {
             value={formData.middle_name}
             onChange={handleChange}
             className="form-control"
-            style={{ backgroundColor: "#f0f5f7" }}
+            style={{ backgroundColor: '#f0f5f7' }}
           />
         </div>
       </div>
@@ -180,7 +220,7 @@ const FormContent = ({ onSubmit, loading = false }) => {
             value={formData.last_name}
             onChange={handleChange}
             className="form-control"
-            style={{ backgroundColor: "#f0f5f7" }}
+            style={{ backgroundColor: '#f0f5f7' }}
           />
           <div className="invalid-feedback">
             Please enter your last name.
@@ -195,16 +235,14 @@ const FormContent = ({ onSubmit, loading = false }) => {
             required
             value={formData.email}
             onChange={handleChange}
-            className="form-control"
-            style={{ backgroundColor: "#f0f5f7" }}
+            className={`form-control ${emailError ? 'is-invalid' : ''}`}
+            style={{ backgroundColor: '#f0f5f7' }}
           />
-          <div className="invalid-feedback">
-            Please enter a valid email address.
-          </div>
+          {emailError && <div className="invalid-feedback">{emailError}</div>}
         </div>
       </div>
 
-      {/* Row 4: Password and Confirm Password with Forgot Password */}
+      {/* Row 4: Password and Confirm Password */}
       <div className="row mb-3">
         <div className="col-md-6 form-group">
           <label htmlFor="password" className="form-label">Password</label>
@@ -215,12 +253,10 @@ const FormContent = ({ onSubmit, loading = false }) => {
             required
             value={formData.password}
             onChange={handleChange}
-            className="form-control"
-            style={{ backgroundColor: "#f0f5f7" }}
+            className={`form-control ${passwordError ? 'is-invalid' : ''}`}
+            style={{ backgroundColor: '#f0f5f7' }}
           />
-          <div className="invalid-feedback">
-            Please enter a password.
-          </div>
+          {passwordError && <div className="invalid-feedback">{passwordError}</div>}
         </div>
         <div className="col-md-6 form-group">
           <label htmlFor="password_confirmation" className="form-label">Confirm Password</label>
@@ -231,9 +267,10 @@ const FormContent = ({ onSubmit, loading = false }) => {
             required
             value={formData.password_confirmation}
             onChange={handleChange}
-            className="form-control"
-            style={{ backgroundColor: "#f0f5f7" }}
+            className={`form-control ${confirmPasswordError ? 'is-invalid' : ''}`}
+            style={{ backgroundColor: '#f0f5f7' }}
           />
+          {confirmPasswordError && <div className="invalid-feedback">{confirmPasswordError}</div>}
         </div>
       </div>
 
@@ -243,7 +280,7 @@ const FormContent = ({ onSubmit, loading = false }) => {
           type="submit"
           disabled={loading}
         >
-          {loading ? "Registering..." : "Register"}
+          {loading ? 'Registering...' : 'Register'}
         </button>
       </div>
     </form>
