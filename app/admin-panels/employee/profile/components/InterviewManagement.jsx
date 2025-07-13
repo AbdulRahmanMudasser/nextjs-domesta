@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import CardForm from "@/templates/forms/card-form";
 import Select from "react-select";
 import { networkService } from "@/services/network.service";
-import { utilityService } from "@/services/utility.service";
+import { notificationService } from "@/services/notification.service";
+import Loader from "@/globals/Loader";
 
 const buttonStyle = {
   padding: "0.75rem 1.5rem",
@@ -26,22 +27,59 @@ const InterviewManagement = () => {
     flexibleWeekends: "",
     householdType: "",
     communicationLanguage: "",
+    country: "",
   });
   const [householdTypeOptions, setHouseholdTypeOptions] = useState([]);
   const [languageOptions, setLanguageOptions] = useState([]);
   const [liveInOptions, setLiveInOptions] = useState([]);
+  const [countryOptions, setCountryOptions] = useState([]);
+  const [formErrors, setFormErrors] = useState({});
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleSelectChange = (field) => (selectedOption) => {
     setFormData({ ...formData, [field]: selectedOption ? selectedOption.value : "" });
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    let isValid = true;
+
+    // Create a mapping of field names to their display labels
+    const fieldLabels = fields.reduce((acc, field) => ({
+      ...acc,
+      [field.name]: field.label,
+    }), {});
+
+    // Validate required fields
+    const requiredFields = fields.filter((f) => f.required).map((f) => f.name);
+    requiredFields.forEach((field) => {
+      if (!formData[field] || formData[field] === "") {
+        errors[field] = `${fieldLabels[field]} is required`;
+        isValid = false;
+      }
+    });
+
+    // Specific validations
+    if (formData.maxHoursPerDay && (isNaN(formData.maxHoursPerDay) || formData.maxHoursPerDay < 1 || formData.maxHoursPerDay > 24)) {
+      errors.maxHoursPerDay = `${fieldLabels.maxHoursPerDay} must be a number between 1 and 24`;
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    return isValid;
   };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setIsInitialLoading(true);
         const user = JSON.parse(localStorage.getItem("user"));
         const employeeId = user?.id;
         if (!employeeId) {
@@ -66,7 +104,7 @@ const InterviewManagement = () => {
               };
               return mappings[value] || value;
             }
-            // Title case for other dropdowns (householdType, communicationLanguage)
+            // Title case for other dropdowns (householdType, communicationLanguage, country)
             return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
           };
 
@@ -77,8 +115,8 @@ const InterviewManagement = () => {
             relocationInsideCountry: interviewResponse.comfortable_with_relocation === null ? "" : interviewResponse.comfortable_with_relocation ? "Yes" : "No",
             maxHoursPerDay: interviewResponse.maximum_hours_per_day || "",
             flexibleWeekends: interviewResponse.flexible_with_weekends === null ? "" : interviewResponse.flexible_with_weekends ? "Yes" : "No",
-            // householdType: normalizeValue(interviewResponse.house_hold_type?.value, "prefered_household_tpye") || "",
             communicationLanguage: normalizeValue(interviewResponse.language?.value, "language") || "",
+            country: normalizeValue(interviewResponse.country?.name, "country") || "",
           });
         }
 
@@ -123,13 +161,34 @@ const InterviewManagement = () => {
         } else {
           throw new Error("No willing to live-in options returned");
         }
+
+        // Fetch country options
+        console.log("Fetching country options...");
+        const countryResponse = await networkService.get("/country");
+        console.log("Country API response:", countryResponse);
+        if (Array.isArray(countryResponse) && countryResponse.length > 0) {
+          const options = countryResponse.map((item) => ({
+            value: item.name || "",
+            label: item.name || "",
+            id: item.id || null,
+          }));
+          console.log("Setting countryOptions:", options);
+          setCountryOptions(options);
+        } else {
+          console.error("Country API response is invalid or empty:", countryResponse);
+          throw new Error("No country options returned");
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
-        await utilityService.showAlert(
-          "Error",
+        await notificationService.showToast(
           error.message || "Failed to load interview data.",
           "error"
         );
+      } finally {
+        setTimeout(() => {
+          setIsInitialLoading(false);
+          console.log("Initial loading complete, countryOptions:", countryOptions);
+        }, 500);
       }
     };
 
@@ -167,6 +226,8 @@ const InterviewManagement = () => {
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select Preference",
       required: true,
+      component: Select,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "select",
@@ -176,6 +237,8 @@ const InterviewManagement = () => {
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select Language",
       required: true,
+      component: Select,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "select",
@@ -185,6 +248,8 @@ const InterviewManagement = () => {
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select Option",
       required: true,
+      component: Select,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "select",
@@ -194,6 +259,8 @@ const InterviewManagement = () => {
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select Option",
       required: true,
+      component: Select,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "select",
@@ -203,12 +270,34 @@ const InterviewManagement = () => {
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select Option",
       required: true,
+      component: Select,
+      disabled: isInitialLoading || isSubmitting,
+    },
+    {
+      type: "select",
+      name: "country",
+      label: "Country",
+      options: countryOptions,
+      colClass: "col-lg-3 col-md-12",
+      placeholder: "Select Country",
+      required: true,
+      component: Select,
+      disabled: isInitialLoading || isSubmitting,
     },
   ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormErrors({});
+
+    if (!validateForm()) {
+      const firstError = Object.values(formErrors)[0] || "Please fill in all required fields";
+      await notificationService.showToast(firstError, "error");
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
       const user = JSON.parse(localStorage.getItem("user"));
       const employeeId = user?.id;
       if (!employeeId) {
@@ -230,30 +319,54 @@ const InterviewManagement = () => {
         willing_to_live_in_with_family_id: getIdFromValue(liveInOptions, formData.liveInWithFamily),
         comfortable_with_relocation: formData.relocationInsideCountry === "Yes",
         flexible_with_weekends: formData.flexibleWeekends === "Yes",
+        country_id: getIdFromValue(countryOptions, formData.country),
       };
 
       const response = await networkService.post("/employee/interview-edit", data);
       if (response) {
-        await utilityService.showAlert("Success", "Interview preferences updated successfully!", "success");
+        await notificationService.showToast("Interview preferences updated successfully!", "success");
       }
     } catch (error) {
       console.error("Form submission error:", error);
-      await utilityService.showAlert(
-        "Error",
+      await notificationService.showToast(
         error.message || "Failed to update interview preferences. Please try again.",
         "error"
       );
+    } finally {
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 500);
     }
   };
 
   return (
-    <CardForm
-      fields={fields}
-      formData={formData}
-      handleChange={handleChange}
-      handleSelectChange={handleSelectChange}
-      onSubmit={handleSubmit}
-    />
+    <div className="relative min-h-screen">
+      <style>
+        {`
+          .is-invalid {
+            border: 1px solid #dc3545 !important;
+          }
+          .invalid-feedback {
+            display: block;
+            color: #dc3545;
+            fontSize: 0.875rem;
+            marginTop: 0.25rem;
+          }
+        `}
+      </style>
+      {(isInitialLoading || isSubmitting) && (
+        <Loader text={isInitialLoading ? "Loading..." : "Saving..."} />
+      )}
+      <CardForm
+        fields={fields}
+        formData={formData}
+        handleChange={handleChange}
+        handleSelectChange={handleSelectChange}
+        onSubmit={handleSubmit}
+        loading={isInitialLoading || isSubmitting}
+        formErrors={formErrors}
+      />
+    </div>
   );
 };
 
