@@ -565,7 +565,7 @@ const MyProfile = () => {
       label: "About Me",
       placeholder: "Tell us about yourself",
       colClass: "col-lg-12 col-md-12",
-      required: false,
+      required: true,
       style: { ...inputStyle, height: "120px" },
     },
     {
