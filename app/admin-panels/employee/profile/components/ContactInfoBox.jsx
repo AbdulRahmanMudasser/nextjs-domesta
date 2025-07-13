@@ -61,6 +61,7 @@ const ContactInfoBox = () => {
     city: "",
     country: "",
   });
+  const [formErrors, setFormErrors] = useState({});
   const [dialCodeOptions, setDialCodeOptions] = useState([]);
   const [languageOptions, setLanguageOptions] = useState([]);
   const [countryOptions, setCountryOptions] = useState([]);
@@ -68,10 +69,46 @@ const ContactInfoBox = () => {
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleSelectChange = (field) => (selectedOption) => {
     setFormData({ ...formData, [field]: selectedOption ? selectedOption.value : "" });
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    let isValid = true;
+
+    // Create a mapping of field names to their display labels
+    const fieldLabels = fields.reduce((acc, field) => ({
+      ...acc,
+      [field.name]: field.label,
+    }), {});
+
+    // Validate required fields
+    const requiredFields = fields.filter((f) => f.required).map((f) => f.name);
+    requiredFields.forEach((field) => {
+      if (!formData[field] || formData[field] === "") {
+        errors[field] = `${fieldLabels[field]} is required`;
+        isValid = false;
+      }
+    });
+
+    // Phone number validation
+    if (formData.phoneNumber && !/^\d{7,15}$/.test(formData.phoneNumber)) {
+      errors.phoneNumber = `${fieldLabels.phoneNumber} must be 7-15 digits`;
+      isValid = false;
+    }
+
+    if (formData.whatsapp_number && !/^\d{7,15}$/.test(formData.whatsapp_number)) {
+      errors.whatsapp_number = `${fieldLabels.whatsapp_number} must be 7-15 digits`;
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    return isValid;
   };
 
   useEffect(() => {
@@ -186,7 +223,7 @@ const ContactInfoBox = () => {
     {
       type: "select",
       name: "preferred_language",
-      label: "Preferred Communication Language",
+      label: "Preferred Language",
       options: languageOptions,
       colClass: "col-lg-3 col-md-12",
       placeholder: "Select Language",
@@ -206,7 +243,7 @@ const ContactInfoBox = () => {
     {
       type: "text",
       name: "house_flat_apartment_villa",
-      label: "House/Flat/Apartment/Villa",
+      label: "Residence Type",
       placeholder: "E.g., Villa",
       colClass: "col-lg-3 col-md-12",
       required: true,
@@ -215,7 +252,7 @@ const ContactInfoBox = () => {
     {
       type: "text",
       name: "building_no",
-      label: "Building No",
+      label: "Building Number",
       placeholder: "E.g., 123",
       colClass: "col-lg-3 col-md-12",
       required: true,
@@ -228,7 +265,7 @@ const ContactInfoBox = () => {
     {
       type: "text",
       name: "road_no_1",
-      label: "Road No 1",
+      label: "Road Number 1",
       placeholder: "E.g., 456",
       colClass: "col-lg-3 col-md-12",
       required: true,
@@ -241,7 +278,7 @@ const ContactInfoBox = () => {
     {
       type: "text",
       name: "road_no_2",
-      label: "Road No 2",
+      label: "Road Number 2",
       placeholder: "E.g., 789",
       colClass: "col-lg-3 col-md-12",
       required: true,
@@ -275,6 +312,14 @@ const ContactInfoBox = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormErrors({});
+
+    if (!validateForm()) {
+      const firstError = Object.values(formErrors)[0] || "Please fill in all required fields";
+      await notificationService.showToast(firstError, "error");
+      return;
+    }
+
     try {
       console.log("Submitting form, loading: true");
       setLoading(true);
@@ -332,6 +377,15 @@ const ContactInfoBox = () => {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
           }
+          .is-invalid {
+            border: 1px solid #dc3545 !important;
+          }
+          .invalid-feedback {
+            display: block;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+          }
         `}
       </style>
       {loading && (
@@ -357,6 +411,7 @@ const ContactInfoBox = () => {
         handleSelectChange={handleSelectChange}
         onSubmit={handleSubmit}
         loading={loading}
+        formErrors={formErrors}
       />
     </div>
   );

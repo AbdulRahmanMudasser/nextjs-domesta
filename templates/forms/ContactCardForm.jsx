@@ -1,4 +1,3 @@
-
 import React from "react";
 import PropTypes from "prop-types";
 import InputField from "@/templates/inputs/input-field";
@@ -11,6 +10,7 @@ const ContactCardForm = ({
   handleSelectChange = () => () => {},
   onSubmit = (e) => e.preventDefault(),
   loading = false,
+  formErrors = {},
 }) => {
   const buttonStyle = {
     backgroundColor: "#8C956B",
@@ -51,21 +51,45 @@ const ContactCardForm = ({
       case "email":
       case "tel":
         return (
-          <InputField
-            field={{ ...field, style: { ...field.style, ...commonInputStyle }, disabled: loading }}
-            value={formData[field.name] || ""}
-            handleChange={handleChange}
-          />
+          <div>
+            <InputField
+              field={{
+                ...field,
+                style: { ...field.style, ...commonInputStyle },
+                disabled: loading,
+                className: formErrors[field.name] ? "is-invalid" : "",
+              }}
+              value={formData[field.name] || ""}
+              handleChange={handleChange}
+            />
+            {formErrors[field.name] && (
+              <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
+                {formErrors[field.name]}
+              </div>
+            )}
+          </div>
         );
       case "select":
         return (
-          <SelectField
-            field={{ ...field, style: { ...field.style, ...commonInputStyle }, disabled: loading }}
-            value={formData[field.name]}
-            handleSelectChange={(name) => (option) => {
-              handleSelectChange(name)(option);
-            }}
-          />
+          <div>
+            <SelectField
+              field={{
+                ...field,
+                style: { ...field.style, ...commonInputStyle },
+                disabled: loading,
+                className: formErrors[field.name] ? "is-invalid" : "",
+              }}
+              value={formData[field.name]}
+              handleSelectChange={(name) => (option) => {
+                handleSelectChange(name)(option);
+              }}
+            />
+            {formErrors[field.name] && (
+              <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
+                {formErrors[field.name]}
+              </div>
+            )}
+          </div>
         );
       default:
         return null;
@@ -74,9 +98,10 @@ const ContactCardForm = ({
 
   return (
     <form
-      className="default-form card p-4"
+      className="default-form card p-4 needs-validation"
       onSubmit={onSubmit}
       style={{ padding: "1rem", opacity: loading ? 0.6 : 1 }}
+      noValidate
     >
       <div className="row">
         {fields.map((field, index) => (
@@ -124,6 +149,7 @@ ContactCardForm.propTypes = {
       style: PropTypes.object,
       disabled: PropTypes.bool,
       component: PropTypes.elementType,
+      className: PropTypes.string,
     })
   ).isRequired,
   formData: PropTypes.object.isRequired,
@@ -131,6 +157,7 @@ ContactCardForm.propTypes = {
   handleSelectChange: PropTypes.func,
   onSubmit: PropTypes.func,
   loading: PropTypes.bool,
+  formErrors: PropTypes.object,
 };
 
 export default ContactCardForm;
