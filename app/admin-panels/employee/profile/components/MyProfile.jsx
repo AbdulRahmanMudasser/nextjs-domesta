@@ -6,35 +6,7 @@ import { networkService } from "@/services/network.service";
 import { notificationService } from "@/services/notification.service";
 import Modal from "./Modal";
 import Select from "react-select";
-
-// Fallback CSS for loader in case Tailwind fails
-const loaderStyles = {
-  overlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-  },
-  spinner: {
-    width: "50px",
-    height: "50px",
-    border: "5px solid #ccc",
-    borderTop: "5px solid #8C956B",
-    borderRadius: "50%",
-    animation: "spin 1s linear infinite",
-  },
-  text: {
-    color: "#fff",
-    fontSize: "18px",
-    marginTop: "10px",
-  },
-};
+import Loader from "@/globals/Loader";
 
 // Define inputStyle for file inputs and textarea
 const inputStyle = {
@@ -289,6 +261,7 @@ const MyProfile = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const user = JSON.parse(localStorage.getItem("user"));
         const employeeId = user?.id;
         if (!employeeId) {
@@ -407,6 +380,10 @@ const MyProfile = () => {
       } catch (error) {
         console.error("Error fetching profile data:", error);
         await notificationService.showToast(error.message || "Failed to load profile data.", "error");
+      } finally {
+        setTimeout(() => {
+          setLoading(false);
+        }, 500);
       }
     };
 
@@ -752,7 +729,7 @@ const MyProfile = () => {
             name="profileImage"
             accept="image/*"
             onChange={handleFileChange("profileImage")}
-            style={ { display: "none" } }
+            style={{ display: "none" }}
             disabled={loading}
           />
           {formErrors.profileImage && (
@@ -1030,10 +1007,6 @@ const MyProfile = () => {
     <div className="relative min-h-screen">
       <style>
         {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
           .is-invalid {
             border: 1px solid #dc3545 !important;
           }
@@ -1046,17 +1019,16 @@ const MyProfile = () => {
         `}
       </style>
       {loading && (
-        <div
-          className="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-70 flex items-center justify-center z-[1000]"
-          style={loaderStyles.overlay}
-        >
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-t-4 border-t-[#8C956B] border-gray-300 rounded-full animate-spin" style={loaderStyles.spinner}></div>
-            <p className="text-white text-xl font-semibold" style={loaderStyles.text}>
-              Saving...
-            </p>
-          </div>
-        </div>
+        <Loader
+          text={
+            formData.firstName ||
+            formData.lastName ||
+            formData.email ||
+            formData.address
+              ? "Saving..."
+              : "Loading..."
+          }
+        />
       )}
       <ProfileCardForm
         fields={fields}
