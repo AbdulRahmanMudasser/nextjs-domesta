@@ -103,7 +103,8 @@ const MyProfile = () => {
   });
   const [modalContent, setModalContent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -124,8 +125,8 @@ const MyProfile = () => {
       setFormData({ ...formData, [field]: file });
       setFormErrors((prev) => ({ ...prev, [field]: "" }));
       try {
-        console.log(`Starting upload for ${field}, loading: true`);
-        setLoading(true);
+        console.log(`Starting upload for ${field}, isSubmitting: true`);
+        setIsSubmitting(true);
         const response = await networkService.uploadMedia(file);
         if (response && response[0]?.base_url && response[0]?.thumb_size) {
           const previewUrl = `${response[0].base_url}${response[0].thumb_size}`;
@@ -147,8 +148,8 @@ const MyProfile = () => {
         );
       } finally {
         setTimeout(() => {
-          setLoading(false);
-          console.log(`Finished upload for ${field}, loading: false`);
+          setIsSubmitting(false);
+          console.log(`Finished upload for ${field}, isSubmitting: false`);
         }, 500);
       }
     }
@@ -261,7 +262,7 @@ const MyProfile = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
+        setIsInitialLoading(true);
         const user = JSON.parse(localStorage.getItem("user"));
         const employeeId = user?.id;
         if (!employeeId) {
@@ -382,7 +383,7 @@ const MyProfile = () => {
         await notificationService.showToast(error.message || "Failed to load profile data.", "error");
       } finally {
         setTimeout(() => {
-          setLoading(false);
+          setIsInitialLoading(false);
         }, 500);
       }
     };
@@ -730,7 +731,7 @@ const MyProfile = () => {
             accept="image/*"
             onChange={handleFileChange("profileImage")}
             style={{ display: "none" }}
-            disabled={loading}
+            disabled={isSubmitting || isInitialLoading}
           />
           {formErrors.profileImage && (
             <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
@@ -793,7 +794,7 @@ const MyProfile = () => {
             accept=".pdf,.jpg,.png"
             onChange={handleFileChange("passportCopy")}
             style={{ display: "none" }}
-            disabled={loading}
+            disabled={isSubmitting || isInitialLoading}
           />
           {formErrors.passportCopy && (
             <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
@@ -856,7 +857,7 @@ const MyProfile = () => {
             accept=".pdf,.jpg,.png"
             onChange={handleFileChange("visaCopy")}
             style={{ display: "none" }}
-            disabled={loading}
+            disabled={isSubmitting || isInitialLoading}
           />
           {formErrors.visaCopy && (
             <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
@@ -919,7 +920,7 @@ const MyProfile = () => {
             accept=".pdf,.jpg,.png"
             onChange={handleFileChange("cprCopy")}
             style={{ display: "none" }}
-            disabled={loading}
+            disabled={isSubmitting || isInitialLoading}
           />
           {formErrors.cprCopy && (
             <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
@@ -942,8 +943,8 @@ const MyProfile = () => {
     }
 
     try {
-      console.log("Submitting form, loading: true");
-      setLoading(true);
+      console.log("Submitting form, isSubmitting: true");
+      setIsSubmitting(true);
       const user = JSON.parse(localStorage.getItem("user"));
       const employeeId = user?.id;
       if (!employeeId) {
@@ -995,13 +996,13 @@ const MyProfile = () => {
       );
     } finally {
       setTimeout(() => {
-        setLoading(false);
-        console.log("Submission complete, loading: false");
+        setIsSubmitting(false);
+        console.log("Submission complete, isSubmitting: false");
       }, 500);
     }
   };
 
-  console.log("Rendering MyProfile, loading:", loading);
+  console.log("Rendering MyProfile, isInitialLoading:", isInitialLoading, "isSubmitting:", isSubmitting);
 
   return (
     <div className="relative min-h-screen">
@@ -1018,17 +1019,8 @@ const MyProfile = () => {
           }
         `}
       </style>
-      {loading && (
-        <Loader
-          text={
-            formData.firstName ||
-            formData.lastName ||
-            formData.email ||
-            formData.address
-              ? "Saving..."
-              : "Loading..."
-          }
-        />
+      {(isInitialLoading || isSubmitting) && (
+        <Loader text={isInitialLoading ? "Loading..." : "Saving..."} />
       )}
       <ProfileCardForm
         fields={fields}
@@ -1037,7 +1029,7 @@ const MyProfile = () => {
         handleSelectChange={handleSelectChange}
         handleFileChange={handleFileChange}
         onSubmit={handleSubmit}
-        loading={loading}
+        loading={isSubmitting || isInitialLoading}
         formErrors={formErrors}
       />
       <Modal isOpen={isModalOpen} onClose={closeModal} isWide={modalContent?.type === "iframe"}>
