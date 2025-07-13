@@ -1,8 +1,11 @@
-'use client';
+"use client";
 
-import { useState } from "react";
-import FancyTable from "@/templates/tables/fancy-table";
-import CardForm from "@/templates/forms/card-form";
+import { useState, useEffect } from "react";
+import WorkExperienceCardForm from "@/templates/forms/WorkExperienceCardForm";
+import { networkService } from "@/services/network.service";
+import { notificationService } from "@/services/notification.service";
+import Loader from "@/globals/Loader";
+import Select from "react-select";
 
 // Define styles at the top
 const buttonStyle = {
@@ -21,7 +24,7 @@ const inputStyle = {
   borderRadius: "0.5rem",
   backgroundColor: "#F0F5F7",
   boxSizing: "border-box",
-  height:"60px",
+  height: "60px",
 };
 const modalStyle = {
   position: "fixed",
@@ -38,7 +41,6 @@ const modalStyle = {
   maxHeight: "80vh",
   overflowY: "auto",
 };
-
 const overlayStyle = {
   position: "fixed",
   top: 0,
@@ -50,10 +52,11 @@ const overlayStyle = {
 };
 
 const JobExperienceCard = () => {
-  const [jobExperiences, setJobExperiences] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editId, setEditId] = useState(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const [countryOptions, setCountryOptions] = useState([]);
   const [newExperience, setNewExperience] = useState({
     employerName: "",
     employmentLocation: "",
@@ -71,34 +74,7 @@ const JobExperienceCard = () => {
     comfortableWithPets: "",
   });
 
-  // Define fields for FancyTable (columns for the table)
-  const fields = [
-    { name: "employerName", label: "Employer Name" },
-    { name: "employmentLocation", label: "Employment Location" },
-    { name: "employerPhone", label: "Employer Phone" },
-    { name: "employerEmail", label: "Employer Email" },
-    { name: "country", label: "Country" },
-    { name: "startDate", label: "Start Date" },
-    { name: "endDate", label: "End Date" },
-    { name: "designation", label: "Designation" },
-    { name: "previousSalary", label: "Previous Salary" },
-    { name: "benefits", label: "Benefits" },
-    { name: "rating", label: "Rating" },
-    { name: "employerReview", label: "Employer Review" },
-    { name: "petsExperience", label: "Pets Experience" },
-    { name: "comfortableWithPets", label: "Comfortable with Pets" },
-  ];
-
   // Options for dropdowns
-  const countryOptions = [
-    { value: "Bahrain", label: "Bahrain" },
-    { value: "Kuwait", label: "Kuwait" },
-    { value: "Oman", label: "Oman" },
-    { value: "Qatar", label: "Qatar" },
-    { value: "Saudi Arabia", label: "Saudi Arabia" },
-    { value: "United Arab Emirates", label: "United Arab Emirates" },
-  ];
-
   const yesNoOptions = [
     { value: "Yes", label: "Yes" },
     { value: "No", label: "No" },
@@ -112,7 +88,7 @@ const JobExperienceCard = () => {
     { value: "5", label: "★★★★★ (5 Stars)" },
   ];
 
-  // Form fields for the modal using CardForm
+  // Form fields for the modal using WorkExperienceCardForm
   const formFields = [
     {
       type: "text",
@@ -155,6 +131,8 @@ const JobExperienceCard = () => {
       placeholder: "Select country",
       colClass: "col-lg-6 col-md-12",
       required: true,
+      component: Select,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "date",
@@ -205,6 +183,7 @@ const JobExperienceCard = () => {
       placeholder: "Select rating",
       colClass: "col-lg-6 col-md-12",
       required: true,
+      component: Select,
     },
     {
       type: "textarea",
@@ -230,35 +209,154 @@ const JobExperienceCard = () => {
       placeholder: "Select option",
       colClass: "col-lg-6 col-md-12",
       required: true,
+      component: Select,
     },
   ];
 
   const handleChange = (field, value) => {
     setNewExperience({ ...newExperience, [field]: value });
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleSelectChange = (field) => (selectedOption) => {
     setNewExperience({ ...newExperience, [field]: selectedOption ? selectedOption.value : "" });
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  const saveExperience = () => {
-    if (isEditing) {
-      setJobExperiences(
-        jobExperiences.map((exp) =>
-          exp.id === editId ? { ...exp, ...newExperience } : exp
-        )
-      );
-    } else {
-      setJobExperiences([
-        ...jobExperiences,
-        {
-          id: Date.now(),
-          ...newExperience,
-        },
-      ]);
+  const validateForm = () => {
+    const errors = {};
+    let isValid = true;
+
+    // Create a mapping of field names to their display labels
+    const fieldLabels = formFields.reduce((acc, field) => ({
+      ...acc,
+      [field.name]: field.label,
+    }), {});
+
+    // Validate required fields
+    const requiredFields = formFields.filter((f) => f.required).map((f) => f.name);
+    requiredFields.forEach((field) => {
+      if (!newExperience[field] || newExperience[field] === "") {
+        errors[field] = `${fieldLabels[field]} is required`;
+        isValid = false;
+      }
+    });
+
+    // Specific validations
+    if (newExperience.employerPhone && !/^\d{7,15}$/.test(newExperience.employerPhone)) {
+      errors.employerPhone = `${fieldLabels.employerPhone} must be 7-15 digits`;
+      isValid = false;
     }
-    setIsModalOpen(false);
-    resetForm();
+
+    if (newExperience.previousSalary && (isNaN(newExperience.previousSalary) || newExperience.previousSalary < 0)) {
+      errors.previousSalary = `${fieldLabels.previousSalary} must be a non-negative number`;
+      isValid = false;
+    }
+
+    if (newExperience.startDate && !/^\d{4}-\d{2}-\d{2}$/.test(newExperience.startDate)) {
+      errors.startDate = `Please enter a valid ${fieldLabels.startDate.toLowerCase()} (YYYY-MM-DD)`;
+      isValid = false;
+    }
+
+    if (newExperience.endDate && !/^\d{4}-\d{2}-\d{2}$/.test(newExperience.endDate)) {
+      errors.endDate = `Please enter a valid ${fieldLabels.endDate.toLowerCase()} (YYYY-MM-DD)`;
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
+  useEffect(() => {
+    const fetchCountryOptions = async () => {
+      try {
+        setIsInitialLoading(true);
+        console.log("Fetching country options...");
+        const countryResponse = await networkService.get("/country");
+        console.log("Country API response:", countryResponse);
+        if (countryResponse) {
+          const countryOptions = countryResponse.map((item) => ({
+            value: item.name || "",
+            label: item.name || "",
+            id: item.id || null,
+          }));
+          console.log("Setting countryOptions:", countryOptions);
+          setCountryOptions(countryOptions);
+        } else {
+          throw new Error("No country options returned");
+        }
+      } catch (error) {
+        console.error("Error fetching country options:", error);
+        await notificationService.showToast(
+          error.message || "Failed to load country options.",
+          "error"
+        );
+      } finally {
+        setTimeout(() => {
+          setIsInitialLoading(false);
+          console.log("Initial loading complete, countryOptions:", countryOptions);
+        }, 500);
+      }
+    };
+
+    fetchCountryOptions();
+  }, []);
+
+  const saveExperience = async () => {
+    if (!validateForm()) {
+      const firstError = Object.values(formErrors)[0] || "Please fill in all required fields";
+      await notificationService.showToast(firstError, "error");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const user = JSON.parse(localStorage.getItem("user"));
+      const employeeId = user?.id;
+      if (!employeeId) {
+        throw new Error("User ID not found in localStorage");
+      }
+
+      const getIdFromValue = (options, value) => {
+        const option = options.find((opt) => opt.value === value);
+        return option ? option.id : null;
+      };
+
+      const data = {
+        employee_id: employeeId,
+        employer_name: newExperience.employerName,
+        employment_location: newExperience.employmentLocation,
+        employer_phone: newExperience.employerPhone,
+        employer_email: newExperience.employerEmail,
+        country_id: getIdFromValue(countryOptions, newExperience.country),
+        start_date: newExperience.startDate,
+        end_date: newExperience.endDate,
+        designation: newExperience.designation,
+        previous_salary: parseFloat(newExperience.previousSalary) || 0,
+        benefits: newExperience.benefits,
+        rating: newExperience.rating,
+        employer_review: newExperience.employerReview,
+        pets_experience: newExperience.petsExperience,
+        comfortable_with_pets: newExperience.comfortableWithPets,
+      };
+
+      const response = await networkService.post("/employee/work-experience", data);
+      if (response) {
+        await notificationService.showToast("Experience added successfully!", "success");
+        setIsModalOpen(false);
+        resetForm();
+      }
+    } catch (error) {
+      console.error("Error saving experience:", error);
+      await notificationService.showToast(
+        error.message || "Failed to save experience. Please try again.",
+        "error"
+      );
+    } finally {
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 500);
+    }
   };
 
   const resetForm = () => {
@@ -278,40 +376,39 @@ const JobExperienceCard = () => {
       petsExperience: "",
       comfortableWithPets: "",
     });
-    setIsEditing(false);
-    setEditId(null);
-  };
-
-  const editExperience = (exp) => {
-    setNewExperience(exp);
-    setIsEditing(true);
-    setEditId(exp.id);
-    setIsModalOpen(true);
-  };
-
-  const deleteExperience = (id) => {
-    setJobExperiences(jobExperiences.filter((exp) => exp.id !== id));
+    setFormErrors({});
   };
 
   const openModal = () => {
     setIsModalOpen(true);
   };
 
+  console.log("Rendering JobExperienceCard, countryOptions:", countryOptions);
+
   return (
-    <div>
-      <FancyTable
-        fields={fields}
-        data={jobExperiences}
-        title="Work Experiences"
-        filterOptions={[]}
-        editAction={editExperience}
-        deleteAction={deleteExperience}
-      />
+    <div className="relative min-h-screen">
+      <style>
+        {`
+          .is-invalid {
+            border: 1px solid #dc3545 !important;
+          }
+          .invalid-feedback {
+            display: block;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+          }
+        `}
+      </style>
+      {(isInitialLoading || isSubmitting) && (
+        <Loader text={isInitialLoading ? "Loading..." : "Saving..."} />
+      )}
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
         <button
           type="button"
           style={buttonStyle}
           onClick={openModal}
+          disabled={isInitialLoading || isSubmitting}
         >
           Add Experience
         </button>
@@ -321,8 +418,8 @@ const JobExperienceCard = () => {
         <>
           <div style={overlayStyle} onClick={() => setIsModalOpen(false)} />
           <div style={modalStyle}>
-            <h3>{isEditing ? "Edit Experience" : "Add Experience"}</h3>
-            <CardForm
+            <h3>Add Experience</h3>
+            <WorkExperienceCardForm
               fields={formFields}
               formData={newExperience}
               handleChange={handleChange}
@@ -331,6 +428,8 @@ const JobExperienceCard = () => {
                 e.preventDefault();
                 saveExperience();
               }}
+              loading={isSubmitting || isInitialLoading}
+              formErrors={formErrors}
             />
           </div>
         </>
