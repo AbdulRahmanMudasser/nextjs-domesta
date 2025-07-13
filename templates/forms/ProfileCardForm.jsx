@@ -12,6 +12,7 @@ const ProfileCardForm = ({
   handleFileChange = () => () => {},
   onSubmit = (e) => e.preventDefault(),
   loading = false,
+  formErrors = {},
 }) => {
   const buttonStyle = {
     backgroundColor: "#8C956B",
@@ -52,39 +53,77 @@ const ProfileCardForm = ({
       case "email":
       case "tel":
         return (
-          <InputField
-            field={{ ...field, style: { ...field.style, ...commonInputStyle }, disabled: loading }}
-            value={formData[field.name] || ""}
-            handleChange={handleChange}
-          />
+          <div>
+            <InputField
+              field={{
+                ...field,
+                style: { ...field.style, ...commonInputStyle },
+                disabled: loading,
+                className: formErrors[field.name] ? "is-invalid" : "",
+              }}
+              value={formData[field.name] || ""}
+              handleChange={handleChange}
+            />
+            {formErrors[field.name] && (
+              <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
+                {formErrors[field.name]}
+              </div>
+            )}
+          </div>
         );
       case "textarea":
         return (
-          <textarea
-            name={field.name}
-            placeholder={field.placeholder}
-            value={formData[field.name] || ""}
-            onChange={(e) => handleChange(field.name, e.target.value)}
-            required={field.required}
-            readOnly={field.readOnly || loading}
-            style={{ ...field.style, ...commonInputStyle }}
-          />
+          <div>
+            <textarea
+              name={field.name}
+              placeholder={field.placeholder}
+              value={formData[field.name] || ""}
+              onChange={(e) => handleChange(field.name, e.target.value)}
+              required={field.required}
+              readOnly={field.readOnly || loading}
+              className={formErrors[field.name] ? "is-invalid" : ""}
+              style={{ ...field.style, ...commonInputStyle }}
+            />
+            {formErrors[field.name] && (
+              <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
+                {formErrors[field.name]}
+              </div>
+            )}
+          </div>
         );
       case "select":
         return (
-          <SelectField
-            field={{ ...field, style: { ...field.style, ...commonInputStyle }, isMulti: field.isMulti || false, disabled: loading }}
-            value={formData[field.name]}
-            handleSelectChange={(name) => (option) => {
-              handleSelectChange(name)(option);
-            }}
-          />
+          <div>
+            <SelectField
+              field={{
+                ...field,
+                style: { ...field.style, ...commonInputStyle },
+                isMulti: field.isMulti || false,
+                disabled: loading,
+                className: formErrors[field.name] ? "is-invalid" : "",
+              }}
+              value={formData[field.name]}
+              handleSelectChange={(name) => (option) => {
+                handleSelectChange(name)(option);
+              }}
+            />
+            {formErrors[field.name] && (
+              <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
+                {formErrors[field.name]}
+              </div>
+            )}
+          </div>
         );
       case "file":
         return (
           <div>
             <ImageField
-              field={{ ...field, style: { ...field.style, ...commonInputStyle }, disabled: loading }}
+              field={{
+                ...field,
+                style: { ...field.style, ...commonInputStyle },
+                disabled: loading,
+                className: formErrors[field.name] ? "is-invalid" : "",
+              }}
               value={formData[field.name]}
               handleFileChange={(name, event) => {
                 handleFileChange(name)(event);
@@ -106,9 +145,10 @@ const ProfileCardForm = ({
 
   return (
     <form
-      className="default-form card p-4"
+      className="default-form card p-4 needs-validation"
       onSubmit={onSubmit}
       style={{ padding: "1rem", opacity: loading ? 0.6 : 1 }}
+      noValidate
     >
       <div className="row">
         {fields.map((field, index) => (
@@ -165,6 +205,7 @@ ProfileCardForm.propTypes = {
       preview: PropTypes.string,
       previewComponent: PropTypes.node,
       disabled: PropTypes.bool,
+      className: PropTypes.string,
     })
   ).isRequired,
   formData: PropTypes.object.isRequired,
@@ -173,6 +214,7 @@ ProfileCardForm.propTypes = {
   handleFileChange: PropTypes.func,
   onSubmit: PropTypes.func,
   loading: PropTypes.bool,
+  formErrors: PropTypes.object,
 };
 
 export default ProfileCardForm;

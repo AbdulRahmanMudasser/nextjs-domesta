@@ -36,7 +36,7 @@ const loaderStyles = {
   },
 };
 
-// Define inputStyle for file inputs and textarea (matching Document.jsx)
+// Define inputStyle for file inputs and textarea
 const inputStyle = {
   width: "100%",
   padding: "0.75rem",
@@ -115,6 +115,7 @@ const MyProfile = () => {
     cprCopyUrl: "",
     aboutMe: "",
   });
+  const [formErrors, setFormErrors] = useState({});
   const [catOptions, setCatOptions] = useState([]);
   const [genderOptions, setGenderOptions] = useState([]);
   const [religionOptions, setReligionOptions] = useState([]);
@@ -134,6 +135,7 @@ const MyProfile = () => {
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleSelectChange = (field) => (selectedOption) => {
@@ -141,12 +143,14 @@ const MyProfile = () => {
       ...formData,
       [field]: selectedOption ? selectedOption.value : "",
     });
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleFileChange = (field) => async (e) => {
     const file = e.target.files[0];
     if (file) {
       setFormData({ ...formData, [field]: file });
+      setFormErrors((prev) => ({ ...prev, [field]: "" }));
       try {
         console.log(`Starting upload for ${field}, loading: true`);
         setLoading(true);
@@ -170,7 +174,6 @@ const MyProfile = () => {
           "error"
         );
       } finally {
-        // Add slight delay to ensure loader is visible for testing
         setTimeout(() => {
           setLoading(false);
           console.log(`Finished upload for ${field}, loading: false`);
@@ -190,6 +193,7 @@ const MyProfile = () => {
       ...prev,
       [field]: "",
     }));
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handlePreviewClick = (field, url) => () => {
@@ -218,6 +222,68 @@ const MyProfile = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setModalContent(null);
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    let isValid = true;
+
+    // Create a mapping of field names to their display labels
+    const fieldLabels = fields.reduce((acc, field) => ({
+      ...acc,
+      [field.name]: field.label,
+    }), {});
+
+    // Validate required fields
+    const requiredFields = fields.filter((f) => f.required).map((f) => f.name);
+    requiredFields.forEach((field) => {
+      if (!formData[field] || formData[field] === "") {
+        errors[field] = `${fieldLabels[field]} is required`;
+        isValid = false;
+      }
+    });
+
+    // Specific validations
+    if (formData.age && (isNaN(formData.age) || formData.age < 18)) {
+      errors.age = `${fieldLabels.age} must be a number greater than or equal to 18`;
+      isValid = false;
+    }
+
+    if (formData.childrenCount && (isNaN(formData.childrenCount) || formData.childrenCount < 0)) {
+      errors.childrenCount = `${fieldLabels.childrenCount} must be a non-negative number`;
+      isValid = false;
+    }
+
+    if (formData.no_of_days_available && (isNaN(formData.no_of_days_available) || formData.no_of_days_available < 0)) {
+      errors.no_of_days_available = `${fieldLabels.no_of_days_available} must be a non-negative number`;
+      isValid = false;
+    }
+
+    if (formData.dob && !/^\d{4}-\d{2}-\d{2}$/.test(formData.dob)) {
+      errors.dob = `Please enter a valid ${fieldLabels.dob.toLowerCase()} (YYYY-MM-DD)`;
+      isValid = false;
+    }
+
+    // File fields validation
+    if (!formData.profileImage && !formData.profileImageUrl) {
+      errors.profileImage = `${fieldLabels.profileImage} is required`;
+      isValid = false;
+    }
+    if (!formData.passportCopy && !formData.passportCopyUrl) {
+      errors.passportCopy = `${fieldLabels.passportCopy} is required`;
+      isValid = false;
+    }
+    if (!formData.visaCopy && !formData.visaCopyUrl) {
+      errors.visaCopy = `${fieldLabels.visaCopy} is required`;
+      isValid = false;
+    }
+    if (!formData.cprCopy && !formData.cprCopyUrl) {
+      errors.cprCopy = `${fieldLabels.cprCopy} is required`;
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    return isValid;
   };
 
   useEffect(() => {
@@ -618,7 +684,7 @@ const MyProfile = () => {
     {
       type: "select",
       name: "work_available",
-      label: "Work Available",
+      label: "Work Availability",
       options: workAvailableOptions,
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select availability",
@@ -628,7 +694,7 @@ const MyProfile = () => {
     {
       type: "text",
       name: "no_of_days_available",
-      label: "Available after how many days?",
+      label: "Days Until Available",
       placeholder: "Number of days",
       colClass: "col-lg-4 col-md-12",
       required: true,
@@ -674,6 +740,7 @@ const MyProfile = () => {
           ) : (
             <div
               style={{ ...inputStyle, textAlign: "center", lineHeight: "60px" }}
+              className={formErrors.profileImage ? "is-invalid" : ""}
               onClick={() => document.getElementById("profileImageInput").click()}
             >
               Choose Profile Picture
@@ -685,9 +752,14 @@ const MyProfile = () => {
             name="profileImage"
             accept="image/*"
             onChange={handleFileChange("profileImage")}
-            style={{ display: "none" }}
+            style={ { display: "none" } }
             disabled={loading}
           />
+          {formErrors.profileImage && (
+            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
+              {formErrors.profileImage}
+            </div>
+          )}
         </div>
       ),
     },
@@ -731,6 +803,7 @@ const MyProfile = () => {
           ) : (
             <div
               style={{ ...inputStyle, textAlign: "center", lineHeight: "60px" }}
+              className={formErrors.passportCopy ? "is-invalid" : ""}
               onClick={() => document.getElementById("passportCopyInput").click()}
             >
               Choose Passport Copy
@@ -745,6 +818,11 @@ const MyProfile = () => {
             style={{ display: "none" }}
             disabled={loading}
           />
+          {formErrors.passportCopy && (
+            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
+              {formErrors.passportCopy}
+            </div>
+          )}
         </div>
       ),
     },
@@ -788,6 +866,7 @@ const MyProfile = () => {
           ) : (
             <div
               style={{ ...inputStyle, textAlign: "center", lineHeight: "60px" }}
+              className={formErrors.visaCopy ? "is-invalid" : ""}
               onClick={() => document.getElementById("visaCopyInput").click()}
             >
               Choose Visa Copy
@@ -802,6 +881,11 @@ const MyProfile = () => {
             style={{ display: "none" }}
             disabled={loading}
           />
+          {formErrors.visaCopy && (
+            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
+              {formErrors.visaCopy}
+            </div>
+          )}
         </div>
       ),
     },
@@ -845,6 +929,7 @@ const MyProfile = () => {
           ) : (
             <div
               style={{ ...inputStyle, textAlign: "center", lineHeight: "60px" }}
+              className={formErrors.cprCopy ? "is-invalid" : ""}
               onClick={() => document.getElementById("cprCopyInput").click()}
             >
               Choose CPR Copy
@@ -859,6 +944,11 @@ const MyProfile = () => {
             style={{ display: "none" }}
             disabled={loading}
           />
+          {formErrors.cprCopy && (
+            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
+              {formErrors.cprCopy}
+            </div>
+          )}
         </div>
       ),
     },
@@ -866,6 +956,14 @@ const MyProfile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormErrors({});
+
+    if (!validateForm()) {
+      const firstError = Object.values(formErrors)[0] || "Please fill in all required fields";
+      await notificationService.showToast(firstError, "error");
+      return;
+    }
+
     try {
       console.log("Submitting form, loading: true");
       setLoading(true);
@@ -936,6 +1034,15 @@ const MyProfile = () => {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
           }
+          .is-invalid {
+            border: 1px solid #dc3545 !important;
+          }
+          .invalid-feedback {
+            display: block;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+          }
         `}
       </style>
       {loading && (
@@ -959,6 +1066,7 @@ const MyProfile = () => {
         handleFileChange={handleFileChange}
         onSubmit={handleSubmit}
         loading={loading}
+        formErrors={formErrors}
       />
       <Modal isOpen={isModalOpen} onClose={closeModal} isWide={modalContent?.type === "iframe"}>
         {modalContent}
