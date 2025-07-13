@@ -6,35 +6,7 @@ import { networkService } from "@/services/network.service";
 import { notificationService } from "@/services/notification.service";
 import Modal from "./Modal";
 import Select from "react-select";
-
-// Fallback CSS for loader in case Tailwind fails
-const loaderStyles = {
-  overlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-  },
-  spinner: {
-    width: "50px",
-    height: "50px",
-    border: "5px solid #ccc",
-    borderTop: "5px solid #8C956B",
-    borderRadius: "50%",
-    animation: "spin 1s linear infinite",
-  },
-  text: {
-    color: "#fff",
-    fontSize: "18px",
-    marginTop: "10px",
-  },
-};
+import Loader from "@/globals/Loader";
 
 // Define inputStyle for file inputs and textarea
 const inputStyle = {
@@ -131,7 +103,8 @@ const MyProfile = () => {
   });
   const [modalContent, setModalContent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -152,8 +125,8 @@ const MyProfile = () => {
       setFormData({ ...formData, [field]: file });
       setFormErrors((prev) => ({ ...prev, [field]: "" }));
       try {
-        console.log(`Starting upload for ${field}, loading: true`);
-        setLoading(true);
+        console.log(`Starting upload for ${field}, isSubmitting: true`);
+        setIsSubmitting(true);
         const response = await networkService.uploadMedia(file);
         if (response && response[0]?.base_url && response[0]?.thumb_size) {
           const previewUrl = `${response[0].base_url}${response[0].thumb_size}`;
@@ -175,8 +148,8 @@ const MyProfile = () => {
         );
       } finally {
         setTimeout(() => {
-          setLoading(false);
-          console.log(`Finished upload for ${field}, loading: false`);
+          setIsSubmitting(false);
+          console.log(`Finished upload for ${field}, isSubmitting: false`);
         }, 500);
       }
     }
@@ -289,6 +262,7 @@ const MyProfile = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setIsInitialLoading(true);
         const user = JSON.parse(localStorage.getItem("user"));
         const employeeId = user?.id;
         if (!employeeId) {
@@ -407,6 +381,10 @@ const MyProfile = () => {
       } catch (error) {
         console.error("Error fetching profile data:", error);
         await notificationService.showToast(error.message || "Failed to load profile data.", "error");
+      } finally {
+        setTimeout(() => {
+          setIsInitialLoading(false);
+        }, 500);
       }
     };
 
@@ -565,7 +543,7 @@ const MyProfile = () => {
       label: "About Me",
       placeholder: "Tell us about yourself",
       colClass: "col-lg-12 col-md-12",
-      required: false,
+      required: true,
       style: { ...inputStyle, height: "120px" },
     },
     {
@@ -752,8 +730,8 @@ const MyProfile = () => {
             name="profileImage"
             accept="image/*"
             onChange={handleFileChange("profileImage")}
-            style={ { display: "none" } }
-            disabled={loading}
+            style={{ display: "none" }}
+            disabled={isSubmitting || isInitialLoading}
           />
           {formErrors.profileImage && (
             <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
@@ -816,7 +794,7 @@ const MyProfile = () => {
             accept=".pdf,.jpg,.png"
             onChange={handleFileChange("passportCopy")}
             style={{ display: "none" }}
-            disabled={loading}
+            disabled={isSubmitting || isInitialLoading}
           />
           {formErrors.passportCopy && (
             <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
@@ -879,7 +857,7 @@ const MyProfile = () => {
             accept=".pdf,.jpg,.png"
             onChange={handleFileChange("visaCopy")}
             style={{ display: "none" }}
-            disabled={loading}
+            disabled={isSubmitting || isInitialLoading}
           />
           {formErrors.visaCopy && (
             <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
@@ -942,7 +920,7 @@ const MyProfile = () => {
             accept=".pdf,.jpg,.png"
             onChange={handleFileChange("cprCopy")}
             style={{ display: "none" }}
-            disabled={loading}
+            disabled={isSubmitting || isInitialLoading}
           />
           {formErrors.cprCopy && (
             <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
@@ -965,8 +943,8 @@ const MyProfile = () => {
     }
 
     try {
-      console.log("Submitting form, loading: true");
-      setLoading(true);
+      console.log("Submitting form, isSubmitting: true");
+      setIsSubmitting(true);
       const user = JSON.parse(localStorage.getItem("user"));
       const employeeId = user?.id;
       if (!employeeId) {
@@ -1018,22 +996,18 @@ const MyProfile = () => {
       );
     } finally {
       setTimeout(() => {
-        setLoading(false);
-        console.log("Submission complete, loading: false");
+        setIsSubmitting(false);
+        console.log("Submission complete, isSubmitting: false");
       }, 500);
     }
   };
 
-  console.log("Rendering MyProfile, loading:", loading);
+  console.log("Rendering MyProfile, isInitialLoading:", isInitialLoading, "isSubmitting:", isSubmitting);
 
   return (
     <div className="relative min-h-screen">
       <style>
         {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
           .is-invalid {
             border: 1px solid #dc3545 !important;
           }
@@ -1045,18 +1019,8 @@ const MyProfile = () => {
           }
         `}
       </style>
-      {loading && (
-        <div
-          className="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-70 flex items-center justify-center z-[1000]"
-          style={loaderStyles.overlay}
-        >
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-t-4 border-t-[#8C956B] border-gray-300 rounded-full animate-spin" style={loaderStyles.spinner}></div>
-            <p className="text-white text-xl font-semibold" style={loaderStyles.text}>
-              Saving...
-            </p>
-          </div>
-        </div>
+      {(isInitialLoading || isSubmitting) && (
+        <Loader text={isInitialLoading ? "Loading..." : "Saving..."} />
       )}
       <ProfileCardForm
         fields={fields}
@@ -1065,7 +1029,7 @@ const MyProfile = () => {
         handleSelectChange={handleSelectChange}
         handleFileChange={handleFileChange}
         onSubmit={handleSubmit}
-        loading={loading}
+        loading={isSubmitting || isInitialLoading}
         formErrors={formErrors}
       />
       <Modal isOpen={isModalOpen} onClose={closeModal} isWide={modalContent?.type === "iframe"}>

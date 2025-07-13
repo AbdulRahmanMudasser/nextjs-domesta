@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import CardForm from "@/templates/forms/card-form";
 import { networkService } from "@/services/network.service";
-import { utilityService } from "@/services/utility.service";
+import { notificationService } from "@/services/notification.service";
+import Loader from "@/globals/Loader";
 
 const SocialNetworkBox = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +13,8 @@ const SocialNetworkBox = () => {
     linkedin: "",
     googlePlus: "",
   });
+  const [formErrors, setFormErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const fields = [
     {
@@ -51,6 +54,7 @@ const SocialNetworkBox = () => {
   useEffect(() => {
     const fetchSocialNetworkData = async () => {
       try {
+        setLoading(true);
         const user = JSON.parse(localStorage.getItem("user"));
         const employeeId = user?.id;
         if (!employeeId) {
@@ -68,24 +72,58 @@ const SocialNetworkBox = () => {
         }
       } catch (error) {
         console.error("Error fetching social network data:", error);
-        await utilityService.showAlert(
-          "Error",
+        await notificationService.showToast(
           error.message || "Failed to load social network data.",
           "error"
         );
+      } finally {
+        setTimeout(() => {
+          setLoading(false);
+        }, 500);
       }
     };
 
     fetchSocialNetworkData();
   }, []);
 
+  const validateForm = () => {
+    const errors = {};
+    let isValid = true;
+
+    const fieldLabels = fields.reduce((acc, field) => ({
+      ...acc,
+      [field.name]: field.label,
+    }), {});
+
+    const requiredFields = fields.filter((f) => f.required).map((f) => f.name);
+    requiredFields.forEach((field) => {
+      if (!formData[field] || formData[field].trim() === "") {
+        errors[field] = `${fieldLabels[field]} is required`;
+        isValid = false;
+      }
+    });
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
   const handleChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormErrors({});
+
+    if (!validateForm()) {
+      const firstError = Object.values(formErrors)[0] || "Please fill in all required fields";
+      await notificationService.showToast(firstError, "error");
+      return;
+    }
+
     try {
+      setLoading(true);
       const user = JSON.parse(localStorage.getItem("user"));
       const employeeId = user?.id;
       if (!employeeId) {
@@ -102,27 +140,48 @@ const SocialNetworkBox = () => {
 
       const response = await networkService.post("/employee/social-network-edit", data);
       if (response) {
-        await utilityService.showAlert("Success", "Social network details updated successfully!", "success");
+        await notificationService.showToast("Social network details updated successfully!", "success");
       }
     } catch (error) {
       console.error("Error submitting social network data:", error);
-      await utilityService.showAlert(
-        "Error",
+      await notificationService.showToast(
         error.message || "Failed to update social network details.",
         "error"
       );
+    } finally {
+      setTimeout(() => {
+        setLoading(false);
+      }, 500);
     }
   };
 
   return (
-    <CardForm
-      fields={fields}
-      formData={formData}
-      handleChange={handleChange}
-      handleSelectChange={() => {}}
-      handleFileChange={() => {}}
-      onSubmit={handleSubmit}
-    />
+    <div className="relative">
+      <style>
+        {`
+          .is-invalid {
+            border: 1px solid #dc3545 !important;
+          }
+          .invalid-feedback {
+            display: block;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+          }
+        `}
+      </style>
+      {loading && <Loader text={formData.facebook || formData.twitter || formData.linkedin || formData.googlePlus ? "Saving..." : "Loading..."} />}
+      <CardForm
+        fields={fields}
+        formData={formData}
+        handleChange={handleChange}
+        handleSelectChange={() => {}}
+        handleFileChange={() => {}}
+        onSubmit={handleSubmit}
+        loading={loading}
+        formErrors={formErrors}
+      />
+    </div>
   );
 };
 
