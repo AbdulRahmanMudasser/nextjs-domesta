@@ -41,6 +41,7 @@ const WorkExperienceCardForm = ({
       width: "100%",
       boxSizing: "border-box",
       transition: "border-color 0.2s",
+      border: "1px solid #ced4da", // Consistent border for all fields
       opacity: loading ? 0.6 : 1,
     };
 
@@ -105,6 +106,27 @@ const WorkExperienceCardForm = ({
                 handleSelectChange(name)(option);
               }}
             />
+            {formErrors[field.name] && (
+              <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
+                {formErrors[field.name]}
+              </div>
+            )}
+          </div>
+        );
+      case "checkbox":
+        return (
+          <div>
+            <label style={{ display: "flex", alignItems: "center" }}>
+              <input
+                type="checkbox"
+                name={field.name}
+                checked={formData[field.name] || false}
+                onChange={(e) => handleChange(field.name, e.target.checked)}
+                disabled={loading}
+                style={{ marginRight: "0.5rem" }}
+              />
+              {field.label}
+            </label>
             {formErrors[field.name] && (
               <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
                 {formErrors[field.name]}

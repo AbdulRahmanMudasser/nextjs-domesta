@@ -18,14 +18,7 @@ const buttonStyle = {
   fontSize: "1rem",
   fontWeight: "600",
 };
-const inputStyle = {
-  width: "100%",
-  padding: "0.75rem",
-  borderRadius: "0.5rem",
-  backgroundColor: "#F0F5F7",
-  boxSizing: "border-box",
-  height: "60px",
-};
+
 const modalStyle = {
   position: "fixed",
   top: "50%",
@@ -41,6 +34,7 @@ const modalStyle = {
   maxHeight: "80vh",
   overflowY: "auto",
 };
+
 const overlayStyle = {
   position: "fixed",
   top: 0,
@@ -57,71 +51,78 @@ const JobExperienceCard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [countryOptions, setCountryOptions] = useState([]);
-  const [newExperience, setNewExperience] = useState({
-    employerName: "",
-    employmentLocation: "",
-    employerPhone: "",
-    employerEmail: "",
+  const [formData, setFormData] = useState({
+    employer_name: "",
+    employment_location: "",
+    employer_dial_code: "",
+    employer_phone: "",
+    employer_email: "",
     country: "",
-    startDate: "",
-    endDate: "",
+    country_id: null,
+    start_date: "",
+    end_date: "",
     designation: "",
-    previousSalary: "",
+    previous_salary: "",
     benefits: "",
     rating: "",
-    employerReview: "",
-    petsExperience: "",
-    comfortableWithPets: "",
+    employer_review: "",
+    pets_experience: "",
+    comfortable_with_pets: "", // Changed to string for dropdown
+    employee_id: 10, // Hardcoded as per API body
   });
 
-  // Options for dropdowns
-  const yesNoOptions = [
-    { value: "Yes", label: "Yes" },
-    { value: "No", label: "No" },
-  ];
-
-  const ratingOptions = [
-    { value: "1", label: "★☆☆☆☆ (1 Star)" },
-    { value: "2", label: "★★☆☆☆ (2 Stars)" },
-    { value: "3", label: "★★★☆☆ (3 Stars)" },
-    { value: "4", label: "★★★★☆ (4 Stars)" },
-    { value: "5", label: "★★★★★ (5 Stars)" },
+  // Options for comfortable_with_pets dropdown
+  const petComfortOptions = [
+    { value: true, label: "Yes" },
+    { value: false, label: "No" },
   ];
 
   // Form fields for the modal using WorkExperienceCardForm
   const formFields = [
     {
       type: "text",
-      name: "employerName",
+      name: "employer_name",
       label: "Employer Name",
       placeholder: "Enter employer name",
       colClass: "col-lg-6 col-md-12",
       required: true,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "text",
-      name: "employmentLocation",
+      name: "employment_location",
       label: "Employment Location",
       placeholder: "Enter employment location",
       colClass: "col-lg-6 col-md-12",
       required: true,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "text",
-      name: "employerPhone",
-      label: "Employer Phone",
-      placeholder: "Enter employer phone",
+      name: "employer_dial_code",
+      label: "Employer Dial Code",
+      placeholder: "Enter dial code (e.g., +973)",
       colClass: "col-lg-6 col-md-12",
-      pattern: "[0-9]*",
       required: true,
+      disabled: isInitialLoading || isSubmitting,
+    },
+    {
+      type: "text",
+      name: "employer_phone",
+      label: "Employer Phone",
+      placeholder: "Enter phone number",
+      colClass: "col-lg-6 col-md-12",
+      required: true,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "email",
-      name: "employerEmail",
+      name: "employer_email",
       label: "Employer Email",
       placeholder: "Enter employer email",
       colClass: "col-lg-6 col-md-12",
       required: true,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "select",
@@ -136,19 +137,39 @@ const JobExperienceCard = () => {
     },
     {
       type: "date",
-      name: "startDate",
+      name: "start_date",
       label: "Start Date",
+      placeholder: "Select start date",
       colClass: "col-lg-6 col-md-12",
       required: true,
-      style: inputStyle,
+      disabled: isInitialLoading || isSubmitting,
+      style: {
+        borderRadius: "0.5rem",
+        padding: "0.75rem",
+        width: "100%",
+        backgroundColor: "#F0F5F7",
+        boxSizing: "border-box",
+        transition: "border-color 0.2s",
+        border: "1px solid #ced4da", // Consistent border
+      },
     },
     {
       type: "date",
-      name: "endDate",
+      name: "end_date",
       label: "End Date",
+      placeholder: "Select end date",
       colClass: "col-lg-6 col-md-12",
-      required: true,
-      style: inputStyle,
+      required: false,
+      disabled: isInitialLoading || isSubmitting,
+      style: {
+        borderRadius: "0.5rem",
+        padding: "0.75rem",
+        width: "100%",
+        backgroundColor: "#F0F5F7",
+        boxSizing: "border-box",
+        transition: "border-color 0.2s",
+        border: "1px solid #ced4da", // Consistent border
+      },
     },
     {
       type: "text",
@@ -157,15 +178,16 @@ const JobExperienceCard = () => {
       placeholder: "Enter designation",
       colClass: "col-lg-6 col-md-12",
       required: true,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "number",
-      name: "previousSalary",
+      name: "previous_salary",
       label: "Previous Salary",
       placeholder: "Enter previous salary",
       colClass: "col-lg-6 col-md-12",
-      min: "0",
       required: true,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "text",
@@ -173,53 +195,67 @@ const JobExperienceCard = () => {
       label: "Benefits",
       placeholder: "Enter benefits",
       colClass: "col-lg-6 col-md-12",
-      required: true,
+      required: false,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "select",
+      type: "number",
       name: "rating",
       label: "Rating",
-      options: ratingOptions,
-      placeholder: "Select rating",
+      placeholder: "Enter rating (1-5)",
       colClass: "col-lg-6 col-md-12",
       required: true,
-      component: Select,
-    },
-    {
-      type: "textarea",
-      name: "employerReview",
-      label: "Employer Review",
-      placeholder: "Enter employer review",
-      colClass: "col-lg-12 col-md-12",
-      required: true,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "text",
-      name: "petsExperience",
-      label: "Pets Experience",
+      name: "employer_review",
+      label: "Employer Review",
+      placeholder: "Enter employer review",
+      colClass: "col-lg-6 col-md-12",
+      required: false,
+      disabled: isInitialLoading || isSubmitting,
+    },
+    {
+      type: "text",
+      name: "pets_experience",
+      label: "Pets Experience", // Removed heading as requested
       placeholder: "Enter pets experience",
       colClass: "col-lg-6 col-md-12",
-      required: true,
+      required: false,
+      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "select",
-      name: "comfortableWithPets",
+      name: "comfortable_with_pets",
       label: "Comfortable with Pets",
-      options: yesNoOptions,
-      placeholder: "Select option",
+      options: petComfortOptions,
+      placeholder: "Select pet comfort level",
       colClass: "col-lg-6 col-md-12",
-      required: true,
+      required: false,
       component: Select,
+      disabled: isInitialLoading || isSubmitting,
     },
   ];
 
   const handleChange = (field, value) => {
-    setNewExperience({ ...newExperience, [field]: value });
+    setFormData({ ...formData, [field]: value });
     setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleSelectChange = (field) => (selectedOption) => {
-    setNewExperience({ ...newExperience, [field]: selectedOption ? selectedOption.value : "" });
+    if (field === "country") {
+      setFormData({
+        ...formData,
+        [field]: selectedOption ? selectedOption.value : "",
+        country_id: selectedOption ? selectedOption.id : null,
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [field]: selectedOption ? selectedOption.value : "",
+      });
+    }
     setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
@@ -227,39 +263,47 @@ const JobExperienceCard = () => {
     const errors = {};
     let isValid = true;
 
-    // Create a mapping of field names to their display labels
-    const fieldLabels = formFields.reduce((acc, field) => ({
-      ...acc,
-      [field.name]: field.label,
-    }), {});
-
-    // Validate required fields
-    const requiredFields = formFields.filter((f) => f.required).map((f) => f.name);
-    requiredFields.forEach((field) => {
-      if (!newExperience[field] || newExperience[field] === "") {
-        errors[field] = `${fieldLabels[field]} is required`;
-        isValid = false;
-      }
-    });
-
-    // Specific validations
-    if (newExperience.employerPhone && !/^\d{7,15}$/.test(newExperience.employerPhone)) {
-      errors.employerPhone = `${fieldLabels.employerPhone} must be 7-15 digits`;
+    if (!formData.employer_name) {
+      errors.employer_name = "Employer name is required";
       isValid = false;
     }
-
-    if (newExperience.previousSalary && (isNaN(newExperience.previousSalary) || newExperience.previousSalary < 0)) {
-      errors.previousSalary = `${fieldLabels.previousSalary} must be a non-negative number`;
+    if (!formData.employment_location) {
+      errors.employment_location = "Employment location is required";
       isValid = false;
     }
-
-    if (newExperience.startDate && !/^\d{4}-\d{2}-\d{2}$/.test(newExperience.startDate)) {
-      errors.startDate = `Please enter a valid ${fieldLabels.startDate.toLowerCase()} (YYYY-MM-DD)`;
+    if (!formData.employer_dial_code) {
+      errors.employer_dial_code = "Employer dial code is required";
       isValid = false;
     }
-
-    if (newExperience.endDate && !/^\d{4}-\d{2}-\d{2}$/.test(newExperience.endDate)) {
-      errors.endDate = `Please enter a valid ${fieldLabels.endDate.toLowerCase()} (YYYY-MM-DD)`;
+    if (!formData.employer_phone) {
+      errors.employer_phone = "Employer phone is required";
+      isValid = false;
+    }
+    if (!formData.employer_email) {
+      errors.employer_email = "Employer email is required";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.employer_email)) {
+      errors.employer_email = "Invalid email format";
+      isValid = false;
+    }
+    if (!formData.country) {
+      errors.country = "Country is required";
+      isValid = false;
+    }
+    if (!formData.start_date) {
+      errors.start_date = "Start date is required";
+      isValid = false;
+    }
+    if (!formData.designation) {
+      errors.designation = "Designation is required";
+      isValid = false;
+    }
+    if (!formData.previous_salary) {
+      errors.previous_salary = "Previous salary is required";
+      isValid = false;
+    }
+    if (!formData.rating) {
+      errors.rating = "Rating is required";
       isValid = false;
     }
 
@@ -274,15 +318,16 @@ const JobExperienceCard = () => {
         console.log("Fetching country options...");
         const countryResponse = await networkService.get("/country");
         console.log("Country API response:", countryResponse);
-        if (countryResponse) {
-          const countryOptions = countryResponse.map((item) => ({
+        if (Array.isArray(countryResponse) && countryResponse.length > 0) {
+          const options = countryResponse.map((item) => ({
             value: item.name || "",
             label: item.name || "",
             id: item.id || null,
           }));
-          console.log("Setting countryOptions:", countryOptions);
-          setCountryOptions(countryOptions);
+          console.log("Setting countryOptions:", options);
+          setCountryOptions(options);
         } else {
+          console.error("Country API response is invalid or empty:", countryResponse);
           throw new Error("No country options returned");
         }
       } catch (error) {
@@ -302,54 +347,61 @@ const JobExperienceCard = () => {
     fetchCountryOptions();
   }, []);
 
-  const saveExperience = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!validateForm()) {
-      const firstError = Object.values(formErrors)[0] || "Please fill in all required fields";
+      const firstError = Object.values(formErrors)[0] || "Please fill all required fields";
       await notificationService.showToast(firstError, "error");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const user = JSON.parse(localStorage.getItem("user"));
-      const employeeId = user?.id;
-      if (!employeeId) {
-        throw new Error("User ID not found in localStorage");
-      }
-
-      const getIdFromValue = (options, value) => {
-        const option = options.find((opt) => opt.value === value);
-        return option ? option.id : null;
-      };
-
-      const data = {
-        employee_id: employeeId,
-        employer_name: newExperience.employerName,
-        employment_location: newExperience.employmentLocation,
-        employer_phone: newExperience.employerPhone,
-        employer_email: newExperience.employerEmail,
-        country_id: getIdFromValue(countryOptions, newExperience.country),
-        start_date: newExperience.startDate,
-        end_date: newExperience.endDate,
-        designation: newExperience.designation,
-        previous_salary: parseFloat(newExperience.previousSalary) || 0,
-        benefits: newExperience.benefits,
-        rating: newExperience.rating,
-        employer_review: newExperience.employerReview,
-        pets_experience: newExperience.petsExperience,
-        comfortable_with_pets: newExperience.comfortableWithPets,
-      };
-
-      const response = await networkService.post("/employee/work-experience", data);
-      if (response) {
-        await notificationService.showToast("Experience added successfully!", "success");
-        setIsModalOpen(false);
-        resetForm();
-      }
+      console.log("Submitting form data:", formData);
+      const response = await networkService.post("/employee/experience/add", {
+        employer_name: formData.employer_name,
+        employment_location: formData.employment_location,
+        employer_dial_code: formData.employer_dial_code,
+        employer_phone: formData.employer_phone,
+        employer_email: formData.employer_email,
+        country_id: formData.country_id,
+        start_date: formData.start_date,
+        end_date: formData.end_date || null,
+        designation: formData.designation,
+        previous_salary: parseFloat(formData.previous_salary),
+        benefits: formData.benefits || null,
+        rating: parseInt(formData.rating),
+        employer_review: formData.employer_review || null,
+        pets_experience: formData.pets_experience || null,
+        comfortable_with_pets: formData.comfortable_with_pets,
+        employee_id: formData.employee_id,
+      });
+      console.log("API response:", response);
+      await notificationService.showToast("Work experience added successfully!", "success");
+      setIsModalOpen(false);
+      setFormData({
+        employer_name: "",
+        employment_location: "",
+        employer_dial_code: "",
+        employer_phone: "",
+        employer_email: "",
+        country: "",
+        country_id: null,
+        start_date: "",
+        end_date: "",
+        designation: "",
+        previous_salary: "",
+        benefits: "",
+        rating: "",
+        employer_review: "",
+        pets_experience: "",
+        comfortable_with_pets: "",
+        employee_id: 10,
+      });
     } catch (error) {
-      console.error("Error saving experience:", error);
+      console.error("Error submitting form:", error);
       await notificationService.showToast(
-        error.message || "Failed to save experience. Please try again.",
+        error.message || "Failed to add work experience. Please try again.",
         "error"
       );
     } finally {
@@ -357,26 +409,6 @@ const JobExperienceCard = () => {
         setIsSubmitting(false);
       }, 500);
     }
-  };
-
-  const resetForm = () => {
-    setNewExperience({
-      employerName: "",
-      employmentLocation: "",
-      employerPhone: "",
-      employerEmail: "",
-      country: "",
-      startDate: "",
-      endDate: "",
-      designation: "",
-      previousSalary: "",
-      benefits: "",
-      rating: "",
-      employerReview: "",
-      petsExperience: "",
-      comfortableWithPets: "",
-    });
-    setFormErrors({});
   };
 
   const openModal = () => {
@@ -394,7 +426,7 @@ const JobExperienceCard = () => {
           }
           .invalid-feedback {
             display: block;
-            color: #dc3545;
+            color: "#dc3545",
             font-size: 0.875rem;
             margin-top: 0.25rem;
           }
@@ -410,7 +442,7 @@ const JobExperienceCard = () => {
           onClick={openModal}
           disabled={isInitialLoading || isSubmitting}
         >
-          Add Experience
+          Add Work Experience
         </button>
       </div>
 
@@ -418,16 +450,13 @@ const JobExperienceCard = () => {
         <>
           <div style={overlayStyle} onClick={() => setIsModalOpen(false)} />
           <div style={modalStyle}>
-            <h3>Add Experience</h3>
+            <h3>Add Work Experience</h3>
             <WorkExperienceCardForm
               fields={formFields}
-              formData={newExperience}
+              formData={formData}
               handleChange={handleChange}
               handleSelectChange={handleSelectChange}
-              onSubmit={(e) => {
-                e.preventDefault();
-                saveExperience();
-              }}
+              onSubmit={handleSubmit}
               loading={isSubmitting || isInitialLoading}
               formErrors={formErrors}
             />
