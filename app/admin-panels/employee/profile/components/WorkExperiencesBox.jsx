@@ -308,6 +308,7 @@ const JobExperienceCard = () => {
             borderRadius: "0.5rem",
             border: "none",
             cursor: "pointer",
+            marginBottom: "1rem"
           }}
         >
           Add Work Experience
@@ -318,6 +319,7 @@ const JobExperienceCard = () => {
         data={experiences}
         title="Work Experience History"
         handleBulkDelete={handleBulkDelete}
+        onDataRefresh={fetchData}
       />
 
       {isModalOpen && (
