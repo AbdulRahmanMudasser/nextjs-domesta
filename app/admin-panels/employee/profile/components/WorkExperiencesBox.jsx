@@ -1,49 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import WorkExperienceCardForm from "@/templates/forms/WorkExperienceCardForm";
+import WorkExperienceTable from "@/templates/tables/WorkExperienceTable";
 import { networkService } from "@/services/network.service";
 import { notificationService } from "@/services/notification.service";
 import Loader from "@/globals/Loader";
 import Select from "react-select";
-
-// Define styles at the top
-const buttonStyle = {
-  padding: "0.75rem 1.5rem",
-  border: "none",
-  borderRadius: "0.5rem",
-  backgroundColor: "#8C956B",
-  color: "white",
-  cursor: "pointer",
-  fontSize: "1rem",
-  fontWeight: "600",
-};
-
-const modalStyle = {
-  position: "fixed",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  backgroundColor: "white",
-  padding: "2rem",
-  borderRadius: "0.5rem",
-  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-  zIndex: 1000,
-  width: "90%",
-  maxWidth: "800px",
-  maxHeight: "80vh",
-  overflowY: "auto",
-};
-
-const overlayStyle = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: "rgba(0, 0, 0, 0.5)",
-  zIndex: 999,
-};
 
 const JobExperienceCard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,6 +14,24 @@ const JobExperienceCard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [countryOptions, setCountryOptions] = useState([]);
+  const [experiences, setExperiences] = useState([]);
+  const [mounted, setMounted] = useState(false);
+
+  // Handle client-side mounting to avoid hydration issues
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const user = useMemo(() => {
+    if (typeof window !== 'undefined' && mounted) {
+      const userData = localStorage.getItem("user");
+      return userData ? JSON.parse(userData) : null;
+    }
+    return null;
+  }, [mounted]);
+
+  const employeeId = user?.id;
+
   const [formData, setFormData] = useState({
     employer_name: "",
     employment_location: "",
@@ -67,319 +48,213 @@ const JobExperienceCard = () => {
     rating: "",
     employer_review: "",
     pets_experience: "",
-    comfortable_with_pets: "", // Changed to string for dropdown
-    employee_id: 10, // Hardcoded as per API body
+    comfortable_with_pets: "",
+    employee_id: employeeId,
   });
 
-  // Options for comfortable_with_pets dropdown
   const petComfortOptions = [
     { value: true, label: "Yes" },
     { value: false, label: "No" },
   ];
 
-  // Form fields for the modal using WorkExperienceCardForm
-  const formFields = [
+  const formFields = useMemo(() => [
     {
-      type: "text",
-      name: "employer_name",
-      label: "Employer Name",
-      placeholder: "Enter employer name",
-      colClass: "col-lg-6 col-md-12",
-      required: true,
-      disabled: isInitialLoading || isSubmitting,
+      type: "text", name: "employer_name", label: "Employer Name", placeholder: "Enter employer name", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "text",
-      name: "employment_location",
-      label: "Employment Location",
-      placeholder: "Enter employment location",
-      colClass: "col-lg-6 col-md-12",
-      required: true,
-      disabled: isInitialLoading || isSubmitting,
+      type: "text", name: "employment_location", label: "Employment Location", placeholder: "Enter employment location", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "text",
-      name: "employer_dial_code",
-      label: "Employer Dial Code",
-      placeholder: "Enter dial code (e.g., +973)",
-      colClass: "col-lg-6 col-md-12",
-      required: true,
-      disabled: isInitialLoading || isSubmitting,
+      type: "text", name: "employer_dial_code", label: "Employer Dial Code", placeholder: "Enter dial code", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "text",
-      name: "employer_phone",
-      label: "Employer Phone",
-      placeholder: "Enter phone number",
-      colClass: "col-lg-6 col-md-12",
-      required: true,
-      disabled: isInitialLoading || isSubmitting,
+      type: "text", name: "employer_phone", label: "Employer Phone", placeholder: "Enter phone number", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "email",
-      name: "employer_email",
-      label: "Employer Email",
-      placeholder: "Enter employer email",
-      colClass: "col-lg-6 col-md-12",
-      required: true,
-      disabled: isInitialLoading || isSubmitting,
+      type: "email", name: "employer_email", label: "Employer Email", placeholder: "Enter employer email", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "select",
-      name: "country",
-      label: "Country",
-      options: countryOptions,
-      placeholder: "Select country",
-      colClass: "col-lg-6 col-md-12",
-      required: true,
-      component: Select,
-      disabled: isInitialLoading || isSubmitting,
+      type: "select", name: "country", label: "Country", options: countryOptions, placeholder: "Select country", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "date",
-      name: "start_date",
-      label: "Start Date",
-      placeholder: "Select start date",
-      colClass: "col-lg-6 col-md-12",
-      required: true,
-      disabled: isInitialLoading || isSubmitting,
-      style: {
-        borderRadius: "0.5rem",
-        padding: "0.75rem",
-        width: "100%",
-        backgroundColor: "#F0F5F7",
-        boxSizing: "border-box",
-        transition: "border-color 0.2s",
-        border: "1px solid #ced4da", // Consistent border
-      },
+      type: "date", name: "start_date", label: "Start Date", placeholder: "Start date", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "date",
-      name: "end_date",
-      label: "End Date",
-      placeholder: "Select end date",
-      colClass: "col-lg-6 col-md-12",
-      required: false,
-      disabled: isInitialLoading || isSubmitting,
-      style: {
-        borderRadius: "0.5rem",
-        padding: "0.75rem",
-        width: "100%",
-        backgroundColor: "#F0F5F7",
-        boxSizing: "border-box",
-        transition: "border-color 0.2s",
-        border: "1px solid #ced4da", // Consistent border
-      },
+      type: "date", name: "end_date", label: "End Date", placeholder: "End date", colClass: "col-lg-6 col-md-12", required: false, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "text",
-      name: "designation",
-      label: "Designation",
-      placeholder: "Enter designation",
-      colClass: "col-lg-6 col-md-12",
-      required: true,
-      disabled: isInitialLoading || isSubmitting,
+      type: "text", name: "designation", label: "Designation", placeholder: "Enter designation", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "number",
-      name: "previous_salary",
-      label: "Previous Salary",
-      placeholder: "Enter previous salary",
-      colClass: "col-lg-6 col-md-12",
-      required: true,
-      disabled: isInitialLoading || isSubmitting,
+      type: "number", name: "previous_salary", label: "Previous Salary", placeholder: "Enter salary", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "text",
-      name: "benefits",
-      label: "Benefits",
-      placeholder: "Enter benefits",
-      colClass: "col-lg-6 col-md-12",
-      required: false,
-      disabled: isInitialLoading || isSubmitting,
+      type: "text", name: "benefits", label: "Benefits", placeholder: "Enter benefits", colClass: "col-lg-6 col-md-12", required: false, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "number",
-      name: "rating",
-      label: "Rating",
-      placeholder: "Enter rating (1-5)",
-      colClass: "col-lg-6 col-md-12",
-      required: true,
-      disabled: isInitialLoading || isSubmitting,
+      type: "number", name: "rating", label: "Rating", placeholder: "1–5", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "text",
-      name: "employer_review",
-      label: "Employer Review",
-      placeholder: "Enter employer review",
-      colClass: "col-lg-6 col-md-12",
-      required: false,
-      disabled: isInitialLoading || isSubmitting,
+      type: "text", name: "employer_review", label: "Employer Review", placeholder: "Enter review", colClass: "col-lg-6 col-md-12", required: false, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "text",
-      name: "pets_experience",
-      label: "Pets Experience", // Removed heading as requested
-      placeholder: "Enter pets experience",
-      colClass: "col-lg-6 col-md-12",
-      required: false,
-      disabled: isInitialLoading || isSubmitting,
+      type: "text", name: "pets_experience", label: "Pets Experience", placeholder: "Enter experience", colClass: "col-lg-6 col-md-12", required: false, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "select",
-      name: "comfortable_with_pets",
-      label: "Comfortable with Pets",
-      options: petComfortOptions,
-      placeholder: "Select pet comfort level",
-      colClass: "col-lg-6 col-md-12",
-      required: false,
-      component: Select,
-      disabled: isInitialLoading || isSubmitting,
+      type: "select", name: "comfortable_with_pets", label: "Comfortable with Pets", options: petComfortOptions, placeholder: "Select", colClass: "col-lg-6 col-md-12", required: false, disabled: isInitialLoading || isSubmitting,
     },
-  ];
+  ], [countryOptions, petComfortOptions, isInitialLoading, isSubmitting]);
 
   const handleChange = (field, value) => {
-    setFormData({ ...formData, [field]: value });
+    console.log("Field change:", field, value); // Debug log
+    setFormData((prev) => ({ ...prev, [field]: value }));
     setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  const handleSelectChange = (field) => (selectedOption) => {
+  const handleSelectChange = (field) => (selected) => {
+    console.log("Select change:", field, selected); // Debug log
     if (field === "country") {
-      setFormData({
-        ...formData,
-        [field]: selectedOption ? selectedOption.value : "",
-        country_id: selectedOption ? selectedOption.id : null,
-      });
+      setFormData((prev) => ({
+        ...prev,
+        [field]: selected?.value || "",
+        country_id: selected?.id || null,
+      }));
+    } else if (field === "comfortable_with_pets") {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: selected?.value,
+      }));
     } else {
-      setFormData({
-        ...formData,
-        [field]: selectedOption ? selectedOption.value : "",
-      });
+      setFormData((prev) => ({
+        ...prev,
+        [field]: selected?.value || "",
+      }));
     }
     setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const validateForm = () => {
     const errors = {};
-    let isValid = true;
-
-    if (!formData.employer_name) {
-      errors.employer_name = "Employer name is required";
-      isValid = false;
+    let valid = true;
+    if (!formData.employer_name) errors.employer_name = "Required", valid = false;
+    if (!formData.employment_location) errors.employment_location = "Required", valid = false;
+    if (!formData.employer_dial_code) errors.employer_dial_code = "Required", valid = false;
+    if (!formData.employer_phone) errors.employer_phone = "Required", valid = false;
+    if (!formData.employer_email || !/\S+@\S+\.\S+/.test(formData.employer_email)) {
+      errors.employer_email = "Invalid email", valid = false;
     }
-    if (!formData.employment_location) {
-      errors.employment_location = "Employment location is required";
-      isValid = false;
-    }
-    if (!formData.employer_dial_code) {
-      errors.employer_dial_code = "Employer dial code is required";
-      isValid = false;
-    }
-    if (!formData.employer_phone) {
-      errors.employer_phone = "Employer phone is required";
-      isValid = false;
-    }
-    if (!formData.employer_email) {
-      errors.employer_email = "Employer email is required";
-      isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(formData.employer_email)) {
-      errors.employer_email = "Invalid email format";
-      isValid = false;
-    }
-    if (!formData.country) {
-      errors.country = "Country is required";
-      isValid = false;
-    }
-    if (!formData.start_date) {
-      errors.start_date = "Start date is required";
-      isValid = false;
-    }
-    if (!formData.designation) {
-      errors.designation = "Designation is required";
-      isValid = false;
-    }
-    if (!formData.previous_salary) {
-      errors.previous_salary = "Previous salary is required";
-      isValid = false;
-    }
-    if (!formData.rating) {
-      errors.rating = "Rating is required";
-      isValid = false;
-    }
-
+    if (!formData.country) errors.country = "Required", valid = false;
+    if (!formData.start_date) errors.start_date = "Required", valid = false;
+    if (!formData.designation) errors.designation = "Required", valid = false;
+    if (!formData.previous_salary) errors.previous_salary = "Required", valid = false;
+    if (!formData.rating) errors.rating = "Required", valid = false;
     setFormErrors(errors);
-    return isValid;
+    return valid;
   };
 
-  useEffect(() => {
-    const fetchCountryOptions = async () => {
-      try {
-        setIsInitialLoading(true);
-        console.log("Fetching country options...");
-        const countryResponse = await networkService.get("/country");
-        console.log("Country API response:", countryResponse);
-        if (Array.isArray(countryResponse) && countryResponse.length > 0) {
-          const options = countryResponse.map((item) => ({
-            value: item.name || "",
-            label: item.name || "",
-            id: item.id || null,
-          }));
-          console.log("Setting countryOptions:", options);
-          setCountryOptions(options);
-        } else {
-          console.error("Country API response is invalid or empty:", countryResponse);
-          throw new Error("No country options returned");
-        }
-      } catch (error) {
-        console.error("Error fetching country options:", error);
-        await notificationService.showToast(
-          error.message || "Failed to load country options.",
-          "error"
-        );
-      } finally {
-        setTimeout(() => {
-          setIsInitialLoading(false);
-          console.log("Initial loading complete, countryOptions:", countryOptions);
-        }, 500);
-      }
-    };
-
-    fetchCountryOptions();
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) {
-      const firstError = Object.values(formErrors)[0] || "Please fill all required fields";
-      await notificationService.showToast(firstError, "error");
+  const fetchData = async () => {
+    if (!employeeId) {
+      console.warn("Employee ID not found");
       return;
     }
 
     try {
+      setIsInitialLoading(true);
+      
+      // Fetch countries
+      const countries = await networkService.get("/country");
+      console.log("Countries response:", countries);
+      
+      if (Array.isArray(countries)) {
+        setCountryOptions(countries.map(c => ({
+          value: c.name,
+          label: c.name,
+          id: c.id,
+        })));
+      } else {
+        console.warn("Countries response is not an array:", countries);
+      }
+
+      // Fetch experiences
+      const experiences = await networkService.get(`/employee/experience/${employeeId}`);
+      console.log("Experiences response:", experiences);
+
+      // Handle different response formats
+      if (experiences && Array.isArray(experiences)) {
+        // Direct array response
+        setExperiences(experiences);
+      } else if (experiences && experiences.data && Array.isArray(experiences.data)) {
+        // Response with data property
+        setExperiences(experiences.data);
+      } else if (experiences && experiences.status && Array.isArray(experiences.data)) {
+        // Response with status and data
+        setExperiences(experiences.data);
+      } else {
+        console.warn("Unexpected experiences response format:", experiences);
+        setExperiences([]);
+      }
+
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      await notificationService.showToast(err.message || "Error loading data", "error");
+      setExperiences([]); // Set empty array on error
+    } finally {
+      setIsInitialLoading(false);
+    }
+  };
+
+  // Update formData when employeeId changes
+  useEffect(() => {
+    if (employeeId) {
+      setFormData((prev) => ({
+        ...prev,
+        employee_id: employeeId,
+      }));
+    }
+  }, [employeeId]);
+
+  // Fetch data when component mounts and employeeId is available
+  useEffect(() => {
+    if (mounted && employeeId) {
+      fetchData();
+    }
+  }, [mounted, employeeId]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("Form submitted with data:", formData); // Debug log
+    
+    if (!validateForm()) {
+      const firstError = Object.values(formErrors)[0];
+      console.log("Validation failed:", formErrors); // Debug log
+      return notificationService.showToast(firstError || "Please fill required fields", "error");
+    }
+    
+    try {
       setIsSubmitting(true);
-      console.log("Submitting form data:", formData);
-      const response = await networkService.post("/employee/experience/add", {
-        employer_name: formData.employer_name,
-        employment_location: formData.employment_location,
-        employer_dial_code: formData.employer_dial_code,
-        employer_phone: formData.employer_phone,
-        employer_email: formData.employer_email,
-        country_id: formData.country_id,
-        start_date: formData.start_date,
+      const payload = {
+        ...formData,
+        previous_salary: parseFloat(formData.previous_salary) || 0,
+        rating: parseInt(formData.rating) || 0,
+        comfortable_with_pets:
+          formData.comfortable_with_pets === true || formData.comfortable_with_pets === "true",
         end_date: formData.end_date || null,
-        designation: formData.designation,
-        previous_salary: parseFloat(formData.previous_salary),
         benefits: formData.benefits || null,
-        rating: parseInt(formData.rating),
         employer_review: formData.employer_review || null,
         pets_experience: formData.pets_experience || null,
-        comfortable_with_pets: formData.comfortable_with_pets,
-        employee_id: formData.employee_id,
-      });
-      console.log("API response:", response);
-      await notificationService.showToast("Work experience added successfully!", "success");
+      };
+      
+      console.log("Submitting payload:", payload); // Debug log
+      
+      const response = await networkService.post("/employee/experience/add", payload);
+      console.log("Submit response:", response); // Debug log
+      
+      await notificationService.showToast("Experience added!", "success");
       setIsModalOpen(false);
-      setFormData({
+      
+      // Reset form data
+      setFormData((prev) => ({
+        ...prev,
         employer_name: "",
         employment_location: "",
         employer_dial_code: "",
@@ -396,60 +271,79 @@ const JobExperienceCard = () => {
         employer_review: "",
         pets_experience: "",
         comfortable_with_pets: "",
-        employee_id: 10,
-      });
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      await notificationService.showToast(
-        error.message || "Failed to add work experience. Please try again.",
-        "error"
-      );
+      }));
+      
+      // Refresh the data
+      fetchData();
+    } catch (err) {
+      console.error("Submit error:", err); // Debug log
+      await notificationService.showToast(err.message || "Submit failed", "error");
     } finally {
-      setTimeout(() => {
-        setIsSubmitting(false);
-      }, 500);
+      setIsSubmitting(false);
     }
   };
 
-  const openModal = () => {
-    setIsModalOpen(true);
+  const handleBulkDelete = async (ids) => {
+    if (ids.length === 0) return;
+    await notificationService.showToast("Bulk delete not implemented", "info");
   };
 
-  console.log("Rendering JobExperienceCard, countryOptions:", countryOptions);
+  // Don't render until mounted to avoid hydration issues
+  if (!mounted) {
+    return <Loader text="Loading..." />;
+  }
 
   return (
     <div className="relative min-h-screen">
-      <style>
-        {`
-          .is-invalid {
-            border: 1px solid #dc3545 !important;
-          }
-          .invalid-feedback {
-            display: block;
-            color: "#dc3545",
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-          }
-        `}
-      </style>
-      {(isInitialLoading || isSubmitting) && (
-        <Loader text={isInitialLoading ? "Loading..." : "Saving..."} />
-      )}
+      {(isInitialLoading || isSubmitting) && <Loader text={isInitialLoading ? "Loading..." : "Saving..."} />}
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
         <button
-          type="button"
-          style={buttonStyle}
-          onClick={openModal}
+          onClick={() => setIsModalOpen(true)}
           disabled={isInitialLoading || isSubmitting}
+          style={{
+            padding: "0.75rem 1.5rem",
+            backgroundColor: "#8C956B",
+            color: "#fff",
+            fontWeight: "600",
+            borderRadius: "0.5rem",
+            border: "none",
+            cursor: "pointer",
+          }}
         >
           Add Work Experience
         </button>
       </div>
 
+      <WorkExperienceTable
+        data={experiences}
+        title="Work Experience History"
+        handleBulkDelete={handleBulkDelete}
+      />
+
       {isModalOpen && (
         <>
-          <div style={overlayStyle} onClick={() => setIsModalOpen(false)} />
-          <div style={modalStyle}>
+          <div
+            style={{
+              position: "fixed",
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              zIndex: 999,
+            }}
+            onClick={() => setIsModalOpen(false)}
+          />
+          <div
+            style={{
+              position: "fixed",
+              top: "50%", left: "50%",
+              transform: "translate(-50%, -50%)",
+              backgroundColor: "#fff",
+              padding: "2rem",
+              borderRadius: "0.5rem",
+              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+              zIndex: 1000,
+              width: "90%", maxWidth: "800px", maxHeight: "80vh", overflowY: "auto",
+            }}
+          >
             <h3>Add Work Experience</h3>
             <WorkExperienceCardForm
               fields={formFields}
@@ -457,7 +351,7 @@ const JobExperienceCard = () => {
               handleChange={handleChange}
               handleSelectChange={handleSelectChange}
               onSubmit={handleSubmit}
-              loading={isSubmitting || isInitialLoading}
+              loading={isSubmitting}
               formErrors={formErrors}
             />
           </div>
