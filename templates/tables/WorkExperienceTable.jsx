@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import PropTypes from "prop-types";
 import Link from "next/link";
 import CustomSelect from "../misc/CustomSelect";
@@ -53,70 +53,107 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
     }
   };
 
-  const filteredData = data.filter((row) =>
-    Object.keys(filters).every((key) => {
-      if (!filters[key]) return true;
-      const cellValue = key === "country" ? row.country?.name?.toLowerCase() || "" : row[key]?.toString().toLowerCase() || "";
-      return cellValue.includes(filters[key].toLowerCase());
-    })
-  );
+  // Ensure data is always an array
+  const safeData = useMemo(() => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    return [];
+  }, [data]);
+
+  const filteredData = useMemo(() => {
+    if (!safeData || safeData.length === 0) return [];
+    
+    return safeData.filter((row) => {
+      if (!row) return false;
+      
+      return Object.keys(filters).every((key) => {
+        if (!filters[key]) return true;
+        
+        let cellValue = "";
+        
+        if (key === "country") {
+          cellValue = row.country?.name?.toLowerCase() || "";
+        } else {
+          cellValue = row[key]?.toString().toLowerCase() || "";
+        }
+        
+        return cellValue.includes(filters[key].toLowerCase());
+      });
+    });
+  }, [safeData, filters]);
 
   const totalPages = Math.ceil(filteredData.length / pageSize);
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const paginatedData = useMemo(() => {
+    return filteredData.slice(
+      (currentPage - 1) * pageSize,
+      currentPage * pageSize
+    );
+  }, [filteredData, currentPage, pageSize]);
 
   const fields = [
     {
       key: "employer_name",
       label: "Employer Name",
-      render: (row) => row.employer_name || "N/A",
+      render: (row) => row?.employer_name || "N/A",
     },
     {
       key: "employment_location",
       label: "Location",
-      render: (row) => row.employment_location || "N/A",
+      render: (row) => row?.employment_location || "N/A",
     },
     {
       key: "designation",
       label: "Designation",
-      render: (row) => row.designation || "N/A",
+      render: (row) => row?.designation || "N/A",
     },
     {
       key: "start_date",
       label: "Start Date",
-      render: (row) => (row.start_date ? new Date(row.start_date).toLocaleDateString() : "N/A"),
+      render: (row) => {
+        if (!row?.start_date) return "N/A";
+        try {
+          return new Date(row.start_date).toLocaleDateString();
+        } catch (e) {
+          return "N/A";
+        }
+      },
     },
     {
       key: "end_date",
       label: "End Date",
-      render: (row) => (row.end_date ? new Date(row.end_date).toLocaleDateString() : "N/A"),
+      render: (row) => {
+        if (!row?.end_date) return "N/A";
+        try {
+          return new Date(row.end_date).toLocaleDateString();
+        } catch (e) {
+          return "N/A";
+        }
+      },
     },
     {
       key: "previous_salary",
       label: "Salary",
-      render: (row) => (row.previous_salary ? `${row.previous_salary}` : "N/A"),
+      render: (row) => (row?.previous_salary ? `${row.previous_salary}` : "N/A"),
     },
     {
       key: "rating",
       label: "Rating",
-      render: (row) => (row.rating ? `${row.rating}/5` : "N/A"),
+      render: (row) => (row?.rating ? `${row.rating}/5` : "N/A"),
     },
     {
       key: "pets_experience",
       label: "Pets Experience",
-      render: (row) => row.pets_experience || "N/A",
+      render: (row) => row?.pets_experience || "N/A",
     },
     {
       key: "comfortable_with_pets",
       label: "Comfortable with Pets",
-      render: (row) => (row.comfortable_with_pets ? "Yes" : "No"),
+      render: (row) => (row?.comfortable_with_pets ? "Yes" : "No"),
     },
     {
       key: "country",
       label: "Country",
-      render: (row) => row.country?.name || "N/A",
+      render: (row) => row?.country?.name || "N/A",
     },
   ];
 
@@ -142,14 +179,14 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
     render: (row) => (
       <input
         type="checkbox"
-        checked={selectedRows.includes(row.id)}
-        onChange={() => handleRowSelect(row.id)}
+        checked={selectedRows.includes(row?.id)}
+        onChange={() => handleRowSelect(row?.id)}
         style={{
           cursor: "pointer",
           width: "14px",
           height: "14px",
           accentColor: "#747c4d",
-          backgroundColor: selectedRows.includes(row.id) ? "#747c4d" : "#fff",
+          backgroundColor: selectedRows.includes(row?.id) ? "#747c4d" : "#fff",
           border: "1px solid #ddd",
           borderRadius: "4px",
         }}
@@ -183,7 +220,7 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
         <ul className="option-list" style={{ display: "flex", gap: "0.5rem" }}>
           <li>
             <Link
-              href={`/website/employees/experience/${row.id}`}
+              href={`/website/employees/experience/${row?.id}`}
               title="View Experience"
               data-text="View Experience"
             >
@@ -192,7 +229,7 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
           </li>
           <li>
             <Link
-              href={`/panels/employee/experience/edit/${row.id}`}
+              href={`/panels/employee/experience/edit/${row?.id}`}
               title="Edit Experience"
               data-text="Edit Experience"
             >
@@ -203,7 +240,7 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
             <button
               title="Delete Experience"
               data-text="Delete Experience"
-              onClick={() => handleBulkDelete([row.id])}
+              onClick={() => handleBulkDelete([row?.id])}
             >
               <span className="la la-trash"></span>
             </button>
@@ -221,6 +258,11 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
     { value: "20", label: "20" },
     { value: "50", label: "50" },
   ];
+
+  // Debug logging
+  console.log("Table data:", safeData);
+  console.log("Filtered data:", filteredData);
+  console.log("Paginated data:", paginatedData);
 
   return (
     <div style={{ backgroundColor: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", marginBottom: "2rem" }}>
@@ -260,6 +302,7 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
               borderRadius: "4px",
               cursor: selectedRows.length === 0 ? "not-allowed" : "pointer",
               fontSize: "0.875rem",
+              opacity: selectedRows.length === 0 ? 0.6 : 1,
             }}
           >
             Bulk Delete ({selectedRows.length})
@@ -318,7 +361,7 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
       `}</style>
 
       <div className="table-outer" style={{ overflowX: "auto" }}>
-        <table className="default-table manage-job-table">
+        <table className="default-table manage-job-table" style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
               {allFields.map((field, index) => (
@@ -330,6 +373,7 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
                     textAlign: "left",
                     color: "#747c4d",
                     fontWeight: "500",
+                    borderBottom: "2px solid #eee",
                   }}
                 >
                   {field.label}
@@ -341,10 +385,10 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
             {paginatedData.length > 0 ? (
               paginatedData.map((row, rowIndex) => (
                 <tr
-                  key={rowIndex}
+                  key={row?.id || rowIndex}
                   style={{
                     borderBottom: "1px solid #eee",
-                    backgroundColor: selectedRows.includes(row.id) ? "#f0f0f0" : "#fff",
+                    backgroundColor: selectedRows.includes(row?.id) ? "#f0f0f0" : "#fff",
                   }}
                 >
                   {allFields.map((field, colIndex) => (
@@ -354,9 +398,10 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
                       style={{
                         padding: "1rem",
                         color: "#555",
+                        borderBottom: "1px solid #eee",
                       }}
                     >
-                      {field.render ? field.render(row) : row[field.key]}
+                      {field.render ? field.render(row) : row?.[field.key] || "N/A"}
                     </td>
                   ))}
                 </tr>
@@ -367,11 +412,12 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
                   colSpan={allFields.length}
                   style={{
                     textAlign: "center",
-                    padding: "1rem",
+                    padding: "2rem",
                     color: "#555",
+                    fontStyle: "italic",
                   }}
                 >
-                  No records found
+                  {safeData.length === 0 ? "No work experience records found" : "No records match your filters"}
                 </td>
               </tr>
             )}
@@ -392,7 +438,7 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
         }}
       >
         <div>
-          Showing {(currentPage - 1) * pageSize + 1} to{" "}
+          Showing {filteredData.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to{" "}
           {Math.min(currentPage * pageSize, filteredData.length)} of{" "}
           {filteredData.length} records
         </div>
@@ -429,23 +475,23 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
             Previous
           </button>
           <span style={{ padding: "0.5rem", whiteSpace: "nowrap" }}>
-            Page {currentPage} of {totalPages}
+            Page {currentPage} of {totalPages || 1}
           </span>
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
+            disabled={currentPage === totalPages || totalPages === 0}
             style={{
               padding: "0 0.75rem",
               border: "1px solid #e1e5e9",
               borderRadius: "8px",
-              backgroundColor: currentPage === totalPages ? "#f5f5f5" : "#fff",
-              cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+              backgroundColor: (currentPage === totalPages || totalPages === 0) ? "#f5f5f5" : "#fff",
+              cursor: (currentPage === totalPages || totalPages === 0) ? "not-allowed" : "pointer",
               height: "36px",
               fontSize: "0.875rem",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: currentPage === totalPages ? "#9ca3af" : "#333",
+              color: (currentPage === totalPages || totalPages === 0) ? "#9ca3af" : "#333",
               transition: "all 0.2s ease",
             }}
           >
@@ -458,9 +504,13 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete }) => {
 };
 
 WorkExperienceTable.propTypes = {
-  data: PropTypes.arrayOf(PropTypes.object).isRequired,
+  data: PropTypes.arrayOf(PropTypes.object),
   title: PropTypes.string.isRequired,
   handleBulkDelete: PropTypes.func.isRequired,
+};
+
+WorkExperienceTable.defaultProps = {
+  data: [],
 };
 
 export default WorkExperienceTable;
