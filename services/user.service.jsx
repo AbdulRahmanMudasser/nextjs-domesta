@@ -229,6 +229,48 @@ class UserService {
       throw error;
     }
   }
+
+  // Employment Details Methods
+  async getEmploymentDetails(userId) {
+    try {
+      console.log("Calling networkService.getEmploymentDetails with userId:", userId);
+      const response = await networkService.getEmploymentDetails(userId);
+      console.log("getEmploymentDetails response:", response);
+      if (response) {
+        return response;
+      }
+      console.warn("No employment details returned for userId:", userId);
+      return null;
+    } catch (error) {
+      console.error("getEmploymentDetails error:", error);
+      await notificationService.showToast("Failed to fetch employment details. Please try again.", "error");
+      return null;
+    }
+  }
+
+  async saveEmploymentDetails(data) {
+    try {
+      console.log("Calling networkService.saveEmploymentDetails with data:", data);
+      const response = await networkService.saveEmploymentDetails(data);
+      console.log("saveEmploymentDetails response:", response);
+      if (response) {
+        await notificationService.showToast("Employment details saved successfully!", "success");
+        return response;
+      }
+      console.warn("Failed to save employment details");
+      await notificationService.showToast("Failed to save employment details.", "error");
+      return null;
+    } catch (error) {
+      console.error("saveEmploymentDetails error:", error);
+      if (error.errors) {
+        const errorMessages = Object.values(error.errors).flat().join("; ");
+        await notificationService.showToast(`Failed to save employment details: ${errorMessages}`, "error");
+        throw new Error(errorMessages || "Invalid employment data.");
+      }
+      await notificationService.showToast(`Failed to save employment details: ${error.message || "Server error."}`, "error");
+      throw error;
+    }
+  }
 }
 
 export const userService = new UserService();

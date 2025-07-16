@@ -4,6 +4,7 @@ import EmploymentDetailsCardForm from "@/templates/forms/EmploymentDetailsCardFo
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import { networkService } from "@/services/network.service";
+import { userService } from "@/services/user.service";
 import { notificationService } from "@/services/notification.service";
 import Modal from "./Modal";
 import Loader from "@/globals/Loader";
@@ -53,7 +54,7 @@ const EmploymentDetails = () => {
     experience: "",
     employers: "",
     skills: "",
-    workingHours: "9:00 am to 5:00pm",
+    workingHours: "",
     salary: "",
     noticePeriod: "",
     needAirTicket: "",
@@ -80,6 +81,8 @@ const EmploymentDetails = () => {
   const [verificationStatusOptions, setVerificationStatusOptions] = useState([]);
   const [employeeTypeOptions, setEmployeeTypeOptions] = useState([]);
   const [willingToLiveInOptions, setWillingToLiveInOptions] = useState([]);
+  const [serviceOptions, setServiceOptions] = useState([]);
+  const [visaStatusOptions, setVisaStatusOptions] = useState([]);
   const [documentPreviews, setDocumentPreviews] = useState({
     supportingDocs: "",
   });
@@ -183,74 +186,232 @@ const EmploymentDetails = () => {
     setModalContent(null);
   };
 
+  // Helper function to find option by value
+  const findOptionByValue = (options, value) => {
+    return options.find(option => option.value === value);
+  };
+
+  // Helper function to find option by ID 
+  const findOptionById = (options, id) => {
+    return options.find(option => option.id === id);
+  };
+
+  // Helper function to get value from nested object (similar to MyProfile.jsx)
+  const getValue = (obj, fallback = "") => obj?.value || obj?.name || fallback;
+
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    return new Date(dateString).toISOString().split("T")[0];
+  };
+
+  // Helper function to fetch media thumbnail (similar to MyProfile.jsx)
+  const fetchMediaThumbnail = async (mediaId, originalUrl) => {
+    if (!mediaId) return "";
+    try {
+      const mediaResponse = await networkService.get(`/media/single/${mediaId}`);
+      if (mediaResponse?.data?.base_url && mediaResponse?.data?.thumb_size) {
+        return `${mediaResponse.data.base_url}${mediaResponse.data.thumb_size}`;
+      }
+      return originalUrl || "";
+    } catch (error) {
+      console.error(`Error fetching media ${mediaId}:`, error);
+      return originalUrl || "";
+    }
+  };
+
+  // Map API response to form data
+  const mapApiToFormData = async (apiData) => {
+    if (!apiData) return;
+
+    console.log("Mapping API data to form data:", apiData);
+
+    const mappedData = {
+      experience: apiData.work_experience_years || "",
+      employers: apiData.previous_employers || "",
+      skills: apiData.skills_and_expertise || "",
+      workingHours: getValue(apiData.preferred_working_hours),
+      salary: apiData.expected_salary_bhd || "",
+      noticePeriod: apiData.notice_period || "",
+      needAirTicket: apiData.need_air_ticket === true ? "Yes" : apiData.need_air_ticket === false ? "No" : "",
+      employmentPreference: getValue(apiData.employment_type),
+      availability: apiData.availability || "",
+      interviewTimings: apiData.preferred_interview_timings || "",
+      verificationStatus: getValue(apiData.document_verification_status),
+      employeeType: getValue(apiData.employee_type),
+      employeeCategory: getValue(apiData.service) || getValue(apiData.employee_service),
+      visaStatus: getValue(apiData.visa_status),
+      visaExpiryDate: formatDate(apiData.visa_expiry_date),
+      willingToLiveIn: getValue(apiData.willing_live),
+      maxWorkHours: apiData.max_work_hours_per_day || "",
+      flexibleWeekends: apiData.flexible_with_weekends === true ? "Yes" : apiData.flexible_with_weekends === false ? "No" : "",
+      otherBenefits: apiData.other_benefits_requirements || "",
+      supportingDocsId: apiData.media_id || null,
+    };
+
+    console.log("Mapped form data:", mappedData);
+
+    // Handle media preview if exists
+    if (apiData.media && apiData.media.base_url && apiData.media.unique_name) {
+      const originalUrl = `${apiData.media.base_url}${apiData.media.unique_name}`;
+      mappedData.supportingDocsUrl = originalUrl;
+      
+      // Fetch thumbnail for preview
+      try {
+        const thumbnailUrl = await fetchMediaThumbnail(apiData.media_id, originalUrl);
+        setDocumentPreviews(prev => ({
+          ...prev,
+          supportingDocs: thumbnailUrl,
+        }));
+      } catch (error) {
+        console.error("Error fetching media thumbnail:", error);
+        // Fallback to original URL for preview if thumbnail fails
+        setDocumentPreviews(prev => ({
+          ...prev,
+          supportingDocs: originalUrl,
+        }));
+      }
+    }
+
+    setFormData(prev => ({ ...prev, ...mappedData }));
+  };
+
+  // Map form data to API format
+  const mapFormToApiData = (userId) => {
+    // Find the ID for dropdown values
+    const getDropdownId = (options, value) => {
+      const option = findOptionByValue(options, value);
+      console.log(`Finding ID for value "${value}" in options:`, options, "Found:", option);
+      return option ? option.id : null;
+    };
+
+    const apiData = {
+      employee_id: userId,
+      work_experience_years: formData.experience ? parseInt(formData.experience) : null,
+      previous_employers: formData.employers || null,
+      skills_and_expertise: formData.skills || null,
+      preferred_working_hours_id: getDropdownId(workingHoursOptions, formData.workingHours),
+      expected_salary_bhd: formData.salary ? parseFloat(formData.salary) : null,
+      notice_period: formData.noticePeriod || null,
+      need_air_ticket: formData.needAirTicket === "Yes" ? true : formData.needAirTicket === "No" ? false : null,
+      employment_type_preference_id: getDropdownId(employmentPreferenceOptions, formData.employmentPreference),
+      availability: formData.availability || null,
+      preferred_interview_timings: formData.interviewTimings || null,
+      document_verification_status_id: getDropdownId(verificationStatusOptions, formData.verificationStatus),
+      employee_type_id: getDropdownId(employeeTypeOptions, formData.employeeType),
+      visa_status_id: getDropdownId(visaStatusOptions, formData.visaStatus),
+      visa_expiry_date: formData.visaExpiryDate || null,
+      willing_to_live_in_id: getDropdownId(willingToLiveInOptions, formData.willingToLiveIn),
+      max_work_hours_per_day: formData.maxWorkHours ? parseInt(formData.maxWorkHours) : null,
+      flexible_with_weekends: formData.flexibleWeekends === "Yes" ? true : formData.flexibleWeekends === "No" ? false : null,
+      other_benefits_requirements: formData.otherBenefits || null,
+      employee_service_id: getDropdownId(serviceOptions, formData.employeeCategory),
+      media_id: formData.supportingDocsId || null,
+    };
+
+    console.log("Form data:", formData);
+    console.log("Mapped API data:", apiData);
+    return apiData;
+  };
+
   useEffect(() => {
-    const fetchDropdowns = async () => {
+    const fetchData = async () => {
       try {
         setIsInitialLoading(true);
         
-        // Fetch type_of_employment_prefernce options
-        const employmentResponse = await networkService.getDropdowns("type_of_employment_prefernce");
+        // Get current user
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user || !user.id) {
+          await notificationService.showToast("User not found. Please login again.", "error");
+          return;
+        }
+
+        // Fetch all dropdowns
+        const [
+          employmentResponse,
+          workingHoursResponse,
+          verificationStatusResponse,
+          employeeTypeResponse,
+          willingToLiveInResponse,
+          visaStatusResponse,
+          servicesResponse
+        ] = await Promise.all([
+          networkService.getDropdowns("type_of_employment_prefernce"),
+          networkService.getDropdowns("prefered_working_hours"),
+          networkService.getDropdowns("document_verification_status"),
+          networkService.getDropdowns("employee_type"),
+          networkService.getDropdowns("willing_to_live_in"),
+          networkService.getDropdowns("visa_status"),
+          userService.getServices()
+        ]);
+
+        // Set dropdown options
         if (employmentResponse?.type_of_employment_prefernce) {
-          const options = employmentResponse.type_of_employment_prefernce.map((item) => ({
+          setEmploymentPreferenceOptions(employmentResponse.type_of_employment_prefernce.map(item => ({
+            id: item.id,
             value: item.value,
             label: item.value,
-          }));
-          setEmploymentPreferenceOptions(options);
-        } else {
-          throw new Error("No employment preference options returned");
+          })));
         }
 
-        // Fetch prefered_working_hours options
-        const workingHoursResponse = await networkService.getDropdowns("prefered_working_hours");
         if (workingHoursResponse?.prefered_working_hours) {
-          const options = workingHoursResponse.prefered_working_hours.map((item) => ({
+          setWorkingHoursOptions(workingHoursResponse.prefered_working_hours.map(item => ({
+            id: item.id,
             value: item.value,
             label: item.value,
-          }));
-          setWorkingHoursOptions(options);
-        } else {
-          throw new Error("No working hours options returned");
+          })));
         }
 
-        // Fetch document_verification_status options
-        const verificationStatusResponse = await networkService.getDropdowns("document_verification_status");
         if (verificationStatusResponse?.document_verification_status) {
-          const options = verificationStatusResponse.document_verification_status.map((item) => ({
+          setVerificationStatusOptions(verificationStatusResponse.document_verification_status.map(item => ({
+            id: item.id,
             value: item.value,
             label: item.value,
-          }));
-          setVerificationStatusOptions(options);
-        } else {
-          throw new Error("No document verification status options returned");
+          })));
         }
 
-        // Fetch employee_type options
-        const employeeTypeResponse = await networkService.getDropdowns("employee_type");
         if (employeeTypeResponse?.employee_type) {
-          const options = employeeTypeResponse.employee_type.map((item) => ({
+          setEmployeeTypeOptions(employeeTypeResponse.employee_type.map(item => ({
+            id: item.id,
             value: item.value,
             label: item.value,
-          }));
-          setEmployeeTypeOptions(options);
-        } else {
-          throw new Error("No employee type options returned");
+          })));
         }
 
-        // Fetch willing_to_live_in options
-        const willingToLiveInResponse = await networkService.getDropdowns("willing_to_live_in");
         if (willingToLiveInResponse?.willing_to_live_in) {
-          const options = willingToLiveInResponse.willing_to_live_in.map((item) => ({
+          setWillingToLiveInOptions(willingToLiveInResponse.willing_to_live_in.map(item => ({
+            id: item.id,
             value: item.value,
             label: item.value,
-          }));
-          setWillingToLiveInOptions(options);
-        } else {
-          throw new Error("No willing to live-in options returned");
+          })));
         }
+
+        if (visaStatusResponse?.visa_status) {
+          setVisaStatusOptions(visaStatusResponse.visa_status.map(item => ({
+            id: item.id,
+            value: item.value,
+            label: item.value,
+          })));
+        }
+
+        if (servicesResponse && Array.isArray(servicesResponse)) {
+          setServiceOptions(servicesResponse.map(item => ({
+            id: item.id,
+            value: item.name || item.title, // Use name if available, fallback to title
+            label: item.name || item.title,
+          })));
+        }
+
+        // Fetch existing employment details
+        const employmentData = await userService.getEmploymentDetails(user.id);
+        if (employmentData) {
+          await mapApiToFormData(employmentData);
+        }
+
       } catch (error) {
-        console.error("Error fetching dropdowns:", error);
+        console.error("Error fetching data:", error);
         await notificationService.showToast(
-          error.message || "Failed to load dropdown options.",
+          error.message || "Failed to load data.",
           "error"
         );
       } finally {
@@ -260,7 +421,7 @@ const EmploymentDetails = () => {
       }
     };
 
-    fetchDropdowns();
+    fetchData();
   }, []);
 
   const yesNoOptions = [
@@ -273,18 +434,7 @@ const EmploymentDetails = () => {
     { value: "not_available", label: "Not Available" },
   ];
 
-  const employeeCategoryOptions = [
-    { value: "Driver", label: "Driver" },
-    { value: "Cook", label: "Cook" },
-    { value: "Maid", label: "Maid" },
-    { value: "Nanny", label: "Nanny" },
-    { value: "Elderly Care", label: "Elderly Care" },
-  ];
-
-  const visaStatusOptions = [
-    { value: "Own Visa", label: "Own Visa" },
-    { value: "Needs Sponsorship", label: "Needs Sponsorship" },
-  ];
+  const employeeCategoryOptions = serviceOptions; // Use services from API
 
   const fields = [
     {
@@ -545,15 +695,27 @@ const EmploymentDetails = () => {
     try {
       setIsSubmitting(true);
       
-      // Add your form submission logic here, such as API calls
-      await notificationService.showToast("Employment details saved successfully!", "success");
+      // Get current user
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user || !user.id) {
+        await notificationService.showToast("User not found. Please login again.", "error");
+        return;
+      }
+
+      // Map form data to API format
+      const apiData = mapFormToApiData(user.id);
+      console.log("Mapped API data:", apiData);
+
+      // Save employment details
+      const response = await userService.saveEmploymentDetails(apiData);
+      
+      if (response) {
+        console.log("Employment details saved successfully:", response);
+      }
       
     } catch (error) {
       console.error("Form submission error:", error);
-      await notificationService.showToast(
-        error.message || "Failed to save employment details. Please try again.",
-        "error"
-      );
+      // Error handling is done in userService.saveEmploymentDetails
     } finally {
       setTimeout(() => {
         setIsSubmitting(false);
