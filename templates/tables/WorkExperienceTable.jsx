@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import Link from "next/link";
 import CustomSelect from "../misc/CustomSelect";
 import { networkService } from "@/services/network.service";
+import { apiService } from "@/services/api.service";
 import { notificationService } from "@/services/notification.service";
 
 const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh }) => {
@@ -17,13 +18,17 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh }) =
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async (ids) => {
+    console.log("handleDelete called with:", ids); // Debug log
+    
     if (!ids || ids.length === 0) {
       await notificationService.showToast("No items selected for deletion", "warning");
       return;
     }
 
-    // Filter out any undefined or null IDs
-    const validIds = ids.filter(id => id != null);
+    // Filter out any undefined or null IDs and ensure they're numbers
+    const validIds = ids.filter(id => id != null && !isNaN(id)).map(id => Number(id));
+    console.log("Valid IDs after filtering:", validIds); // Debug log
+    
     if (validIds.length === 0) {
       await notificationService.showToast("Invalid items selected", "error");
       return;
@@ -31,17 +36,22 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh }) =
 
     try {
       setIsDeleting(true);
-      console.log("Deleting experiences with IDs:", validIds); // Debug log
+      console.log("Sending DELETE request to /employee/experience/delete with IDs:", validIds); // Debug log
 
-      const response = await networkService.delete("/employee/experience/delete", {
-        ids: validIds
-      });
+      // Use the same pattern as deleteService - direct apiService call
+      const response = await apiService.delete("/employee/experience/delete", { data: { ids: validIds } });
+      
+      // Extract data like in network service handleResponse
+      const result = response.data.data || response.data || response;
+      console.log("Delete response:", result); // Debug log
 
-      console.log("Delete response:", response); // Debug log
-
-      if (response && response.status) {
+      // Check for success - API might return just the number of deleted records or a status object
+      const isSuccess = (result && result.status === true) || (typeof result === 'number' && result > 0) || result === 1;
+      
+      if (isSuccess) {
+        const deletedCount = typeof result === 'number' ? result : validIds.length;
         await notificationService.showToast(
-          response.message || `Successfully deleted ${validIds.length} experience(s)`, 
+          `Successfully deleted ${deletedCount} experience(s)!`, 
           "success"
         );
         
@@ -60,12 +70,16 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh }) =
           setCurrentPage(maxPage);
         }
       } else {
-        throw new Error(response?.message || "Delete operation failed");
+        console.log("Delete operation failed - unexpected response:", result);
+        throw new Error("Delete operation failed - unexpected response from server");
       }
     } catch (err) {
       console.error("Delete error:", err); // Debug log
+      
+      // Handle error similar to network service
+      const error = err.response?.data || err;
       await notificationService.showToast(
-        err.message || "Failed to delete experience(s)", 
+        error.message || "Failed to delete experience(s)", 
         "error"
       );
     } finally {
@@ -364,7 +378,11 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh }) =
           <button
             title="Delete Experience"
             className="action-button delete-btn"
-            onClick={() => handleDelete([row?.id])}
+            onClick={() => {
+              console.log("Delete button clicked for row:", row); // Debug log
+              console.log("Row ID being sent:", row?.id); // Debug log
+              handleDelete([row?.id]);
+            }}
             disabled={isDeleting}
             style={{ opacity: isDeleting ? 0.6 : 1 }}
           >
@@ -388,6 +406,12 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh }) =
   console.log("Table data:", safeData);
   console.log("Filtered data:", filteredData);
   console.log("Paginated data:", paginatedData);
+  
+  // Debug each row to see the ID structure
+  if (paginatedData.length > 0) {
+    console.log("First row structure:", paginatedData[0]);
+    console.log("First row ID:", paginatedData[0]?.id);
+  }
 
   return (
     <div style={{ backgroundColor: "#fff", padding: "2rem", borderRadius: "12px", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)", marginBottom: "2rem", border: "1px solid #f1f5f9" }}>
@@ -631,7 +655,6 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh }) =
                     textAlign: "center",
                     padding: "3rem 2rem",
                     color: "#718096",
-                    fontStyle: "italic",
                     fontSize: "1rem",
                   }}
                 >
