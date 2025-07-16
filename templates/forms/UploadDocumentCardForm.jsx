@@ -119,43 +119,56 @@ const UploadDocumentCardForm = ({
       case "file":
         return (
           <div>
-            <div
-              style={{
-                ...commonInputStyle,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                textAlign: "center",
-                position: "relative",
-                minHeight: "60px",
-                backgroundColor: formErrors[field.name] ? "#fed7d7" : "#f0f5f7",
-              }}
-              onClick={() => document.getElementById(`${field.name}Input`).click()}
-            >
-              {formData[field.name] ? (
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <span>{formData[field.name].name || "File selected"}</span>
-                </div>
-              ) : (
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <span>Click to upload {field.label}</span>
-                </div>
-              )}
-            </div>
-            <input
-              type="file"
-              id={`${field.name}Input`}
-              name={field.name}
-              accept={field.accept}
-              onChange={handleFileChange(field.name)}
-              style={{ display: "none" }}
-              disabled={loading}
-            />
-            {formErrors[field.name] && (
-              <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-                {formErrors[field.name]}
+            {field.previewComponent ? (
+              <div style={{ opacity: loading ? 0.6 : 1 }}>
+                {field.previewComponent}
               </div>
+            ) : (
+              <div
+                style={{
+                  ...commonInputStyle,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  position: "relative",
+                  minHeight: "60px",
+                  border: formErrors[field.name] ? "2px dashed #dc3545" : "2px dashed #8C956B",
+                  backgroundColor: formErrors[field.name] ? "#fed7d7" : "#f0f5f7",
+                }}
+                onClick={() => document.getElementById(`${field.name}Input`).click()}
+              >
+                {formData[field.name] ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <span className="la la-file" style={{ color: "#8C956B", fontSize: "1.5rem" }}></span>
+                    <span>{formData[field.name].name || "File selected"}</span>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <span className="la la-upload" style={{ color: "#8C956B", fontSize: "1.5rem" }}></span>
+                    <span>Click to upload {field.label}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            {!field.previewComponent && (
+              <>
+                <input
+                  type="file"
+                  id={`${field.name}Input`}
+                  name={field.name}
+                  accept={field.accept}
+                  onChange={handleFileChange(field.name)}
+                  style={{ display: "none" }}
+                  disabled={loading}
+                />
+                {formErrors[field.name] && (
+                  <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
+                    {formErrors[field.name]}
+                  </div>
+                )}
+              </>
             )}
           </div>
         );
@@ -248,6 +261,7 @@ UploadDocumentCardForm.propTypes = {
       isMulti: PropTypes.bool,
       disabled: PropTypes.bool,
       className: PropTypes.string,
+      previewComponent: PropTypes.node,
     })
   ).isRequired,
   formData: PropTypes.object.isRequired,

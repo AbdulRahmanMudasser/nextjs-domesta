@@ -6,6 +6,7 @@ import UploadDocumentTable from "@/templates/tables/UploadDocumentTable";
 import { networkService } from "@/services/network.service";
 import { notificationService } from "@/services/notification.service";
 import Loader from "@/globals/Loader";
+import Modal from "./Modal";
 import { v4 as uuidv4 } from "uuid";
 import Select from "react-select";
 
@@ -21,6 +22,11 @@ const UploadDocument = () => {
   const [isLoadingSingle, setIsLoadingSingle] = useState(false);
   const [documentTypeOptions, setDocumentTypeOptions] = useState([]);
   const [countryOptions, setCountryOptions] = useState([]);
+  const [documentPreviews, setDocumentPreviews] = useState({
+    file: "",
+  });
+  const [modalContent, setModalContent] = useState(null);
+  const [isModalPreviewOpen, setIsModalPreviewOpen] = useState(false);
 
   // Handle client-side mounting to avoid hydration issues
   useEffect(() => {
@@ -31,6 +37,8 @@ const UploadDocument = () => {
     id: uuidv4(),
     category: "",
     file: null,
+    fileUrl: "",
+    fileId: null,
     expiryDate: "",
     currentStatus: "",
     issuingCountry: "",
@@ -48,6 +56,35 @@ const UploadDocument = () => {
     height: "60px",
   };
 
+  // Define preview button style for document buttons
+  const previewButtonStyle = {
+    marginTop: "10px",
+    backgroundColor: "#8C956B",
+    color: "white",
+    border: "none",
+    padding: "0.5rem 1rem",
+    borderRadius: "0.5rem",
+    cursor: "pointer",
+    fontSize: "14px",
+  };
+
+  // Define remove button style
+  const removeButtonStyle = {
+    position: "absolute",
+    top: "0px",
+    right: "-1px",
+    backgroundColor: "#8C956B",
+    color: "white",
+    borderRadius: "50%",
+    width: "28px",
+    height: "28px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    fontSize: "18px",
+  };
+
   const statusOptions = [
     { value: "Active", label: "Active" },
     { value: "Expired", label: "Expired" },
@@ -58,6 +95,103 @@ const UploadDocument = () => {
     { value: "Yes", label: "Yes" },
     { value: "No", label: "No" },
   ];
+
+  const handleChange = (field, value) => {
+    console.log("Field change:", field, value); // Debug log
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const handleSelectChange = (field) => (selected) => {
+    console.log("Select change:", field, selected); // Debug log
+    setFormData((prev) => ({
+      ...prev,
+      [field]: selected?.value || "",
+    }));
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const handleFileChange = (field) => async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({ ...prev, [field]: file }));
+      setFormErrors((prev) => ({ ...prev, [field]: "" }));
+      
+      try {
+        console.log(`Starting upload for ${field}, isSubmitting: true`);
+        setIsSubmitting(true);
+        
+        // Use the exact same approach as MyProfile
+        const response = await networkService.uploadMedia(file);
+        
+        if (response && response[0]?.base_url && response[0]?.thumb_size) {
+          const previewUrl = `${response[0].base_url}${response[0].thumb_size}`;
+          setDocumentPreviews((prev) => ({
+            ...prev,
+            [field]: previewUrl,
+          }));
+          setFormData((prev) => ({
+            ...prev,
+            [`${field}Url`]: `${response[0].base_url}${response[0].unique_name}`,
+            [`${field}Id`]: response[0].id,
+          }));
+        }
+      } catch (error) {
+        console.error(`Error uploading ${field}:`, error);
+        await notificationService.showToast(
+          `Failed to upload ${field}. Please try again.`,
+          "error"
+        );
+      } finally {
+        setTimeout(() => {
+          setIsSubmitting(false);
+          console.log(`Finished upload for ${field}, isSubmitting: false`);
+        }, 500);
+      }
+    }
+  };
+
+  const handleRemoveFile = (field) => () => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: null,
+      [`${field}Url`]: "",
+      [`${field}Id`]: null,
+    }));
+    setDocumentPreviews((prev) => ({
+      ...prev,
+      [field]: "",
+    }));
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const handlePreviewClick = (field, url) => () => {
+    if (url) {
+      if (url.endsWith(".pdf")) {
+        setModalContent(
+          <iframe
+            src={url}
+            style={{ width: "100%", height: "80vh", border: "none" }}
+            title={`${field} Preview`}
+          />
+        );
+      } else {
+        setModalContent(
+          <img
+            src={url}
+            alt={`${field} Preview`}
+            style={{ maxWidth: "100%", maxHeight: "80vh", borderRadius: "0.5rem" }}
+          />
+        );
+      }
+      setIsModalPreviewOpen(true);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalPreviewOpen(false);
+    setModalContent(null);
+  };
 
   const formFields = useMemo(() => [
     {
@@ -82,30 +216,81 @@ const UploadDocument = () => {
       type: "number", name: "numberOfDays", label: "Number of Days (if not immediate)", placeholder: "Enter days", colClass: "col-lg-6 col-md-12", min: "0", required: formData.workAvailableImmediately === "No", disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "file", name: "file", label: "Upload Document", colClass: "col-lg-6 col-md-12", accept: ".pdf,.jpg,.png", required: true, disabled: isInitialLoading || isSubmitting, style: inputStyle,
+      type: "file", name: "file", label: "Upload Document", colClass: "col-lg-6 col-md-12", accept: ".pdf,.jpg,.png", required: !formData.fileUrl, disabled: isInitialLoading || isSubmitting, style: inputStyle,
+      preview: documentPreviews.file,
+      previewComponent: (
+        <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
+          {documentPreviews.file ? (
+            <>
+              {formData.fileUrl && formData.fileUrl.endsWith(".pdf") ? (
+                <button
+                  onClick={handlePreviewClick("file", formData.fileUrl)}
+                  style={previewButtonStyle}
+                >
+                  View Document
+                </button>
+              ) : (
+                <img
+                  src={documentPreviews.file}
+                  alt="Document Preview"
+                  style={{
+                    maxWidth: "100px",
+                    maxHeight: "100px",
+                    marginTop: "10px",
+                    borderRadius: "0.5rem",
+                    objectFit: "cover",
+                  }}
+                  onClick={handlePreviewClick("file", formData.fileUrl)}
+                  onError={() => console.error("Error loading document preview")}
+                />
+              )}
+              <button
+                onClick={handleRemoveFile("file")}
+                style={removeButtonStyle}
+                title="Remove Document"
+              >
+                ×
+              </button>
+            </>
+          ) : (
+            <div
+              style={{ 
+                width: "100%",
+                borderRadius: "0.5rem",
+                backgroundColor: "#F0F5F7",
+                boxSizing: "border-box",
+                height: "60px",
+                border: formErrors.file ? "1px solid #dc3545" : "1px solid transparent",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+                cursor: "pointer"
+              }}
+              className={formErrors.file ? "is-invalid" : ""}
+              onClick={() => document.getElementById("fileInput").click()}
+            >
+              Choose Document
+            </div>
+          )}
+          <input
+            type="file"
+            id="fileInput"
+            name="file"
+            accept=".pdf,.jpg,.png"
+            onChange={handleFileChange("file")}
+            style={{ display: "none" }}
+            disabled={isSubmitting || isInitialLoading}
+          />
+          {formErrors.file && (
+            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+              {formErrors.file}
+            </div>
+          )}
+        </div>
+      ),
     },
-  ], [documentTypeOptions, statusOptions, countryOptions, yesNoOptions, formData.workAvailableImmediately, isInitialLoading, isSubmitting, inputStyle]);
-
-  const handleChange = (field, value) => {
-    console.log("Field change:", field, value); // Debug log
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setFormErrors((prev) => ({ ...prev, [field]: "" }));
-  };
-
-  const handleSelectChange = (field) => (selected) => {
-    console.log("Select change:", field, selected); // Debug log
-    setFormData((prev) => ({
-      ...prev,
-      [field]: selected?.value || "",
-    }));
-    setFormErrors((prev) => ({ ...prev, [field]: "" }));
-  };
-
-  const handleFileChange = (field) => (e) => {
-    console.log("File change:", field, e.target.files[0]); // Debug log
-    setFormData((prev) => ({ ...prev, [field]: e.target.files[0] }));
-    setFormErrors((prev) => ({ ...prev, [field]: "" }));
-  };
+  ], [documentTypeOptions, statusOptions, countryOptions, yesNoOptions, formData.workAvailableImmediately, formData.fileUrl, documentPreviews.file, formErrors.file, isInitialLoading, isSubmitting, inputStyle]);
 
   const fetchSingleDocument = async (documentId) => {
     if (!documentId) {
@@ -128,6 +313,8 @@ const UploadDocument = () => {
           id: document.id,
           category: document.category || "",
           file: document.file || null,
+          fileUrl: document.fileUrl || "",
+          fileId: document.fileId || null,
           expiryDate: document.expiryDate || "",
           currentStatus: document.currentStatus || "",
           issuingCountry: document.issuingCountry || "",
@@ -135,6 +322,14 @@ const UploadDocument = () => {
           workAvailableImmediately: document.workAvailableImmediately || "",
           numberOfDays: document.numberOfDays || "",
         };
+
+        // Set document preview if exists
+        if (document.fileUrl) {
+          setDocumentPreviews(prev => ({
+            ...prev,
+            file: document.fileUrl.includes('thumb') ? document.fileUrl : document.fileUrl,
+          }));
+        }
 
         console.log("Formatted form data:", formattedData); // Debug log
         setFormData(formattedData);
@@ -171,12 +366,18 @@ const UploadDocument = () => {
       id: uuidv4(),
       category: "",
       file: null,
+      fileUrl: "",
+      fileId: null,
       expiryDate: "",
       currentStatus: "",
       issuingCountry: "",
       currentLocation: "",
       workAvailableImmediately: "",
       numberOfDays: "",
+    });
+
+    setDocumentPreviews({
+      file: "",
     });
     
     setFormErrors({});
@@ -185,20 +386,48 @@ const UploadDocument = () => {
 
   const validateForm = () => {
     const errors = {};
-    let valid = true;
-    if (!formData.category) errors.category = "Required", valid = false;
-    if (!formData.expiryDate) errors.expiryDate = "Required", valid = false;
-    if (!formData.currentStatus) errors.currentStatus = "Required", valid = false;
-    if (!formData.issuingCountry) errors.issuingCountry = "Required", valid = false;
-    if (!formData.currentLocation) errors.currentLocation = "Required", valid = false;
-    if (!formData.workAvailableImmediately) errors.workAvailableImmediately = "Required", valid = false;
-    if (formData.workAvailableImmediately === "No" && !formData.numberOfDays) {
-      errors.numberOfDays = "Required when work is not immediately available", valid = false;
+    let isValid = true;
+
+    // Create a mapping of field names to their display labels
+    const fieldLabels = formFields.reduce((acc, field) => ({
+      ...acc,
+      [field.name]: field.label,
+    }), {});
+
+    // Validate required fields
+    const requiredFields = formFields.filter((f) => f.required).map((f) => f.name);
+    requiredFields.forEach((field) => {
+      if (!formData[field] || formData[field] === "") {
+        errors[field] = `${fieldLabels[field]} is required`;
+        isValid = false;
+      }
+    });
+
+    // Specific validations
+    if (formData.numberOfDays && (isNaN(formData.numberOfDays) || formData.numberOfDays < 0)) {
+      errors.numberOfDays = `${fieldLabels.numberOfDays} must be a non-negative number`;
+      isValid = false;
     }
-    if (!formData.file && !isEditMode) errors.file = "Required", valid = false;
-    
+
+    if (formData.expiryDate && !/^\d{4}-\d{2}-\d{2}$/.test(formData.expiryDate)) {
+      errors.expiryDate = `Please enter a valid ${fieldLabels.expiryDate.toLowerCase()} (YYYY-MM-DD)`;
+      isValid = false;
+    }
+
+    // File field validation
+    if (!formData.file && !formData.fileUrl && !isEditMode) {
+      errors.file = `${fieldLabels.file} is required`;
+      isValid = false;
+    }
+
+    // Conditional validation for numberOfDays
+    if (formData.workAvailableImmediately === "No" && !formData.numberOfDays) {
+      errors.numberOfDays = "Required when work is not immediately available";
+      isValid = false;
+    }
+
     setFormErrors(errors);
-    return valid;
+    return isValid;
   };
 
   const fetchData = async () => {
@@ -268,13 +497,16 @@ const UploadDocument = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormErrors({});
+    
     console.log("Form submitted with data:", formData); // Debug log
     console.log("Is edit mode:", isEditMode, "Editing ID:", editingDocumentId); // Debug log
     
     if (!validateForm()) {
-      const firstError = Object.values(formErrors)[0];
+      const firstError = Object.values(formErrors)[0] || "Please fill in all required fields";
       console.log("Validation failed:", formErrors); // Debug log
-      return notificationService.showToast(firstError || "Please fill required fields", "error");
+      await notificationService.showToast(firstError, "error");
+      return;
     }
     
     try {
@@ -318,12 +550,18 @@ const UploadDocument = () => {
         id: uuidv4(),
         category: "",
         file: null,
+        fileUrl: "",
+        fileId: null,
         expiryDate: "",
         currentStatus: "",
         issuingCountry: "",
         currentLocation: "",
         workAvailableImmediately: "",
         numberOfDays: "",
+      });
+
+      setDocumentPreviews({
+        file: "",
       });
       
     } catch (err) {
@@ -377,6 +615,19 @@ const UploadDocument = () => {
 
   return (
     <div className="relative min-h-screen">
+      <style>
+        {`
+          .is-invalid {
+            border: 1px solid #dc3545 !important;
+          }
+          .invalid-feedback {
+            display: block;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+          }
+        `}
+      </style>
       {(isInitialLoading || isSubmitting || isLoadingSingle) && (
         <Loader text={
           isLoadingSingle ? "Loading document..." : 
@@ -455,6 +706,10 @@ const UploadDocument = () => {
           </div>
         </>
       )}
+
+      <Modal isOpen={isModalPreviewOpen} onClose={closeModal} isWide={modalContent?.type === "iframe"}>
+        {modalContent}
+      </Modal>
     </div>
   );
 };
