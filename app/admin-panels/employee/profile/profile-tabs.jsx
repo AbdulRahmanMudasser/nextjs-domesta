@@ -12,10 +12,20 @@ const ProfileTabs = ({ activeTab, setActiveTab }) => {
     { name: "WorkExperiencesBox", label: "Work Experiences" },
     { name: "EmploymentDetails", label: "Employment Details" },
     { name: "UploadDocument", label: "Upload Document" },
-    { name: "ApplicationManagement", label: "Application Management" },
     { name: "InterviewManagement", label: "Interview Management" },
     { name: "SocialNetworkBox", label: "Social Networks" },
   ];
+
+  // const tabs = [
+  //   { name: "MyProfile", label: "Employee Profile" },
+  //   { name: "ContactInfoBox", label: "Contact Information" },
+  //   { name: "WorkExperiencesBox", label: "Work Experiences" },
+  //   { name: "EmploymentDetails", label: "Employment Details" },
+  //   { name: "UploadDocument", label: "Upload Document" },
+  //   { name: "ApplicationManagement", label: "Application Management" },
+  //   { name: "InterviewManagement", label: "Interview Management" },
+  //   { name: "SocialNetworkBox", label: "Social Networks" },
+  // ];
 
   const scrollLeft = () => {
     if (scrollRef.current) {
