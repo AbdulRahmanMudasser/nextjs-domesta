@@ -44,4 +44,4 @@ export const apiService = {
   delete: (url, config = {}) => defaultAxiosInstance.delete(url, config),
 };
 
-export default defaultAxiosInstance;
+export default defaultAxiosInstance;  

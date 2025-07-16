@@ -93,6 +93,15 @@ export const networkService = {
     console.log(`Sending GET request to /dropdowns?types=${types}`);
     return handleResponse(apiService.get(`/dropdowns?types=${types}`, {}), false);
   },
+  // Employment Details APIs
+  getEmploymentDetails: (userId: number) => {
+    console.log(`Sending GET request to /employee/employment-single/${userId}`);
+    return handleResponse(apiService.get(`/employee/employment-single/${userId}`, {}), false);
+  },
+  saveEmploymentDetails: (data: any) => {
+    console.log("Sending POST request to /employee/employment-edit with data:", data);
+    return handleResponse(apiService.post("/employee/employment-edit", data, {}), true);
+  },
   get: (endpoint: string, id: any = null, showError = true) =>
     handleResponse(
       apiService.get(`${endpoint}${id ? "/" + id : ""}`, {}),
