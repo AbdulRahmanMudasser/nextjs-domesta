@@ -650,7 +650,6 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
                     textAlign: "center",
                     padding: "3rem 2rem",
                     color: "#718096",
-                    fontStyle: "italic",
                     fontSize: "1rem",
                   }}
                 >

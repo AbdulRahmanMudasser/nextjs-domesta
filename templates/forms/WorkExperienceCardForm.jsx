@@ -42,7 +42,8 @@ const WorkExperienceCardForm = ({
       width: "100%",
       boxSizing: "border-box",
       transition: "border-color 0.2s",
-      border: "1px solid #ced4da", // Consistent border for all fields
+      border: "none", // No border for all fields
+      backgroundColor: "#f0f5f7", // Light gray background for all fields
       opacity: loading ? 0.6 : 1,
     };
 
