@@ -129,19 +129,16 @@ const UploadDocumentCardForm = ({
                 textAlign: "center",
                 position: "relative",
                 minHeight: "60px",
-                border: formErrors[field.name] ? "2px dashed #dc3545" : "2px dashed #8C956B",
                 backgroundColor: formErrors[field.name] ? "#fed7d7" : "#f0f5f7",
               }}
               onClick={() => document.getElementById(`${field.name}Input`).click()}
             >
               {formData[field.name] ? (
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <span className="la la-file" style={{ color: "#8C956B", fontSize: "1.5rem" }}></span>
                   <span>{formData[field.name].name || "File selected"}</span>
                 </div>
               ) : (
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <span className="la la-upload" style={{ color: "#8C956B", fontSize: "1.5rem" }}></span>
                   <span>Click to upload {field.label}</span>
                 </div>
               )}

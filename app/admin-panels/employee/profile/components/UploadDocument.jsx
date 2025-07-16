@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import UploadDocumentCardForm from "@/templates/forms/UploadDocumentCardForm";
 import UploadDocumentTable from "@/templates/tables/UploadDocumentTable";
+import { networkService } from "@/services/network.service";
 import { notificationService } from "@/services/notification.service";
 import Loader from "@/globals/Loader";
 import { v4 as uuidv4 } from "uuid";
@@ -18,6 +19,8 @@ const UploadDocument = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingDocumentId, setEditingDocumentId] = useState(null);
   const [isLoadingSingle, setIsLoadingSingle] = useState(false);
+  const [documentTypeOptions, setDocumentTypeOptions] = useState([]);
+  const [countryOptions, setCountryOptions] = useState([]);
 
   // Handle client-side mounting to avoid hydration issues
   useEffect(() => {
@@ -45,27 +48,10 @@ const UploadDocument = () => {
     height: "60px",
   };
 
-  const documentCategoryOptions = [
-    { value: "Passport", label: "Passport" },
-    { value: "Visa", label: "Visa" },
-    { value: "Work Permit", label: "Work Permit" },
-    { value: "ID Card", label: "ID Card" },
-    { value: "Other", label: "Other" },
-  ];
-
   const statusOptions = [
     { value: "Active", label: "Active" },
     { value: "Expired", label: "Expired" },
     { value: "Pending", label: "Pending" },
-  ];
-
-  const countryOptions = [
-    { value: "Bahrain", label: "Bahrain" },
-    { value: "Kuwait", label: "Kuwait" },
-    { value: "Oman", label: "Oman" },
-    { value: "Qatar", label: "Qatar" },
-    { value: "Saudi Arabia", label: "Saudi Arabia" },
-    { value: "United Arab Emirates", label: "United Arab Emirates" },
   ];
 
   const yesNoOptions = [
@@ -75,7 +61,7 @@ const UploadDocument = () => {
 
   const formFields = useMemo(() => [
     {
-      type: "select", name: "category", label: "Document Type", options: documentCategoryOptions, placeholder: "Select Category", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
+      type: "select", name: "category", label: "Document Type", options: documentTypeOptions, placeholder: "Select Category", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "date", name: "expiryDate", label: "Expiry Date", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting, style: inputStyle,
@@ -98,7 +84,7 @@ const UploadDocument = () => {
     {
       type: "file", name: "file", label: "Upload Document", colClass: "col-lg-6 col-md-12", accept: ".pdf,.jpg,.png", required: true, disabled: isInitialLoading || isSubmitting, style: inputStyle,
     },
-  ], [documentCategoryOptions, statusOptions, countryOptions, yesNoOptions, formData.workAvailableImmediately, isInitialLoading, isSubmitting, inputStyle]);
+  ], [documentTypeOptions, statusOptions, countryOptions, yesNoOptions, formData.workAvailableImmediately, isInitialLoading, isSubmitting, inputStyle]);
 
   const handleChange = (field, value) => {
     console.log("Field change:", field, value); // Debug log
@@ -219,6 +205,12 @@ const UploadDocument = () => {
     try {
       setIsInitialLoading(true);
       
+      // Fetch document type options
+      await fetchDocumentTypeOptions();
+      
+      // Fetch country options
+      await fetchCountryOptions();
+      
       // Since this is using local state, we don't need to fetch from API
       // But we can simulate loading for consistency
       console.log("Loading documents from local state:", savedDocuments);
@@ -230,6 +222,40 @@ const UploadDocument = () => {
       setTimeout(() => {
         setIsInitialLoading(false);
       }, 500);
+    }
+  };
+
+  const fetchDocumentTypeOptions = async () => {
+    try {
+      const documentTypeResponse = await networkService.getDropdowns("document_type");
+      if (documentTypeResponse?.document_type) {
+        const documentTypeOptions = documentTypeResponse.document_type.map((item) => ({
+          value: item.value,
+          label: item.value,
+          id: item.id,
+        }));
+        setDocumentTypeOptions(documentTypeOptions);
+      }
+    } catch (error) {
+      console.error("Error fetching document type options:", error);
+    }
+  };
+
+  const fetchCountryOptions = async () => {
+    try {
+      const countryResponse = await networkService.get("/country");
+      if (countryResponse) {
+        const countryOptions = countryResponse.map((item) => ({
+          value: item.name,
+          label: item.name,
+          id: item.id,
+        }));
+        setCountryOptions(countryOptions);
+      } else {
+        throw new Error("No country options returned");
+      }
+    } catch (error) {
+      console.error("Error fetching country options:", error);
     }
   };
 
