@@ -11,6 +11,7 @@ const WorkExperienceCardForm = ({
   onSubmit = (e) => e.preventDefault(),
   loading = false,
   formErrors = {},
+  buttonText = "Save",
 }) => {
   const buttonStyle = {
     backgroundColor: "#8C956B",
@@ -173,7 +174,7 @@ const WorkExperienceCardForm = ({
             onMouseOut={(e) => !loading && (e.target.style.backgroundColor = "#8C956B")}
             disabled={loading}
           >
-            {loading ? "Saving..." : "Save"}
+            {loading ? "Saving..." : buttonText}
           </button>
         </div>
       </div>
@@ -206,6 +207,7 @@ WorkExperienceCardForm.propTypes = {
   onSubmit: PropTypes.func,
   loading: PropTypes.bool,
   formErrors: PropTypes.object,
+  buttonText: PropTypes.string,
 };
 
 export default WorkExperienceCardForm;

@@ -16,6 +16,9 @@ const JobExperienceCard = () => {
   const [countryOptions, setCountryOptions] = useState([]);
   const [experiences, setExperiences] = useState([]);
   const [mounted, setMounted] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingExperienceId, setEditingExperienceId] = useState(null);
+  const [isLoadingSingle, setIsLoadingSingle] = useState(false);
 
   // Handle client-side mounting to avoid hydration issues
   useEffect(() => {
@@ -133,6 +136,109 @@ const JobExperienceCard = () => {
     setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
+  const fetchSingleExperience = async (experienceId) => {
+    if (!experienceId) {
+      console.warn("No experience ID provided");
+      return;
+    }
+
+    try {
+      setIsLoadingSingle(true);
+      console.log("Fetching single experience with ID:", experienceId); // Debug log
+
+      const response = await networkService.get(`/employee/experience/single/${experienceId}`);
+      console.log("Single experience response:", response); // Debug log
+
+      let experienceData = null;
+      
+      // Handle different response formats
+      if (response && response.data) {
+        experienceData = response.data;
+      } else if (response && response.status && response.data) {
+        experienceData = response.data;
+      } else if (response) {
+        experienceData = response;
+      }
+
+      if (experienceData) {
+        console.log("Experience data to populate:", experienceData); // Debug log
+        
+        // Format the data to match form structure
+        const formattedData = {
+          employer_name: experienceData.employer_name || "",
+          employment_location: experienceData.employment_location || "",
+          employer_dial_code: experienceData.employer_dial_code || "",
+          employer_phone: experienceData.employer_phone || "",
+          employer_email: experienceData.employer_email || "",
+          country: experienceData.country?.name || "",
+          country_id: experienceData.country_id || null,
+          start_date: experienceData.start_date ? experienceData.start_date.split('T')[0] : "",
+          end_date: experienceData.end_date ? experienceData.end_date.split('T')[0] : "",
+          designation: experienceData.designation || "",
+          previous_salary: experienceData.previous_salary || "",
+          benefits: experienceData.benefits || "",
+          rating: experienceData.rating || "",
+          employer_review: experienceData.employer_review || "",
+          pets_experience: experienceData.pets_experience || "",
+          comfortable_with_pets: experienceData.comfortable_with_pets,
+          employee_id: employeeId,
+        };
+
+        console.log("Formatted form data:", formattedData); // Debug log
+        setFormData(formattedData);
+      } else {
+        console.warn("No experience data found in response:", response);
+        await notificationService.showToast("Experience not found", "error");
+      }
+
+    } catch (err) {
+      console.error("Error fetching single experience:", err);
+      await notificationService.showToast(err.message || "Error loading experience data", "error");
+    } finally {
+      setIsLoadingSingle(false);
+    }
+  };
+
+  const handleEditExperience = async (experienceId) => {
+    console.log("Edit experience called with ID:", experienceId); // Debug log
+    setIsEditMode(true);
+    setEditingExperienceId(experienceId);
+    setIsModalOpen(true);
+    
+    // Fetch and populate the experience data
+    await fetchSingleExperience(experienceId);
+  };
+
+  const handleAddExperience = () => {
+    console.log("Add new experience"); // Debug log
+    setIsEditMode(false);
+    setEditingExperienceId(null);
+    
+    // Reset form data for new experience
+    setFormData({
+      employer_name: "",
+      employment_location: "",
+      employer_dial_code: "",
+      employer_phone: "",
+      employer_email: "",
+      country: "",
+      country_id: null,
+      start_date: "",
+      end_date: "",
+      designation: "",
+      previous_salary: "",
+      benefits: "",
+      rating: "",
+      employer_review: "",
+      pets_experience: "",
+      comfortable_with_pets: "",
+      employee_id: employeeId,
+    });
+    
+    setFormErrors({});
+    setIsModalOpen(true);
+  };
+
   const validateForm = () => {
     const errors = {};
     let valid = true;
@@ -223,6 +329,7 @@ const JobExperienceCard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Form submitted with data:", formData); // Debug log
+    console.log("Is edit mode:", isEditMode, "Editing ID:", editingExperienceId); // Debug log
     
     if (!validateForm()) {
       const firstError = Object.values(formErrors)[0];
@@ -243,14 +350,31 @@ const JobExperienceCard = () => {
         employer_review: formData.employer_review || null,
         pets_experience: formData.pets_experience || null,
       };
+
+      // Add ID for edit mode
+      if (isEditMode && editingExperienceId) {
+        payload.id = editingExperienceId;
+      }
       
       console.log("Submitting payload:", payload); // Debug log
       
-      const response = await networkService.post("/employee/experience/add", payload);
-      console.log("Submit response:", response); // Debug log
+      let response;
+      if (isEditMode) {
+        // Edit existing experience
+        response = await networkService.post("/employee/experience/edit", payload);
+        console.log("Edit response:", response); // Debug log
+      } else {
+        // Add new experience
+        response = await networkService.post("/employee/experience/add", payload);
+        console.log("Add response:", response); // Debug log
+      }
       
-      await notificationService.showToast("Experience added!", "success");
+      const successMessage = isEditMode ? "Experience updated successfully!" : "Experience added successfully!";
+      await notificationService.showToast(successMessage, "success");
+      
       setIsModalOpen(false);
+      setIsEditMode(false);
+      setEditingExperienceId(null);
       
       // Reset form data
       setFormData((prev) => ({
@@ -277,15 +401,17 @@ const JobExperienceCard = () => {
       fetchData();
     } catch (err) {
       console.error("Submit error:", err); // Debug log
-      await notificationService.showToast(err.message || "Submit failed", "error");
+      const errorMessage = isEditMode ? "Failed to update experience" : "Failed to add experience";
+      await notificationService.showToast(err.message || errorMessage, "error");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleBulkDelete = async (ids) => {
-    if (ids.length === 0) return;
-    await notificationService.showToast("Bulk delete not implemented", "info");
+    // This function is kept for backward compatibility but not used
+    // The actual delete is handled in WorkExperienceTable component
+    console.log("Legacy handleBulkDelete called with:", ids);
   };
 
   // Don't render until mounted to avoid hydration issues
@@ -295,10 +421,16 @@ const JobExperienceCard = () => {
 
   return (
     <div className="relative min-h-screen">
-      {(isInitialLoading || isSubmitting) && <Loader text={isInitialLoading ? "Loading..." : "Saving..."} />}
+      {(isInitialLoading || isSubmitting || isLoadingSingle) && (
+        <Loader text={
+          isLoadingSingle ? "Loading experience..." : 
+          isInitialLoading ? "Loading..." : 
+          "Saving..."
+        } />
+      )}
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleAddExperience}
           disabled={isInitialLoading || isSubmitting}
           style={{
             padding: "0.75rem 1.5rem",
@@ -320,6 +452,7 @@ const JobExperienceCard = () => {
         title="Work Experience History"
         handleBulkDelete={handleBulkDelete}
         onDataRefresh={fetchData}
+        onEditExperience={handleEditExperience}
       />
 
       {isModalOpen && (
@@ -331,7 +464,11 @@ const JobExperienceCard = () => {
               backgroundColor: "rgba(0,0,0,0.5)",
               zIndex: 999,
             }}
-            onClick={() => setIsModalOpen(false)}
+            onClick={() => {
+              setIsModalOpen(false);
+              setIsEditMode(false);
+              setEditingExperienceId(null);
+            }}
           />
           <div
             style={{
@@ -346,15 +483,16 @@ const JobExperienceCard = () => {
               width: "90%", maxWidth: "800px", maxHeight: "80vh", overflowY: "auto",
             }}
           >
-            <h3>Add Work Experience</h3>
+            <h3>{isEditMode ? "Edit Work Experience" : "Add Work Experience"}</h3>
             <WorkExperienceCardForm
               fields={formFields}
               formData={formData}
               handleChange={handleChange}
               handleSelectChange={handleSelectChange}
               onSubmit={handleSubmit}
-              loading={isSubmitting}
+              loading={isSubmitting || isLoadingSingle}
               formErrors={formErrors}
+              buttonText={isEditMode ? "Update Experience" : "Save Experience"}
             />
           </div>
         </>

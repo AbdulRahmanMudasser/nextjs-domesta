@@ -1,12 +1,11 @@
 import React, { useState, useMemo } from "react";
 import PropTypes from "prop-types";
-import Link from "next/link";
 import CustomSelect from "../misc/CustomSelect";
 import { networkService } from "@/services/network.service";
 import { apiService } from "@/services/api.service";
 import { notificationService } from "@/services/notification.service";
 
-const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh }) => {
+const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh, onEditExperience }) => {
   const [filters, setFilters] = useState({
     employer_name: "",
     designation: "",
@@ -359,22 +358,25 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh }) =
     render: (row) => (
       <div className="option-box">
         <div className="option-list" style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <Link
-            href={`/website/employees/experience/${row?.id}`}
-            title="View Experience"
-            className="action-button view-btn"
-            style={{ textDecoration: "none" }}
-          >
-            <span className="la la-eye"></span>
-          </Link>
-          <Link
-            href={`/panels/employee/experience/edit/${row?.id}`}
+          <button
             title="Edit Experience"
             className="action-button edit-btn"
-            style={{ textDecoration: "none" }}
+            onClick={() => {
+              console.log("Edit button clicked for row:", row); // Debug log
+              console.log("Row ID being sent for edit:", row?.id); // Debug log
+              if (onEditExperience && typeof onEditExperience === 'function') {
+                onEditExperience(row?.id);
+              }
+            }}
+            disabled={isDeleting}
+            style={{ 
+              opacity: isDeleting ? 0.6 : 1,
+              textDecoration: "none",
+              border: "none"
+            }}
           >
             <span className="la la-pencil"></span>
-          </Link>
+          </button>
           <button
             title="Delete Experience"
             className="action-button delete-btn"
@@ -561,13 +563,6 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh }) =
           transform: translateY(-1px);
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        .view-btn {
-          background-color: #4299e1;
-          color: white;
-        }
-        .view-btn:hover {
-          background-color: #3182ce;
-        }
         .edit-btn {
           background-color: #8C956B;
           color: white;
@@ -655,6 +650,7 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh }) =
                     textAlign: "center",
                     padding: "3rem 2rem",
                     color: "#718096",
+                    fontStyle: "italic",
                     fontSize: "1rem",
                   }}
                 >
@@ -837,11 +833,13 @@ WorkExperienceTable.propTypes = {
   title: PropTypes.string.isRequired,
   handleBulkDelete: PropTypes.func.isRequired,
   onDataRefresh: PropTypes.func,
+  onEditExperience: PropTypes.func,
 };
 
 WorkExperienceTable.defaultProps = {
   data: [],
   onDataRefresh: null,
+  onEditExperience: null,
 };
 
 export default WorkExperienceTable;
