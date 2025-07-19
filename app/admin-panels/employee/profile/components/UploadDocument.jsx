@@ -1,36 +1,63 @@
-'use client';
+"use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import UploadDocumentCardForm from "@/templates/forms/UploadDocumentCardForm";
+import UploadDocumentTable from "@/templates/tables/UploadDocumentTable";
+import { networkService } from "@/services/network.service";
+import { userService } from "@/services/user.service";
+import { notificationService } from "@/services/notification.service";
+import Loader from "@/globals/Loader";
+import Modal from "./Modal";
 import { v4 as uuidv4 } from "uuid";
-import FancyTable from "@/templates/tables/fancy-table";
-import CardForm from "@/templates/forms/card-form";
 
 const UploadDocument = () => {
-  const [savedDocuments, setSavedDocuments] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentEntry, setCurrentEntry] = useState({
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const [savedDocuments, setSavedDocuments] = useState([]);
+  const [mounted, setMounted] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingDocumentId, setEditingDocumentId] = useState(null);
+  const [isLoadingSingle, setIsLoadingSingle] = useState(false);
+  const [documentTypeOptions, setDocumentTypeOptions] = useState([]);
+  const [countryOptions, setCountryOptions] = useState([]);
+  const [statusOptions, setStatusOptions] = useState([]);
+  const [documentPreviews, setDocumentPreviews] = useState({
+    file: "",
+  });
+  const [modalContent, setModalContent] = useState(null);
+  const [isModalPreviewOpen, setIsModalPreviewOpen] = useState(false);
+
+  // Handle client-side mounting to avoid hydration issues
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const user = useMemo(() => {
+    if (typeof window !== 'undefined' && mounted) {
+      const userData = localStorage.getItem("user");
+      return userData ? JSON.parse(userData) : null;
+    }
+    return null;
+  }, [mounted]);
+
+  const employeeId = user?.id;
+
+  const [formData, setFormData] = useState({
     id: uuidv4(),
     category: "",
     file: null,
+    fileUrl: "",
+    fileId: null,
     expiryDate: "",
     currentStatus: "",
     issuingCountry: "",
     currentLocation: "",
     workAvailableImmediately: "",
     numberOfDays: "",
+    employee_id: employeeId,
   });
-
-  const buttonStyle = {
-    padding: "0.75rem 1.5rem",
-    border: "none",
-    borderRadius: "0.5rem",
-    backgroundColor: "#8C956B",
-    color: "white",
-    cursor: "pointer",
-    fontSize: "1rem",
-    fontWeight: "600",
-  };
 
   const inputStyle = {
     width: "100%",
@@ -38,244 +65,810 @@ const UploadDocument = () => {
     borderRadius: "0.5rem",
     backgroundColor: "#F0F5F7",
     boxSizing: "border-box",
-    height:"60px",
+    height: "60px",
   };
 
-  const handleChange = (field, value) => {
-    setCurrentEntry((prev) => ({ ...prev, [field]: value }));
+  // Define preview button style for document buttons
+  const previewButtonStyle = {
+    marginTop: "10px",
+    backgroundColor: "#8C956B",
+    color: "white",
+    border: "none",
+    padding: "0.5rem 1rem",
+    borderRadius: "0.5rem",
+    cursor: "pointer",
+    fontSize: "14px",
   };
 
-  const handleSelectChange = (field) => (selectedOption) => {
-    setCurrentEntry((prev) => ({
-      ...prev,
-      [field]: selectedOption ? selectedOption.value : "",
-    }));
+  // Define remove button style
+  const removeButtonStyle = {
+    position: "absolute",
+    top: "0px",
+    right: "-1px",
+    backgroundColor: "#8C956B",
+    color: "white",
+    borderRadius: "50%",
+    width: "28px",
+    height: "28px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    fontSize: "18px",
   };
-
-  const handleFileChange = (field) => (e) => {
-    setCurrentEntry((prev) => ({ ...prev, [field]: e.target.files[0] }));
-  };
-
-  const saveDocument = () => {
-    if (isEditing) {
-      setSavedDocuments(
-        savedDocuments.map((doc) =>
-          doc.id === currentEntry.id ? currentEntry : doc
-        )
-      );
-    } else {
-      setSavedDocuments([...savedDocuments, { ...currentEntry, id: uuidv4() }]);
-    }
-    setIsModalOpen(false);
-    resetForm();
-    setIsEditing(false);
-  };
-
-  const editDocument = (doc) => {
-    setCurrentEntry(doc);
-    setIsEditing(true);
-    setIsModalOpen(true);
-  };
-
-  const deleteDocument = (id) => {
-    setSavedDocuments(savedDocuments.filter((doc) => doc.id !== id));
-  };
-
-  const resetForm = () => {
-    setCurrentEntry({
-      id: uuidv4(),
-      category: "",
-      file: null,
-      expiryDate: "",
-      currentStatus: "",
-      issuingCountry: "",
-      currentLocation: "",
-      workAvailableImmediately: "",
-      numberOfDays: "",
-    });
-  };
-
-  const fields = [
-    { key: "category", label: "Document Type" },
-    { key: "expiryDate", label: "Expiry Date" },
-    { key: "currentStatus", label: "Current Status" },
-    { key: "issuingCountry", label: "Issuing Country" },
-    { key: "currentLocation", label: "Current Location" },
-    { key: "workAvailableImmediately", label: "Work Immediately" },
-    { key: "numberOfDays", label: "Number of Days" },
-  ];
-
-  const documentCategoryOptions = [
-    { value: "Passport", label: "Passport" },
-    { value: "Visa", label: "Visa" },
-    { value: "Work Permit", label: "Work Permit" },
-    { value: "ID Card", label: "ID Card" },
-    { value: "Other", label: "Other" },
-  ];
-
-  const statusOptions = [
-    { value: "Active", label: "Active" },
-    { value: "Expired", label: "Expired" },
-    { value: "Pending", label: "Pending" },
-  ];
-
-  const countryOptions = [
-    { value: "Bahrain", label: "Bahrain" },
-    { value: "Kuwait", label: "Kuwait" },
-    { value: "Oman", label: "Oman" },
-    { value: "Qatar", label: "Qatar" },
-    { value: "Saudi Arabia", label: "Saudi Arabia" },
-    { value: "United Arab Emirates", label: "United Arab Emirates" },
-  ];
 
   const yesNoOptions = [
     { value: "Yes", label: "Yes" },
     { value: "No", label: "No" },
   ];
 
-  const formFields = [
+  const handleChange = (field, value) => {
+    console.log("Field change:", field, value); // Debug log
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const handleSelectChange = (field) => (selected) => {
+    console.log("Select change:", field, selected); // Debug log
+    setFormData((prev) => ({
+      ...prev,
+      [field]: selected?.value || "",
+    }));
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const handleFileChange = (field) => async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({ ...prev, [field]: file }));
+      setFormErrors((prev) => ({ ...prev, [field]: "" }));
+      
+      try {
+        console.log(`Starting upload for ${field}, isSubmitting: true`);
+        setIsSubmitting(true);
+        
+        // Use the exact same approach as MyProfile
+        const response = await networkService.uploadMedia(file);
+        
+        if (response && response[0]?.base_url && response[0]?.thumb_size) {
+          const previewUrl = `${response[0].base_url}${response[0].thumb_size}`;
+          setDocumentPreviews((prev) => ({
+            ...prev,
+            [field]: previewUrl,
+          }));
+          setFormData((prev) => ({
+            ...prev,
+            [`${field}Url`]: `${response[0].base_url}${response[0].unique_name}`,
+            [`${field}Id`]: response[0].id,
+            employee_id: employeeId,
+          }));
+        }
+      } catch (error) {
+        console.error(`Error uploading ${field}:`, error);
+        await notificationService.showToast(
+          `Failed to upload ${field}. Please try again.`,
+          "error"
+        );
+      } finally {
+        setTimeout(() => {
+          setIsSubmitting(false);
+          console.log(`Finished upload for ${field}, isSubmitting: false`);
+        }, 500);
+      }
+    }
+  };
+
+  const handleRemoveFile = (field) => () => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: null,
+      [`${field}Url`]: "",
+      [`${field}Id`]: null,
+      employee_id: employeeId,
+    }));
+    setDocumentPreviews((prev) => ({
+      ...prev,
+      [field]: "",
+    }));
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const handlePreviewClick = (field, url) => () => {
+    if (url) {
+      if (url.endsWith(".pdf")) {
+        setModalContent(
+          <iframe
+            src={url}
+            style={{ width: "100%", height: "80vh", border: "none" }}
+            title={`${field} Preview`}
+          />
+        );
+      } else {
+        setModalContent(
+          <img
+            src={url}
+            alt={`${field} Preview`}
+            style={{ maxWidth: "100%", maxHeight: "80vh", borderRadius: "0.5rem" }}
+          />
+        );
+      }
+      setIsModalPreviewOpen(true);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalPreviewOpen(false);
+    setModalContent(null);
+  };
+
+  // Helper function to find option by value
+  const findOptionByValue = (options, value) => {
+    return options.find(option => option.value === value);
+  };
+
+  // Map form data to API format
+  const mapFormToApiData = (userId) => {
+    // Find the ID for dropdown values
+    const getDropdownId = (options, value) => {
+      const option = findOptionByValue(options, value);
+      console.log(`Finding ID for value "${value}" in options:`, options, "Found:", option);
+      return option ? option.id : null;
+    };
+
+    const apiData = {
+      document_type_id: getDropdownId(documentTypeOptions, formData.category),
+      expiry_date: formData.expiryDate || null,
+      document_status_id: getDropdownId(statusOptions, formData.currentStatus),
+      issuing_country_id: getDropdownId(countryOptions, formData.issuingCountry),
+      current_location_id: getDropdownId(countryOptions, formData.currentLocation),
+      work_available_immediately: formData.workAvailableImmediately === "Yes" ? true : formData.workAvailableImmediately === "No" ? false : null,
+      number_of_days: formData.workAvailableImmediately === "No" && formData.numberOfDays ? parseInt(formData.numberOfDays) : null,
+      media_id: formData.fileId || null,
+      employee_id: userId,
+    };
+
+    console.log("Form data:", formData);
+    console.log("Mapped API data:", apiData);
+    return apiData;
+  };
+
+  const formFields = useMemo(() => [
     {
-      type: "select",
-      name: "category",
-      label: "Document Type",
-      options: documentCategoryOptions,
-      colClass: "col-lg-6 col-md-12",
-      placeholder: "Select Category",
-      required: true,
+      type: "select", name: "category", label: "Document Type", options: documentTypeOptions, placeholder: "Select Category", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "date",
-      name: "expiryDate",
-      label: "Expiry Date",
-      colClass: "col-lg-6 col-md-12",
-      required: true,
-      style: inputStyle,
+      type: "date", name: "expiryDate", label: "Expiry Date", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting, style: inputStyle,
     },
     {
-      type: "select",
-      name: "currentStatus",
-      label: "Current Status",
-      options: statusOptions,
-      colClass: "col-lg-6 col-md-12",
-      placeholder: "Select Status",
-      required: true,
+      type: "select", name: "currentStatus", label: "Current Status", options: statusOptions, placeholder: "Select Status", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "select",
-      name: "issuingCountry",
-      label: "Issuing Country",
-      options: countryOptions,
-      colClass: "col-lg-6 col-md-12",
-      placeholder: "Select Country",
-      required: true,
+      type: "select", name: "issuingCountry", label: "Issuing Country", options: countryOptions, placeholder: "Select Country", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "select",
-      name: "currentLocation",
-      label: "Current Location",
-      options: countryOptions,
-      colClass: "col-lg-6 col-md-12",
-      placeholder: "Select Location",
-      required: true,
+      type: "select", name: "currentLocation", label: "Current Location", options: countryOptions, placeholder: "Select Location", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "select",
-      name: "workAvailableImmediately",
-      label: "Work Available Immediately",
-      options: yesNoOptions,
-      colClass: "col-lg-6 col-md-12",
-      placeholder: "Select Option",
-      required: true,
+      type: "select", name: "workAvailableImmediately", label: "Work Available Immediately", options: yesNoOptions, placeholder: "Select Option", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "number",
-      name: "numberOfDays",
-      label: "Number of Days (if not immediate)",
-      placeholder: "Enter days",
-      colClass: "col-lg-6 col-md-12",
-      min: "0",
-      required: currentEntry.workAvailableImmediately === "No",
+      type: "number", name: "numberOfDays", label: "Number of Days (if not immediate)", placeholder: "Enter days", colClass: "col-lg-6 col-md-12", min: "0", required: formData.workAvailableImmediately === "No", disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "file",
-      name: "file",
-      label: "Upload Document",
-      colClass: "col-lg-6 col-md-12",
-      accept: ".pdf,.jpg,.png",
-      required: true,
-      style: inputStyle,
+      type: "file", name: "file", label: "Upload Document", colClass: "col-lg-6 col-md-12", accept: ".pdf,.jpg,.png", required: !formData.fileUrl, disabled: isInitialLoading || isSubmitting, style: inputStyle,
+      preview: documentPreviews.file,
+      previewComponent: (
+        <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
+          {documentPreviews.file ? (
+            <>
+              {formData.fileUrl && formData.fileUrl.endsWith(".pdf") ? (
+                <button
+                  onClick={handlePreviewClick("file", formData.fileUrl)}
+                  style={previewButtonStyle}
+                >
+                  View Document
+                </button>
+              ) : (
+                <img
+                  src={documentPreviews.file}
+                  alt="Document Preview"
+                  style={{
+                    maxWidth: "100px",
+                    maxHeight: "100px",
+                    marginTop: "10px",
+                    borderRadius: "0.5rem",
+                    objectFit: "cover",
+                  }}
+                  onClick={handlePreviewClick("file", formData.fileUrl)}
+                  onError={() => console.error("Error loading document preview")}
+                />
+              )}
+              <button
+                onClick={handleRemoveFile("file")}
+                style={removeButtonStyle}
+                title="Remove Document"
+              >
+                ×
+              </button>
+            </>
+          ) : (
+            <div
+              style={{ 
+                width: "100%",
+                borderRadius: "0.5rem",
+                backgroundColor: "#F0F5F7",
+                boxSizing: "border-box",
+                height: "60px",
+                border: formErrors.file ? "1px solid #dc3545" : "1px solid transparent",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+                cursor: "pointer"
+              }}
+              className={formErrors.file ? "is-invalid" : ""}
+              onClick={() => document.getElementById("fileInput").click()}
+            >
+              Choose Document
+            </div>
+          )}
+          <input
+            type ="file"
+            id ="fileInput"
+            name ="file"
+            accept=".pdf,.jpg,.png"
+            onChange={handleFileChange("file")}
+            style={{ display: "none" }}
+            disabled={isSubmitting || isInitialLoading}
+          />
+          {formErrors.file && (
+            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+              {formErrors.file}
+            </div>
+          )}
+        </div>
+      ),
     },
-  ];
+  ], [documentTypeOptions, statusOptions, countryOptions, yesNoOptions, formData.workAvailableImmediately, formData.fileUrl, documentPreviews.file, formErrors.file, isInitialLoading, isSubmitting, inputStyle]);
+
+  const fetchSingleDocument = async (documentId) => {
+    if (!documentId) {
+      console.warn("No document ID provided");
+      return;
+    }
+
+    try {
+      setIsLoadingSingle(true);
+      console.log("Fetching single document with ID:", documentId); // Debug log
+
+      // Find the document in local state
+      const document = savedDocuments.find(doc => doc.id === documentId);
+      
+      if (document) {
+        console.log("Document data to populate:", document); // Debug log
+        
+        // Format the data to match form structure
+        const formattedData = {
+          id: document.id,
+          category: document.document_type?.value || document.category || "",
+          file: null,
+          fileUrl: document.media ? `${document.media.base_url}${document.media.unique_name}` : document.fileUrl || "",
+          fileId: document.media_id || document.fileId || null,
+          expiryDate: document.expiry_date ? document.expiry_date.split('T')[0] : document.expiryDate || "",
+          currentStatus: document.document_status?.value || document.currentStatus || "",
+          issuingCountry: document.issuing_country?.name || document.issuingCountry || "",
+          currentLocation: document.current_location?.name || document.currentLocation || "",
+          workAvailableImmediately: document.work_available_immediately ? "Yes" : document.work_available_immediately === false ? "No" : document.workAvailableImmediately || "",
+          numberOfDays: document.number_of_days?.toString() || document.numberOfDays || "",
+          employee_id: employeeId,
+        };
+
+        // Set document preview if exists
+        if (formattedData.fileUrl) {
+          setDocumentPreviews(prev => ({
+            ...prev,
+            file: formattedData.fileUrl.includes('thumb') ? formattedData.fileUrl : formattedData.fileUrl,
+          }));
+        }
+
+        console.log("Formatted form data:", formattedData); // Debug log
+        setFormData(formattedData);
+      } else {
+        console.warn("No document found with ID:", documentId);
+        await notificationService.showToast("Document not found", "error");
+      }
+
+    } catch (err) {
+      console.error("Error fetching single document:", err);
+      await notificationService.showToast(err.message || "Error loading document data", "error");
+    } finally {
+      setIsLoadingSingle(false);
+    }
+  };
+
+  const handleEditDocument = async (documentId) => {
+    console.log("Edit document called with ID:", documentId); // Debug log
+    setIsEditMode(true);
+    setEditingDocumentId(documentId);
+    setIsModalOpen(true);
+    
+    // Fetch and populate the document data
+    await fetchSingleDocument(documentId);
+  };
+
+  const handleAddDocument = () => {
+    console.log("Add new document"); // Debug log
+    setIsEditMode(false);
+    setEditingDocumentId(null);
+    
+    // Reset form data for new document
+    setFormData({
+      id: uuidv4(),
+      category: "",
+      file: null,
+      fileUrl: "",
+      fileId: null,
+      expiryDate: "",
+      currentStatus: "",
+      issuingCountry: "",
+      currentLocation: "",
+      workAvailableImmediately: "",
+      numberOfDays: "",
+      employee_id: employeeId,
+    });
+
+    setDocumentPreviews({
+      file: "",
+    });
+    
+    setFormErrors({});
+    setIsModalOpen(true);
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    let isValid = true;
+
+    // Create a mapping of field names to their display labels
+    const fieldLabels = formFields.reduce((acc, field) => ({
+      ...acc,
+      [field.name]: field.label,
+    }), {});
+
+    // Validate required fields
+    const requiredFields = formFields.filter((f) => f.required).map((f) => f.name);
+    requiredFields.forEach((field) => {
+      if (!formData[field] || formData[field] === "") {
+        errors[field] = `${fieldLabels[field]} is required`;
+        isValid = false;
+      }
+    });
+
+    // Specific validations
+    if (formData.numberOfDays && (isNaN(formData.numberOfDays) || formData.numberOfDays < 0)) {
+      errors.numberOfDays = `${fieldLabels.numberOfDays} must be a non-negative number`;
+      isValid = false;
+    }
+
+    if (formData.expiryDate && !/^\d{4}-\d{2}-\d{2}$/.test(formData.expiryDate)) {
+      errors.expiryDate = `Please enter a valid ${fieldLabels.expiryDate.toLowerCase()} (YYYY-MM-DD)`;
+      isValid = false;
+    }
+
+    // File field validation
+    if (!formData.file && !formData.fileUrl && !isEditMode) {
+      errors.file = `${fieldLabels.file} is required`;
+      isValid = false;
+    }
+
+    // Conditional validation for numberOfDays
+    if (formData.workAvailableImmediately === "No" && !formData.numberOfDays) {
+      errors.numberOfDays = "Required when work is not immediately available";
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
+  const fetchData = async () => {
+    try {
+      setIsInitialLoading(true);
+      
+      // Fetch document type options
+      await fetchDocumentTypeOptions();
+      
+      // Fetch document status options  
+      await fetchDocumentStatusOptions();
+      
+      // Fetch country options
+      await fetchCountryOptions();
+      
+      // Fetch existing documents
+      if (employeeId) {
+        const documents = await userService.getDocuments(employeeId);
+        console.log("Documents response:", documents);
+        
+        // Map API response to local state format
+        const formattedDocuments = documents.map(doc => ({
+          id: doc.id,
+          document_type: doc.document_type || { value: doc.category },
+          expiry_date: doc.expiry_date ? doc.expiry_date.split('T')[0] : "",
+          document_status: doc.document_status || { value: doc.currentStatus },
+          issuing_country: doc.issuing_country || { name: doc.issuingCountry },
+          current_location: doc.current_location || { name: doc.currentLocation },
+          work_available_immediately: doc.work_available_immediately,
+          number_of_days: doc.number_of_days,
+          media: doc.media || { base_url: doc.fileUrl, unique_name: doc.file?.name },
+          media_id: doc.media_id || doc.fileId,
+          file: doc.file || { name: doc.media?.unique_name || "Document" },
+          fileUrl: doc.media ? `${doc.media.base_url}${doc.media.unique_name}` : doc.fileUrl,
+          fileId: doc.media_id || doc.fileId,
+        }));
+        
+        setSavedDocuments(formattedDocuments);
+      } else {
+        console.warn("No employee ID available for fetching documents");
+        setSavedDocuments([]);
+      }
+
+      console.log("Data loading completed");
+
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      await notificationService.showToast(err.message || "Error loading data", "error");
+      setSavedDocuments([]);
+    } finally {
+      setTimeout(() => {
+        setIsInitialLoading(false);
+      }, 500);
+    }
+  };
+
+  const fetchDocumentTypeOptions = async () => {
+    try {
+      const documentTypeResponse = await networkService.getDropdowns("document_type");
+      if (documentTypeResponse?.document_type) {
+        const documentTypeOptions = documentTypeResponse.document_type.map((item) => ({
+          value: item.value,
+          label: item.value,
+          id: item.id,
+        }));
+        setDocumentTypeOptions(documentTypeOptions);
+      }
+    } catch (error) {
+      console.error("Error fetching document type options:", error);
+    }
+  };
+
+  const fetchDocumentStatusOptions = async () => {
+    try {
+      const statusResponse = await networkService.getDropdowns("document_verification_status");
+      if (statusResponse?.document_verification_status) {
+        const statusOptions = statusResponse.document_verification_status.map((item) => ({
+          value: item.value,
+          label: item.value,
+          id: item.id,
+        }));
+        setStatusOptions(statusOptions);
+      }
+    } catch (error) {
+      console.error("Error fetching document verification status options:", error);
+    }
+  };
+
+  const fetchCountryOptions = async () => {
+    try {
+      const countryResponse = await networkService.get("/country");
+      if (countryResponse) {
+        const countryOptions = countryResponse.map((item) => ({
+          value: item.name,
+          label: item.name,
+          id: item.id,
+        }));
+        setCountryOptions(countryOptions);
+      } else {
+        throw new Error("No country options returned");
+      }
+    } catch (error) {
+      console.error("Error fetching country options:", error);
+    }
+  };
+
+  // Update formData when employeeId changes
+  useEffect(() => {
+    if (employeeId) {
+      setFormData((prev) => ({
+        ...prev,
+        employee_id: employeeId,
+      }));
+    }
+  }, [employeeId]);
+
+  // Fetch data when component mounts and employeeId is available
+  useEffect(() => {
+    if (mounted && employeeId) {
+      fetchData();
+    }
+  }, [mounted, employeeId]);
+
+  // UPDATED handleSubmit method with edit functionality
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormErrors({});
+    
+    console.log("Form submitted with data:", formData);
+    console.log("Is edit mode:", isEditMode, "Editing ID:", editingDocumentId);
+    
+    if (!validateForm()) {
+      const firstError = Object.values(formErrors)[0] || "Please fill in all required fields";
+      console.log("Validation failed:", formErrors);
+      await notificationService.showToast(firstError, "error");
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Get current user
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user || !user.id) {
+        await notificationService.showToast("User not found. Please login again.", "error");
+        return;
+      }
+
+      // Map form data to API format
+      const apiData = mapFormToApiData(user.id);
+      
+      // Add ID for edit mode
+      if (isEditMode && editingDocumentId) {
+        apiData.id = editingDocumentId;
+      }
+      
+      console.log("Submitting API data:", apiData);
+
+      // Validate that we have all required IDs
+      if (!apiData.document_type_id) {
+        throw new Error("Please select a valid document type");
+      }
+      if (!apiData.document_status_id) {
+        throw new Error("Please select a valid document status");
+      }
+      if (!apiData.issuing_country_id) {
+        throw new Error("Please select a valid issuing country");
+      }
+      if (!apiData.current_location_id) {
+        throw new Error("Please select a valid current location");
+      }
+      if (!apiData.media_id) {
+        throw new Error("Please upload a document file");
+      }
+      
+      let response;
+      if (isEditMode) {
+        // Edit existing document via API
+        response = await userService.editDocument(apiData);
+        console.log("Edit document response:", response);
+        
+        if (response) {
+          // Update the document in local state
+          setSavedDocuments(prevDocs => 
+            prevDocs.map(doc => 
+              doc.id === editingDocumentId 
+                ? {
+                    ...doc,
+                    document_type: { value: response.document_type?.value || formData.category },
+                    expiry_date: response.expiry_date ? response.expiry_date.split('T')[0] : formData.expiryDate,
+                    document_status: { value: response.document_status?.value || formData.currentStatus },
+                    issuing_country: { name: response.issuing_country?.name || formData.issuingCountry },
+                    current_location: { name: response.current_location?.name || formData.currentLocation },
+                    work_available_immediately: response.work_available_immediately,
+                    number_of_days: response.number_of_days || formData.numberOfDays,
+                    media: response.media || { base_url: formData.fileUrl, unique_name: response.media?.unique_name || formData.file?.name },
+                    media_id: response.media_id || formData.fileId,
+                    fileUrl: response.media ? `${response.media.base_url}${response.media.unique_name}` : formData.fileUrl,
+                    fileId: response.media_id || formData.fileId,
+                  }
+                : doc
+            )
+          );
+        }
+      } else {
+        // Add new document via API
+        response = await userService.addDocument(apiData);
+        console.log("Add document response:", response);
+        
+        if (response) {
+          // Format the response to match table data structure
+          const newDocument = {
+            id: response.id || uuidv4(),
+            document_type: { value: response.document_type?.value || formData.category },
+            expiry_date: response.expiry_date ? response.expiry_date.split('T')[0] : formData.expiryDate,
+            document_status: { value: response.document_status?.value || formData.currentStatus },
+            issuing_country: { name: response.issuing_country?.name || formData.issuingCountry },
+            current_location: { name: response.current_location?.name || formData.currentLocation },
+            work_available_immediately: response.work_available_immediately,
+            number_of_days: response.number_of_days || formData.numberOfDays,
+            media: response.media || { base_url: formData.fileUrl, unique_name: response.media?.unique_name || formData.file?.name },
+            media_id: response.media_id || formData.fileId,
+            file: { name: response.media?.unique_name || "Document" },
+            fileUrl: response.media ? `${response.media.base_url}${response.media.unique_name}` : formData.fileUrl,
+            fileId: response.media_id || formData.fileId,
+          };
+          setSavedDocuments(prevDocs => [...prevDocs, newDocument]);
+        }
+      }
+      
+      setIsModalOpen(false);
+      setIsEditMode(false);
+      setEditingDocumentId(null);
+      
+      // Reset form data
+      setFormData({
+        id: uuidv4(),
+        category: "",
+        file: null,
+        fileUrl: "",
+        fileId: null,
+        expiryDate: "",
+        currentStatus: "",
+        issuingCountry: "",
+        currentLocation: "",
+        workAvailableImmediately: "",
+        numberOfDays: "",
+        employee_id: employeeId,
+      });
+
+      setDocumentPreviews({
+        file: "",
+      });
+      
+    } catch (err) {
+      console.error("Submit error:", err);
+      const errorMessage = isEditMode ? "Failed to update document" : "Failed to add document";
+      // Error handling is done in userService methods
+    } finally {
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 500);
+    }
+  };
+
+  const handleBulkDelete = async (ids) => {
+    console.log("Bulk delete called with:", ids);
+    
+    if (!ids || ids.length === 0) {
+      console.warn("No IDs provided for deletion");
+      return;
+    }
+
+    // Filter out valid IDs
+    const validIds = ids.filter(id => id != null);
+    
+    if (validIds.length === 0) {
+      console.warn("No valid IDs found");
+      return;
+    }
+
+    try {
+      // Remove documents from local state
+      setSavedDocuments(prevDocs => prevDocs.filter(doc => !validIds.includes(doc.id)));
+      console.log("Documents deleted from local state");
+      
+    } catch (error) {
+      console.error("Error in bulk delete:", error);
+      throw error;
+    }
+  };
+
+  const refreshData = async () => {
+    // Refresh data from server
+    await fetchData();
+    console.log("Data refreshed from server");
+  };
+
+  // Don't render until mounted to avoid hydration issues
+  if (!mounted) {
+    return <Loader text="Loading..." />;
+  }
 
   return (
-    <div>
-      {/* Modal for Adding/Editing Document */}
-      {isModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            background: "rgba(0,0,0,0.5)",
-            zIndex: 999,
-          }}
-          onClick={() => setIsModalOpen(false)}
-        >
-          <div
-            style={{
-              position: "fixed",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              background: "white",
-              padding: "2rem",
-              borderRadius: "8px",
-              width: "80%",
-              maxWidth: "800px",
-              zIndex: 1000,
-              maxHeight: "90vh",
-              overflowY: "auto",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h4>{isEditing ? "Edit Document" : "Add Document"}</h4>
-            <CardForm
-              fields={formFields}
-              formData={currentEntry}
-              handleChange={handleChange}
-              handleSelectChange={handleSelectChange}
-              handleFileChange={handleFileChange}
-              onSubmit={(e) => {
-                e.preventDefault();
-                saveDocument();
-              }}
-            />
-          </div>
-        </div>
+    <div className="relative min-h-screen">
+      <style>
+        {`
+          .is-invalid {
+            border: 1px solid #dc3545 !important;
+          }
+          .invalid-feedback {
+            display: block;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+          }
+        `}
+      </style>
+      {(isInitialLoading || isSubmitting || isLoadingSingle) && (
+        <Loader text={
+          isLoadingSingle ? "Loading document..." : 
+          isInitialLoading ? "Loading..." : 
+          "Saving..."
+        } />
       )}
-
-      {/* FancyTable to Display Documents */}
-      <FancyTable
-        fields={fields}
-        data={savedDocuments}
-        title="Uploaded Documents"
-        filterOptions={[]}
-        editAction={editDocument}
-        deleteAction={deleteDocument}
-      />
-
-      {/* Add Document Button */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
         <button
-          type="button"
-          style={buttonStyle}
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleAddDocument}
+          disabled={isInitialLoading || isSubmitting}
+          style={{
+            padding: "0.75rem 1.5rem",
+            backgroundColor: "#8C956B",
+            color: "#fff",
+            fontWeight: "600",
+            borderRadius: "0.5rem",
+            border: "none",
+            cursor: "pointer",
+            marginBottom: "1rem"
+          }}
         >
           Add Document
         </button>
       </div>
+
+      <UploadDocumentTable
+        data={savedDocuments}
+        title="Uploaded Documents"
+        handleBulkDelete={handleBulkDelete}
+        onDataRefresh={refreshData}
+        onEditDocument={handleEditDocument}
+      />
+
+      {isModalOpen && (
+        <>
+          <div
+            style={{
+              position: "fixed",
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              zIndex: 999,
+            }}
+            onClick={() => {
+              setIsModalOpen(false);
+              setIsEditMode(false);
+              setEditingDocumentId(null);
+            }}
+          />
+          <div
+            style={{
+              position: "fixed",
+              top: "50%", left: "50%",
+              transform: "translate(-50%, -50%)",
+              backgroundColor: "#fff",
+              padding: "2rem",
+              borderRadius: "0.5rem",
+              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+              zIndex: 1000,
+              width: "90%", maxWidth: "800px", maxHeight: "80vh", overflowY: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>{isEditMode ? "Edit Document" : "Add Document"}</h3>
+            <UploadDocumentCardForm
+              fields={formFields}
+              formData={formData}
+              handleChange={handleChange}
+              handleSelectChange={handleSelectChange}
+              handleFileChange={handleFileChange}
+              onSubmit={handleSubmit}
+              loading={isSubmitting || isLoadingSingle}
+              formErrors={formErrors}
+              buttonText={isEditMode ? "Update Document" : "Save Document"}
+            />
+          </div>
+        </>
+      )}
+
+      <Modal isOpen={isModalPreviewOpen} onClose={closeModal} isWide={modalContent?.type === "iframe"}>
+        {modalContent}
+      </Modal>
     </div>
   );
 };

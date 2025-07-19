@@ -102,6 +102,19 @@ export const networkService = {
     console.log("Sending POST request to /employee/employment-edit with data:", data);
     return handleResponse(apiService.post("/employee/employment-edit", data, {}), true);
   },
+  // DELETE DOCUMENTS METHOD
+  deleteDocuments: (ids: number[]) => {
+    console.log("Sending DELETE request to /employee/document/delete with IDs:", ids);
+    return handleResponse(
+      apiService.delete("/employee/document/delete", { data: { ids } }),
+      true
+    );
+  },
+  // EDIT DOCUMENT METHOD
+  editDocument: (data: any) => {
+    console.log("Sending POST request to /employee/document/edit with data:", data);
+    return handleResponse(apiService.post("/employee/document/edit", data, {}), true);
+  },
   get: (endpoint: string, id: any = null, showError = true) =>
     handleResponse(
       apiService.get(`${endpoint}${id ? "/" + id : ""}`, {}),
