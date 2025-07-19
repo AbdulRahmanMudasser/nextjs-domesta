@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
 import { useState, useEffect, useMemo } from "react";
 import UploadDocumentCardForm from "@/templates/forms/UploadDocumentCardForm";
 import UploadDocumentTable from "@/templates/tables/UploadDocumentTable";
 import { networkService } from "@/services/network.service";
+import { userService } from "@/services/user.service";
 import { notificationService } from "@/services/notification.service";
 import Loader from "@/globals/Loader";
 import Modal from "./Modal";
@@ -22,6 +23,7 @@ const UploadDocument = () => {
   const [isLoadingSingle, setIsLoadingSingle] = useState(false);
   const [documentTypeOptions, setDocumentTypeOptions] = useState([]);
   const [countryOptions, setCountryOptions] = useState([]);
+  const [statusOptions, setStatusOptions] = useState([]);
   const [documentPreviews, setDocumentPreviews] = useState({
     file: "",
   });
@@ -32,6 +34,16 @@ const UploadDocument = () => {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const user = useMemo(() => {
+    if (typeof window !== 'undefined' && mounted) {
+      const userData = localStorage.getItem("user");
+      return userData ? JSON.parse(userData) : null;
+    }
+    return null;
+  }, [mounted]);
+
+  const employeeId = user?.id;
 
   const [formData, setFormData] = useState({
     id: uuidv4(),
@@ -45,6 +57,7 @@ const UploadDocument = () => {
     currentLocation: "",
     workAvailableImmediately: "",
     numberOfDays: "",
+    employee_id: employeeId,
   });
 
   const inputStyle = {
@@ -84,12 +97,6 @@ const UploadDocument = () => {
     cursor: "pointer",
     fontSize: "18px",
   };
-
-  const statusOptions = [
-    { value: "Active", label: "Active" },
-    { value: "Expired", label: "Expired" },
-    { value: "Pending", label: "Pending" },
-  ];
 
   const yesNoOptions = [
     { value: "Yes", label: "Yes" },
@@ -134,6 +141,7 @@ const UploadDocument = () => {
             ...prev,
             [`${field}Url`]: `${response[0].base_url}${response[0].unique_name}`,
             [`${field}Id`]: response[0].id,
+            employee_id: employeeId,
           }));
         }
       } catch (error) {
@@ -157,6 +165,7 @@ const UploadDocument = () => {
       [field]: null,
       [`${field}Url`]: "",
       [`${field}Id`]: null,
+      employee_id: employeeId,
     }));
     setDocumentPreviews((prev) => ({
       ...prev,
@@ -191,6 +200,37 @@ const UploadDocument = () => {
   const closeModal = () => {
     setIsModalPreviewOpen(false);
     setModalContent(null);
+  };
+
+  // Helper function to find option by value
+  const findOptionByValue = (options, value) => {
+    return options.find(option => option.value === value);
+  };
+
+  // Map form data to API format
+  const mapFormToApiData = (userId) => {
+    // Find the ID for dropdown values
+    const getDropdownId = (options, value) => {
+      const option = findOptionByValue(options, value);
+      console.log(`Finding ID for value "${value}" in options:`, options, "Found:", option);
+      return option ? option.id : null;
+    };
+
+    const apiData = {
+      document_type_id: getDropdownId(documentTypeOptions, formData.category),
+      expiry_date: formData.expiryDate || null,
+      document_status_id: getDropdownId(statusOptions, formData.currentStatus),
+      issuing_country_id: getDropdownId(countryOptions, formData.issuingCountry),
+      current_location_id: getDropdownId(countryOptions, formData.currentLocation),
+      work_available_immediately: formData.workAvailableImmediately === "Yes" ? true : formData.workAvailableImmediately === "No" ? false : null,
+      number_of_days: formData.workAvailableImmediately === "No" && formData.numberOfDays ? parseInt(formData.numberOfDays) : null,
+      media_id: formData.fileId || null,
+      employee_id: userId,
+    };
+
+    console.log("Form data:", formData);
+    console.log("Mapped API data:", apiData);
+    return apiData;
   };
 
   const formFields = useMemo(() => [
@@ -277,7 +317,7 @@ const UploadDocument = () => {
             type="file"
             id="fileInput"
             name="file"
-            accept=".pdf,.jpg,.png"
+            accept = ".pdf,.jpg,.png"
             onChange={handleFileChange("file")}
             style={{ display: "none" }}
             disabled={isSubmitting || isInitialLoading}
@@ -321,6 +361,7 @@ const UploadDocument = () => {
           currentLocation: document.currentLocation || "",
           workAvailableImmediately: document.workAvailableImmediately || "",
           numberOfDays: document.numberOfDays || "",
+          employee_id: employeeId,
         };
 
         // Set document preview if exists
@@ -374,6 +415,7 @@ const UploadDocument = () => {
       currentLocation: "",
       workAvailableImmediately: "",
       numberOfDays: "",
+      employee_id: employeeId,
     });
 
     setDocumentPreviews({
@@ -437,16 +479,38 @@ const UploadDocument = () => {
       // Fetch document type options
       await fetchDocumentTypeOptions();
       
+      // Fetch document status options  
+      await fetchDocumentStatusOptions();
+      
       // Fetch country options
       await fetchCountryOptions();
       
-      // Since this is using local state, we don't need to fetch from API
-      // But we can simulate loading for consistency
-      console.log("Loading documents from local state:", savedDocuments);
+      // Fetch existing documents
+      if (employeeId) {
+        const documents = await networkService.get(`/employee/document/${employeeId}`);
+        console.log("Documents response:", documents);
+        
+        if (documents && Array.isArray(documents)) {
+          setSavedDocuments(documents);
+        } else if (documents && documents.data && Array.isArray(documents.data)) {
+          setSavedDocuments(documents.data);
+        } else if (documents && documents.status && Array.isArray(documents.data)) {
+          setSavedDocuments(documents.data);
+        } else {
+          console.warn("Unexpected documents response format:", documents);
+          setSavedDocuments([]);
+        }
+      } else {
+        console.warn("No employee ID available for fetching documents");
+        setSavedDocuments([]);
+      }
+
+      console.log("Data loading completed");
 
     } catch (err) {
       console.error("Error fetching data:", err);
       await notificationService.showToast(err.message || "Error loading data", "error");
+      setSavedDocuments([]);
     } finally {
       setTimeout(() => {
         setIsInitialLoading(false);
@@ -470,6 +534,22 @@ const UploadDocument = () => {
     }
   };
 
+  const fetchDocumentStatusOptions = async () => {
+    try {
+      const statusResponse = await networkService.getDropdowns("document_verification_status");
+      if (statusResponse?.document_verification_status) {
+        const statusOptions = statusResponse.document_verification_status.map((item) => ({
+          value: item.value,
+          label: item.value,
+          id: item.id,
+        }));
+        setStatusOptions(statusOptions);
+      }
+    } catch (error) {
+      console.error("Error fetching document verification status options:", error);
+    }
+  };
+
   const fetchCountryOptions = async () => {
     try {
       const countryResponse = await networkService.get("/country");
@@ -488,12 +568,22 @@ const UploadDocument = () => {
     }
   };
 
-  // Fetch data when component mounts
+  // Update formData when employeeId changes
   useEffect(() => {
-    if (mounted) {
+    if (employeeId) {
+      setFormData((prev) => ({
+        ...prev,
+        employee_id: employeeId,
+      }));
+    }
+  }, [employeeId]);
+
+  // Fetch data when component mounts and employeeId is available
+  useEffect(() => {
+    if (mounted && employeeId) {
       fetchData();
     }
-  }, [mounted]);
+  }, [mounted, employeeId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -512,34 +602,62 @@ const UploadDocument = () => {
     try {
       setIsSubmitting(true);
       
-      const payload = {
-        ...formData,
-        numberOfDays: formData.numberOfDays ? parseInt(formData.numberOfDays) : "",
-      };
+      // Get current user
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user || !user.id) {
+        await notificationService.showToast("User not found. Please login again.", "error");
+        return;
+      }
 
-      // Add ID for edit mode or generate new one
-      if (isEditMode && editingDocumentId) {
-        payload.id = editingDocumentId;
-      } else if (!payload.id) {
-        payload.id = uuidv4();
+      // Map form data to API format
+      const apiData = mapFormToApiData(user.id);
+      console.log("Submitting API data:", apiData);
+
+      // Validate that we have all required IDs
+      if (!apiData.document_type_id) {
+        throw new Error("Please select a valid document type");
+      }
+      if (!apiData.document_status_id) {
+        throw new Error("Please select a valid document status");
+      }
+      if (!apiData.issuing_country_id) {
+        throw new Error("Please select a valid issuing country");
+      }
+      if (!apiData.current_location_id) {
+        throw new Error("Please select a valid current location");
+      }
+      if (!apiData.media_id) {
+        throw new Error("Please upload a document file");
       }
       
-      console.log("Submitting payload:", payload); // Debug log
-      
+      let response;
       if (isEditMode) {
-        // Edit existing document
-        setSavedDocuments(prevDocs => 
-          prevDocs.map(doc => doc.id === payload.id ? payload : doc)
-        );
-        console.log("Document updated"); // Debug log
+        // For now, editing is not implemented in the API
+        // You would need to implement employee/document/edit endpoint
+        await notificationService.showToast("Document editing is not yet implemented", "warning");
       } else {
-        // Add new document
-        setSavedDocuments(prevDocs => [...prevDocs, payload]);
-        console.log("Document added"); // Debug log
+        // Add new document via API
+        response = await userService.addDocument(apiData);
+        console.log("Add document response:", response); // Debug log
+        
+        if (response) {
+          // Format the response to match table data structure
+          const newDocument = {
+            id: response.id || uuidv4(),
+            category: response.document_type?.value || formData.category,
+            expiryDate: response.expiry_date ? response.expiry_date.split('T')[0] : formData.expiryDate,
+            currentStatus: response.document_status?.value || formData.currentStatus,
+            issuingCountry: response.issuing_country?.name || formData.issuingCountry,
+            currentLocation: response.current_location?.name || formData.currentLocation,
+            workAvailableImmediately: response.work_available_immediately ? "Yes" : "No",
+            numberOfDays: response.number_of_days || formData.numberOfDays,
+            file: formData.file || { name: response.media?.unique_name || "Document" },
+            fileUrl: response.media ? `${response.media.base_url}${response.media.unique_name}` : formData.fileUrl,
+            fileId: response.media_id || formData.fileId,
+          };
+          setSavedDocuments(prevDocs => [...prevDocs, newDocument]);
+        }
       }
-      
-      const successMessage = isEditMode ? "Document updated successfully!" : "Document added successfully!";
-      await notificationService.showToast(successMessage, "success");
       
       setIsModalOpen(false);
       setIsEditMode(false);
@@ -558,6 +676,7 @@ const UploadDocument = () => {
         currentLocation: "",
         workAvailableImmediately: "",
         numberOfDays: "",
+        employee_id: employeeId,
       });
 
       setDocumentPreviews({
@@ -567,7 +686,7 @@ const UploadDocument = () => {
     } catch (err) {
       console.error("Submit error:", err); // Debug log
       const errorMessage = isEditMode ? "Failed to update document" : "Failed to add document";
-      await notificationService.showToast(err.message || errorMessage, "error");
+      // Error handling is done in userService.addDocument
     } finally {
       setTimeout(() => {
         setIsSubmitting(false);
@@ -603,9 +722,9 @@ const UploadDocument = () => {
   };
 
   const refreshData = async () => {
-    // For local state, we don't need to refresh from server
-    // But we keep this function for consistency with the pattern
-    console.log("Data refresh called - using local state");
+    // Refresh data from server
+    await fetchData();
+    console.log("Data refreshed from server");
   };
 
   // Don't render until mounted to avoid hydration issues
