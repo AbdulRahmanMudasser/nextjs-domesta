@@ -295,6 +295,77 @@ class UserService {
       throw error;
     }
   }
+
+  async getDocuments(employeeId) {
+    try {
+      console.log(`Calling networkService.get for /employee/document/${employeeId}`);
+      const response = await networkService.get(`/employee/document/${employeeId}`);
+      console.log("getDocuments response:", response);
+      if (Array.isArray(response)) {
+        return response;
+      }
+      console.warn(`No documents returned for employeeId: ${employeeId}`);
+      await notificationService.showToast("No documents found.", "info");
+      return [];
+    } catch (error) {
+      console.error("getDocuments error:", error);
+      await notificationService.showToast(`Failed to fetch documents: ${error.message || "Server error."}`, "error");
+      return [];
+    }
+  }
+
+  // DELETE DOCUMENTS METHOD
+  async deleteDocuments(ids) {
+    try {
+      console.log("Calling networkService.deleteDocuments with IDs:", ids);
+      const response = await networkService.deleteDocuments(ids);
+      console.log("deleteDocuments response:", response);
+      
+      if (response && response.status === true) {
+        const deletedCount = typeof response.data === 'number' ? response.data : ids.length;
+        await notificationService.showToast(
+          `Successfully deleted ${deletedCount} document(s)!`, 
+          "success"
+        );
+        return response;
+      }
+      
+      console.warn("Failed to delete documents with IDs:", ids);
+      await notificationService.showToast("Failed to delete document(s).", "error");
+      return null;
+    } catch (error) {
+      console.error("deleteDocuments error:", error);
+      await notificationService.showToast(`Failed to delete document(s): ${error.message || "Server error."}`, "error");
+      return null;
+    }
+  }
+
+  // EDIT DOCUMENT METHOD
+  async editDocument(data) {
+    try {
+      console.log("Calling networkService.editDocument with data:", data);
+      const response = await networkService.editDocument(data);
+      console.log("editDocument response:", response);
+      
+      if (response) {
+        await notificationService.showToast("Document updated successfully!", "success");
+        return response;
+      }
+      
+      console.warn("Failed to edit document");
+      await notificationService.showToast("Failed to edit document.", "error");
+      return null;
+    } catch (error) {
+      console.error("editDocument error:", error);
+      if (error.errors) {
+        const errorMessages = Object.values(error.errors).flat().join("; ");
+        await notificationService.showToast(`Failed to edit document: ${errorMessages}`, "error");
+        throw new Error(errorMessages || "Invalid document data.");
+      }
+      await notificationService.showToast(`Failed to edit document: ${error.message || "Server error."}`, "error");
+      throw error;
+    }
+  }
 }
 
 export const userService = new UserService();
