@@ -1,48 +1,61 @@
 import React, { useState, useMemo } from "react";
 import PropTypes from "prop-types";
 import { notificationService } from "@/services/notification.service";
+import { userService } from "@/services/user.service";
+import ConfirmationDialog from "../forms/ConfirmationDialog";
 
 const UploadDocumentTable = ({ data, title, handleBulkDelete, onDataRefresh, onEditDocument }) => {
   const [filters, setFilters] = useState({
-    category: "",
-    currentStatus: "",
-    issuingCountry: "",
+    document_type: "",
+    document_status: "",
+    issuing_country: "",
   });
   const [selectedRows, setSelectedRows] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // CONFIRMATION DIALOG STATE
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null); // { type: "single" | "bulk", ids: number[] }
 
+  // UPDATED handleDelete method with confirmation dialog
   const handleDelete = async (ids) => {
-    console.log("handleDelete called with:", ids); // Debug log
+    console.log("handleDelete called with:", ids);
     
     if (!ids || ids.length === 0) {
       await notificationService.showToast("No items selected for deletion", "warning");
       return;
     }
 
-    // Filter out any undefined or null IDs
-    const validIds = ids.filter(id => id != null);
-    console.log("Valid IDs after filtering:", validIds); // Debug log
+    // Filter out any undefined or null IDs and ensure they're numbers
+    const validIds = ids.filter(id => id != null && !isNaN(id)).map(id => Number(id));
+    console.log("Valid IDs after filtering:", validIds);
     
     if (validIds.length === 0) {
       await notificationService.showToast("Invalid items selected", "error");
       return;
     }
 
+    // Show confirmation dialog instead of proceeding directly
+    setDeleteTarget({
+      type: validIds.length === 1 ? "single" : "bulk",
+      ids: validIds
+    });
+    setShowDeleteDialog(true);
+  };
+
+  // NEW method to handle confirmed deletion
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+
     try {
       setIsDeleting(true);
-      console.log("Deleting documents with IDs:", validIds); // Debug log
+      console.log("Calling userService.deleteDocuments with IDs:", deleteTarget.ids);
 
-      // For local state management, call the handleBulkDelete function
-      if (handleBulkDelete && typeof handleBulkDelete === 'function') {
-        await handleBulkDelete(validIds);
-        
-        await notificationService.showToast(
-          `Successfully deleted ${validIds.length} document(s)!`, 
-          "success"
-        );
-        
+      const response = await userService.deleteDocuments(deleteTarget.ids);
+      
+      if (response && response.status === true) {
         // Clear selected rows
         setSelectedRows([]);
         
@@ -52,27 +65,35 @@ const UploadDocumentTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
         }
         
         // Reset to first page if current page becomes empty
-        const remainingItems = filteredData.length - validIds.length;
+        const remainingItems = filteredData.length - deleteTarget.ids.length;
         const maxPage = Math.ceil(remainingItems / pageSize);
         if (currentPage > maxPage && maxPage > 0) {
           setCurrentPage(maxPage);
         }
+      } else {
+        console.log("Delete operation failed - unexpected response:", response);
+        throw new Error("Delete operation failed - unexpected response from server");
       }
     } catch (err) {
-      console.error("Delete error:", err); // Debug log
-      await notificationService.showToast(
-        err.message || "Failed to delete document(s)", 
-        "error"
-      );
+      console.error("Delete error:", err);
+      // Error handling is already done in userService.deleteDocuments
     } finally {
       setIsDeleting(false);
+      setShowDeleteDialog(false);
+      setDeleteTarget(null);
     }
   };
 
+  // NEW method to handle dialog cancellation
+  const handleCancelDelete = () => {
+    setShowDeleteDialog(false);
+    setDeleteTarget(null);
+  };
+
   const filterOptions = [
-    { key: "category", label: "Document Type", type: "text" },
-    { key: "currentStatus", label: "Status", type: "text" },
-    { key: "issuingCountry", label: "Issuing Country", type: "text" },
+    { key: "document_type", label: "Document Type", type: "text" },
+    { key: "document_status", label: "Status", type: "text" },
+    { key: "issuing_country", label: "Issuing Country", type: "text" },
   ];
 
   const handleFilterChange = (key, value) => {
@@ -82,9 +103,9 @@ const UploadDocumentTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
 
   const handleClearFilters = () => {
     setFilters({
-      category: "",
-      currentStatus: "",
-      issuingCountry: "",
+      document_type: "",
+      document_status: "",
+      issuing_country: "",
     });
     setCurrentPage(1);
   };
@@ -122,7 +143,14 @@ const UploadDocumentTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
         if (!filters[key]) return true;
         
         let cellValue = "";
-        cellValue = row[key]?.toString().toLowerCase() || "";
+        
+        if (key === "document_type") {
+          cellValue = row.document_type?.value?.toLowerCase() || "";
+        } else if (key === "document_status") {
+          cellValue = row.document_status?.value?.toLowerCase() || "";
+        } else if (key === "issuing_country") {
+          cellValue = row.issuing_country?.name?.toLowerCase() || "";
+        }
         
         return cellValue.includes(filters[key].toLowerCase());
       });
@@ -139,67 +167,67 @@ const UploadDocumentTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
 
   const fields = [
     {
-      key: "category",
+      key: "document_type",
       label: "Document Type",
       render: (row) => (
         <div style={{ fontWeight: "600", color: "#2d3748" }}>
-          {row?.category || "N/A"}
+          {row?.document_type?.value || "N/A"}
         </div>
       ),
     },
     {
-      key: "expiryDate",
+      key: "expiry_date",
       label: "Expiry Date",
       render: (row) => {
-        if (!row?.expiryDate) return "N/A";
+        if (!row?.expiry_date) return "N/A";
         try {
-          return new Date(row.expiryDate).toLocaleDateString();
+          return new Date(row.expiry_date).toLocaleDateString();
         } catch (e) {
           return "N/A";
         }
       },
     },
     {
-      key: "currentStatus",
+      key: "document_status",
       label: "Status",
       render: (row) => (
         <span style={{
           display: "inline-block",
           padding: "0.25rem 0.75rem",
-          backgroundColor: row?.currentStatus === "Active" ? "#d4f4dd" : row?.currentStatus === "Expired" ? "#fed7d7" : "#fef7cd",
-          color: row?.currentStatus === "Active" ? "#276749" : row?.currentStatus === "Expired" ? "#9b2c2c" : "#744210",
+          backgroundColor: row?.document_status?.value === "rejected" ? "#fed7d7" : "#d4f4dd",
+          color: row?.document_status?.value === "rejected" ? "#9b2c2c" : "#276749",
           borderRadius: "6px",
           fontSize: "0.875rem",
           fontWeight: "500",
-          border: `1px solid ${row?.currentStatus === "Active" ? "#9ae6b4" : row?.currentStatus === "Expired" ? "#feb2b2" : "#f6e05e"}`,
+          border: `1px solid ${row?.document_status?.value === "rejected" ? "#feb2b2" : "#9ae6b4"}`,
         }}>
-          {row?.currentStatus || "N/A"}
+          {row?.document_status?.value || "N/A"}
         </span>
       ),
     },
     {
-      key: "issuingCountry",
+      key: "issuing_country",
       label: "Issuing Country",
       render: (row) => (
         <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-          <span className="la la-flag" style={{ color: "#8C956B" }}></span>
-          {row?.issuingCountry || "N/A"}
+          <span className="la la-map-marker" style={{ color: "#8C956B" }}></span>
+          {row?.issuing_country?.name || "N/A"}
         </div>
       ),
     },
     {
-      key: "currentLocation",
+      key: "current_location",
       label: "Current Location",
       render: (row) => (
         <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
           <span className="la la-map-marker" style={{ color: "#8C956B" }}></span>
-          {row?.currentLocation || "N/A"}
+          {row?.current_location?.name || "N/A"}
         </div>
       ),
     },
     {
-      key: "workAvailableImmediately",
-      label: "Work Immediately",
+      key: "work_available_immediately",
+      label: "Work Available",
       render: (row) => (
         <span style={{
           display: "inline-flex",
@@ -208,37 +236,51 @@ const UploadDocumentTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
           borderRadius: "20px",
           fontSize: "0.75rem",
           fontWeight: "500",
-          backgroundColor: row?.workAvailableImmediately === "Yes" ? "#d4f4dd" : "#fed7d7",
-          color: row?.workAvailableImmediately === "Yes" ? "#276749" : "#9b2c2c",
-          border: `1px solid ${row?.workAvailableImmediately === "Yes" ? "#9ae6b4" : "#feb2b2"}`,
+          backgroundColor: row?.work_available_immediately ? "#d4f4dd" : "#fed7d7",
+          color: row?.work_available_immediately ? "#276749" : "#9b2c2c",
+          border: `1px solid ${row?.work_available_immediately ? "#9ae6b4" : "#feb2b2"}`,
         }}>
-          <span className={`la la-${row?.workAvailableImmediately === "Yes" ? 'check' : 'times'}`} style={{ marginRight: "0.25rem", fontSize: "0.75rem" }}></span>
-          {row?.workAvailableImmediately || "N/A"}
+          <span className={`la la-${row?.work_available_immediately ? 'check' : 'times'}`} style={{ marginRight: "0.25rem", fontSize: "0.75rem" }}></span>
+          {row?.work_available_immediately ? "Yes" : "No"}
         </span>
       ),
     },
     {
-      key: "numberOfDays",
-      label: "Days Available",
-      render: (row) => {
-        if (row?.workAvailableImmediately === "Yes") return "Immediate";
-        return row?.numberOfDays ? `${row.numberOfDays} days` : "N/A";
-      },
+      key: "number_of_days",
+      label: "Days to Availability",
+      render: (row) => row?.number_of_days || "N/A",
     },
     {
       key: "file",
       label: "Document",
-      render: (row) => {
-        if (!row?.file) return "No file";
-        return (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-            <span className="la la-file" style={{ color: "#8C956B" }}></span>
-            <span style={{ fontSize: "0.875rem", color: "#4a5568" }}>
-              {row.file.name ? row.file.name.substring(0, 20) + (row.file.name.length > 20 ? "..." : "") : "Document"}
-            </span>
-          </div>
-        );
-      },
+      render: (row) => (
+        <button
+          onClick={() => {
+            const url = row?.media ? `${row.media.base_url}${row.media.unique_name}` : row?.fileUrl;
+            if (url) {
+              if (url.endsWith(".pdf")) {
+                window.open(url, '_blank');
+              } else {
+                const img = new Image();
+                img.src = url;
+                img.onload = () => window.open(url, '_blank');
+                img.onerror = () => console.error("Error loading document preview");
+              }
+            }
+          }}
+          style={{
+            backgroundColor: "#8C956B",
+            color: "white",
+            border: "none",
+            padding: "0.5rem 1rem",
+            borderRadius: "0.5rem",
+            cursor: "pointer",
+            fontSize: "14px",
+          }}
+        >
+          View Document
+        </button>
+      ),
     },
   ];
 
@@ -285,14 +327,18 @@ const UploadDocumentTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
     className: "profile-column",
     render: () => (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span className="la la-folder" style={{ 
-          fontSize: "2rem", 
-          color: "#8C956B",
-          backgroundColor: "#f0f9ff",
-          borderRadius: "50%",
-          padding: "0.5rem",
-          border: "2px solid #e2e8f0",
-        }}></span>
+        <img
+          src="/images/demo-profile.jpg"
+          alt="Profile"
+          style={{
+            width: "36px",
+            height: "36px",
+            borderRadius: "50%",
+            objectFit: "cover",
+            border: "2px solid #e2e8f0",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          }}
+        />
       </div>
     ),
   };
@@ -307,8 +353,8 @@ const UploadDocumentTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
             title="Edit Document"
             className="action-button edit-btn"
             onClick={() => {
-              console.log("Edit button clicked for row:", row); // Debug log
-              console.log("Row ID being sent for edit:", row?.id); // Debug log
+              console.log("Edit button clicked for row:", row);
+              console.log("Row ID being sent for edit:", row?.id);
               if (onEditDocument && typeof onEditDocument === 'function') {
                 onEditDocument(row?.id);
               }
@@ -326,8 +372,8 @@ const UploadDocumentTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
             title="Delete Document"
             className="action-button delete-btn"
             onClick={() => {
-              console.log("Delete button clicked for row:", row); // Debug log
-              console.log("Row ID being sent:", row?.id); // Debug log
+              console.log("Delete button clicked for row:", row);
+              console.log("Row ID being sent:", row?.id);
               handleDelete([row?.id]);
             }}
             disabled={isDeleting}
@@ -354,7 +400,6 @@ const UploadDocumentTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
   console.log("Filtered data:", filteredData);
   console.log("Paginated data:", paginatedData);
   
-  // Debug each row to see the ID structure
   if (paginatedData.length > 0) {
     console.log("First row structure:", paginatedData[0]);
     console.log("First row ID:", paginatedData[0]?.id);
@@ -600,7 +645,7 @@ const UploadDocumentTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
                 >
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
                     <span className="la la-inbox" style={{ fontSize: "3rem", color: "#cbd5e0" }}></span>
-                    <span>{safeData.length === 0 ? "No documents found" : "No documents match your filters"}</span>
+                    <span>{safeData.length === 0 ? "No document records found" : "No records match your filters"}</span>
                   </div>
                 </td>
               </tr>
@@ -768,6 +813,23 @@ const UploadDocumentTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
           </div>
         </div>
       </div>
+
+      {/* CONFIRMATION DIALOG */}
+      <ConfirmationDialog
+        isOpen={showDeleteDialog}
+        title={deleteTarget?.type === "single" ? "Delete Document" : "Delete Documents"}
+        message={
+          deleteTarget?.type === "single" 
+            ? "Are you sure you want to delete this document? This action cannot be undone."
+            : `Are you sure you want to delete ${deleteTarget?.ids?.length || 0} documents? This action cannot be undone.`
+        }
+        confirmText={deleteTarget?.type === "single" ? "Delete Document" : "Delete Documents"}
+        cancelText="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        isLoading={isDeleting}
+        type="danger"
+      />
     </div>
   );
 };
