@@ -271,6 +271,30 @@ class UserService {
       throw error;
     }
   }
+
+  async addDocument(data) {
+    try {
+      console.log("Calling networkService.post for /employee/document/add with data:", data);
+      const response = await networkService.post("/employee/document/add", data);
+      console.log("addDocument response:", response);
+      if (response) {
+        await notificationService.showToast("Document added successfully!", "success");
+        return response;
+      }
+      console.warn("Failed to add document");
+      await notificationService.showToast("Failed to add document.", "error");
+      return null;
+    } catch (error) {
+      console.error("addDocument error:", error);
+      if (error.errors) {
+        const errorMessages = Object.values(error.errors).flat().join("; ");
+        await notificationService.showToast(`Failed to add document: ${errorMessages}`, "error");
+        throw new Error(errorMessages || "Invalid document data.");
+      }
+      await notificationService.showToast(`Failed to add document: ${error.message || "Server error."}`, "error");
+      throw error;
+    }
+  }
 }
 
 export const userService = new UserService();
