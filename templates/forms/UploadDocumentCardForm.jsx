@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
-import InputField from "@/templates/inputs/input-field";
-import SelectField from "@/templates/inputs/select-field";
+import FormInputField from "@/templates/inputs/form-input-field";
+import FormSelectField from "@/templates/inputs/form-select-field";
 
 const UploadDocumentCardForm = ({
   fields,
@@ -43,10 +43,13 @@ const UploadDocumentCardForm = ({
       width: "100%",
       boxSizing: "border-box",
       transition: "border-color 0.2s",
-      border: "none", // No border for all fields
-      backgroundColor: "#f0f5f7", // Light gray background for all fields
+      border: "none",
+      outline: "none",
+      backgroundColor: "#f0f5f7",
       opacity: loading ? 0.6 : 1,
     };
+
+    const fieldError = formErrors[field.name];
 
     switch (field.type) {
       case "text":
@@ -55,23 +58,16 @@ const UploadDocumentCardForm = ({
       case "email":
       case "tel":
         return (
-          <div>
-            <InputField
-              field={{
-                ...field,
-                style: { ...field.style, ...commonInputStyle },
-                disabled: loading,
-                className: formErrors[field.name] ? "is-invalid" : "",
-              }}
-              value={formData[field.name] || ""}
-              handleChange={handleChange}
-            />
-            {formErrors[field.name] && (
-              <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-                {formErrors[field.name]}
-              </div>
-            )}
-          </div>
+          <FormInputField
+            field={{
+              ...field,
+              style: { ...commonInputStyle, ...field.style },
+              disabled: loading,
+            }}
+            value={formData[field.name] || ""}
+            handleChange={handleChange}
+            error={fieldError}
+          />
         );
       case "textarea":
         return (
@@ -83,38 +79,36 @@ const UploadDocumentCardForm = ({
               onChange={(e) => handleChange(field.name, e.target.value)}
               required={field.required}
               readOnly={field.readOnly || loading}
-              className={formErrors[field.name] ? "is-invalid" : ""}
-              style={{ ...field.style, ...commonInputStyle, height: "120px" }}
+              style={{
+                ...commonInputStyle,
+                ...field.style,
+                height: "120px",
+                border: fieldError ? "1px solid #dc3545" : "none",
+              }}
+              className={`${field.className || ""} ${fieldError ? "is-invalid" : ""}`.trim()}
             />
-            {formErrors[field.name] && (
+            {fieldError && (
               <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-                {formErrors[field.name]}
+                {fieldError}
               </div>
             )}
           </div>
         );
       case "select":
         return (
-          <div>
-            <SelectField
-              field={{
-                ...field,
-                style: { ...field.style, ...commonInputStyle },
-                isMulti: field.isMulti || false,
-                disabled: loading,
-                className: formErrors[field.name] ? "is-invalid" : "",
-              }}
-              value={formData[field.name]}
-              handleSelectChange={(name) => (option) => {
-                handleSelectChange(name)(option);
-              }}
-            />
-            {formErrors[field.name] && (
-              <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-                {formErrors[field.name]}
-              </div>
-            )}
-          </div>
+          <FormSelectField
+            field={{
+              ...field,
+              style: { ...commonInputStyle, ...field.style },
+              isMulti: field.isMulti || false,
+              disabled: loading,
+            }}
+            value={formData[field.name]}
+            handleSelectChange={(name) => (option) => {
+              handleSelectChange(name)(option);
+            }}
+            error={fieldError}
+          />
         );
       case "file":
         return (
@@ -134,10 +128,10 @@ const UploadDocumentCardForm = ({
                   textAlign: "center",
                   position: "relative",
                   minHeight: "60px",
-                  border: formErrors[field.name] ? "2px dashed #dc3545" : "2px dashed #8C956B",
-                  backgroundColor: formErrors[field.name] ? "#fed7d7" : "#f0f5f7",
+                  border: fieldError ? "1px solid #dc3545" : "2px dashed #8C956B",
                 }}
                 onClick={() => document.getElementById(`${field.name}Input`).click()}
+                className={fieldError ? "is-invalid" : ""}
               >
                 {formData[field.name] ? (
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -160,12 +154,12 @@ const UploadDocumentCardForm = ({
                   name={field.name}
                   accept={field.accept}
                   onChange={handleFileChange(field.name)}
-                  style={{ display: "none" }}
+                  style={{ display: "none", border: "none", outline: "none" }}
                   disabled={loading}
                 />
-                {formErrors[field.name] && (
+                {fieldError && (
                   <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-                    {formErrors[field.name]}
+                    {fieldError}
                   </div>
                 )}
               </>
@@ -182,13 +176,14 @@ const UploadDocumentCardForm = ({
                 checked={formData[field.name] || false}
                 onChange={(e) => handleChange(field.name, e.target.checked)}
                 disabled={loading}
-                style={{ marginRight: "0.5rem" }}
+                style={{ border: "none", outline: "none" }}
+                className={fieldError ? "is-invalid" : ""}
               />
               {field.label}
             </label>
-            {formErrors[field.name] && (
+            {fieldError && (
               <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-                {formErrors[field.name]}
+                {fieldError}
               </div>
             )}
           </div>
@@ -207,6 +202,13 @@ const UploadDocumentCardForm = ({
       style={{ padding: "1rem", opacity: loading ? 0.6 : 1 }}
       noValidate
     >
+      <style>
+        {`
+          .is-invalid {
+            border: none !important;
+          }
+        `}
+      </style>
       <div className="row">
         {fields.map((field, index) => (
           <div

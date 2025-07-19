@@ -9,7 +9,6 @@ import { notificationService } from "@/services/notification.service";
 import Loader from "@/globals/Loader";
 import Modal from "./Modal";
 import { v4 as uuidv4 } from "uuid";
-import Select from "react-select";
 
 const UploadDocument = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -314,10 +313,10 @@ const UploadDocument = () => {
             </div>
           )}
           <input
-            type="file"
-            id="fileInput"
-            name="file"
-            accept = ".pdf,.jpg,.png"
+            type ="file"
+            id ="fileInput"
+            name ="file"
+            accept=".pdf,.jpg,.png"
             onChange={handleFileChange("file")}
             style={{ display: "none" }}
             disabled={isSubmitting || isInitialLoading}
@@ -342,7 +341,7 @@ const UploadDocument = () => {
       setIsLoadingSingle(true);
       console.log("Fetching single document with ID:", documentId); // Debug log
 
-      // Find the document in local state (since we're using local storage)
+      // Find the document in local state
       const document = savedDocuments.find(doc => doc.id === documentId);
       
       if (document) {
@@ -351,24 +350,24 @@ const UploadDocument = () => {
         // Format the data to match form structure
         const formattedData = {
           id: document.id,
-          category: document.category || "",
-          file: document.file || null,
-          fileUrl: document.fileUrl || "",
-          fileId: document.fileId || null,
-          expiryDate: document.expiryDate || "",
-          currentStatus: document.currentStatus || "",
-          issuingCountry: document.issuingCountry || "",
-          currentLocation: document.currentLocation || "",
-          workAvailableImmediately: document.workAvailableImmediately || "",
-          numberOfDays: document.numberOfDays || "",
+          category: document.document_type?.value || document.category || "",
+          file: null,
+          fileUrl: document.media ? `${document.media.base_url}${document.media.unique_name}` : document.fileUrl || "",
+          fileId: document.media_id || document.fileId || null,
+          expiryDate: document.expiry_date ? document.expiry_date.split('T')[0] : document.expiryDate || "",
+          currentStatus: document.document_status?.value || document.currentStatus || "",
+          issuingCountry: document.issuing_country?.name || document.issuingCountry || "",
+          currentLocation: document.current_location?.name || document.currentLocation || "",
+          workAvailableImmediately: document.work_available_immediately ? "Yes" : document.work_available_immediately === false ? "No" : document.workAvailableImmediately || "",
+          numberOfDays: document.number_of_days?.toString() || document.numberOfDays || "",
           employee_id: employeeId,
         };
 
         // Set document preview if exists
-        if (document.fileUrl) {
+        if (formattedData.fileUrl) {
           setDocumentPreviews(prev => ({
             ...prev,
-            file: document.fileUrl.includes('thumb') ? document.fileUrl : document.fileUrl,
+            file: formattedData.fileUrl.includes('thumb') ? formattedData.fileUrl : formattedData.fileUrl,
           }));
         }
 
@@ -487,19 +486,27 @@ const UploadDocument = () => {
       
       // Fetch existing documents
       if (employeeId) {
-        const documents = await networkService.get(`/employee/document/${employeeId}`);
+        const documents = await userService.getDocuments(employeeId);
         console.log("Documents response:", documents);
         
-        if (documents && Array.isArray(documents)) {
-          setSavedDocuments(documents);
-        } else if (documents && documents.data && Array.isArray(documents.data)) {
-          setSavedDocuments(documents.data);
-        } else if (documents && documents.status && Array.isArray(documents.data)) {
-          setSavedDocuments(documents.data);
-        } else {
-          console.warn("Unexpected documents response format:", documents);
-          setSavedDocuments([]);
-        }
+        // Map API response to local state format
+        const formattedDocuments = documents.map(doc => ({
+          id: doc.id,
+          document_type: doc.document_type || { value: doc.category },
+          expiry_date: doc.expiry_date ? doc.expiry_date.split('T')[0] : "",
+          document_status: doc.document_status || { value: doc.currentStatus },
+          issuing_country: doc.issuing_country || { name: doc.issuingCountry },
+          current_location: doc.current_location || { name: doc.currentLocation },
+          work_available_immediately: doc.work_available_immediately,
+          number_of_days: doc.number_of_days,
+          media: doc.media || { base_url: doc.fileUrl, unique_name: doc.file?.name },
+          media_id: doc.media_id || doc.fileId,
+          file: doc.file || { name: doc.media?.unique_name || "Document" },
+          fileUrl: doc.media ? `${doc.media.base_url}${doc.media.unique_name}` : doc.fileUrl,
+          fileId: doc.media_id || doc.fileId,
+        }));
+        
+        setSavedDocuments(formattedDocuments);
       } else {
         console.warn("No employee ID available for fetching documents");
         setSavedDocuments([]);
@@ -585,16 +592,17 @@ const UploadDocument = () => {
     }
   }, [mounted, employeeId]);
 
+  // UPDATED handleSubmit method with edit functionality
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormErrors({});
     
-    console.log("Form submitted with data:", formData); // Debug log
-    console.log("Is edit mode:", isEditMode, "Editing ID:", editingDocumentId); // Debug log
+    console.log("Form submitted with data:", formData);
+    console.log("Is edit mode:", isEditMode, "Editing ID:", editingDocumentId);
     
     if (!validateForm()) {
       const firstError = Object.values(formErrors)[0] || "Please fill in all required fields";
-      console.log("Validation failed:", formErrors); // Debug log
+      console.log("Validation failed:", formErrors);
       await notificationService.showToast(firstError, "error");
       return;
     }
@@ -611,6 +619,12 @@ const UploadDocument = () => {
 
       // Map form data to API format
       const apiData = mapFormToApiData(user.id);
+      
+      // Add ID for edit mode
+      if (isEditMode && editingDocumentId) {
+        apiData.id = editingDocumentId;
+      }
+      
       console.log("Submitting API data:", apiData);
 
       // Validate that we have all required IDs
@@ -632,26 +646,52 @@ const UploadDocument = () => {
       
       let response;
       if (isEditMode) {
-        // For now, editing is not implemented in the API
-        // You would need to implement employee/document/edit endpoint
-        await notificationService.showToast("Document editing is not yet implemented", "warning");
+        // Edit existing document via API
+        response = await userService.editDocument(apiData);
+        console.log("Edit document response:", response);
+        
+        if (response) {
+          // Update the document in local state
+          setSavedDocuments(prevDocs => 
+            prevDocs.map(doc => 
+              doc.id === editingDocumentId 
+                ? {
+                    ...doc,
+                    document_type: { value: response.document_type?.value || formData.category },
+                    expiry_date: response.expiry_date ? response.expiry_date.split('T')[0] : formData.expiryDate,
+                    document_status: { value: response.document_status?.value || formData.currentStatus },
+                    issuing_country: { name: response.issuing_country?.name || formData.issuingCountry },
+                    current_location: { name: response.current_location?.name || formData.currentLocation },
+                    work_available_immediately: response.work_available_immediately,
+                    number_of_days: response.number_of_days || formData.numberOfDays,
+                    media: response.media || { base_url: formData.fileUrl, unique_name: response.media?.unique_name || formData.file?.name },
+                    media_id: response.media_id || formData.fileId,
+                    fileUrl: response.media ? `${response.media.base_url}${response.media.unique_name}` : formData.fileUrl,
+                    fileId: response.media_id || formData.fileId,
+                  }
+                : doc
+            )
+          );
+        }
       } else {
         // Add new document via API
         response = await userService.addDocument(apiData);
-        console.log("Add document response:", response); // Debug log
+        console.log("Add document response:", response);
         
         if (response) {
           // Format the response to match table data structure
           const newDocument = {
             id: response.id || uuidv4(),
-            category: response.document_type?.value || formData.category,
-            expiryDate: response.expiry_date ? response.expiry_date.split('T')[0] : formData.expiryDate,
-            currentStatus: response.document_status?.value || formData.currentStatus,
-            issuingCountry: response.issuing_country?.name || formData.issuingCountry,
-            currentLocation: response.current_location?.name || formData.currentLocation,
-            workAvailableImmediately: response.work_available_immediately ? "Yes" : "No",
-            numberOfDays: response.number_of_days || formData.numberOfDays,
-            file: formData.file || { name: response.media?.unique_name || "Document" },
+            document_type: { value: response.document_type?.value || formData.category },
+            expiry_date: response.expiry_date ? response.expiry_date.split('T')[0] : formData.expiryDate,
+            document_status: { value: response.document_status?.value || formData.currentStatus },
+            issuing_country: { name: response.issuing_country?.name || formData.issuingCountry },
+            current_location: { name: response.current_location?.name || formData.currentLocation },
+            work_available_immediately: response.work_available_immediately,
+            number_of_days: response.number_of_days || formData.numberOfDays,
+            media: response.media || { base_url: formData.fileUrl, unique_name: response.media?.unique_name || formData.file?.name },
+            media_id: response.media_id || formData.fileId,
+            file: { name: response.media?.unique_name || "Document" },
             fileUrl: response.media ? `${response.media.base_url}${response.media.unique_name}` : formData.fileUrl,
             fileId: response.media_id || formData.fileId,
           };
@@ -684,9 +724,9 @@ const UploadDocument = () => {
       });
       
     } catch (err) {
-      console.error("Submit error:", err); // Debug log
+      console.error("Submit error:", err);
       const errorMessage = isEditMode ? "Failed to update document" : "Failed to add document";
-      // Error handling is done in userService.addDocument
+      // Error handling is done in userService methods
     } finally {
       setTimeout(() => {
         setIsSubmitting(false);
