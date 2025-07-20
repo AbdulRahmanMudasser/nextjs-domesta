@@ -1,7 +1,8 @@
 import React from "react";
 import PropTypes from "prop-types";
-import InputField from "@/templates/inputs/input-field";
-import SelectField from "@/templates/inputs/select-field";
+import FormInputField from "@/templates/inputs/form-input-field";
+import FormSelectField from "@/templates/inputs/form-select-field";
+import FormDateField from "@/templates/inputs/form-date-field";
 
 const ContactCardForm = ({
   fields,
@@ -41,55 +42,59 @@ const ContactCardForm = ({
       width: "100%",
       boxSizing: "border-box",
       transition: "border-color 0.2s",
+      border: "none",
+      outline: "none",
+      backgroundColor: "#f0f5f7",
       opacity: loading ? 0.6 : 1,
     };
+
+    const fieldError = formErrors[field.name];
 
     switch (field.type) {
       case "text":
       case "number":
-      case "date":
       case "email":
       case "tel":
         return (
-          <div>
-            <InputField
-              field={{
-                ...field,
-                style: { ...field.style, ...commonInputStyle },
-                disabled: loading,
-                className: formErrors[field.name] ? "is-invalid" : "",
-              }}
-              value={formData[field.name] || ""}
-              handleChange={handleChange}
-            />
-            {formErrors[field.name] && (
-              <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-                {formErrors[field.name]}
-              </div>
-            )}
-          </div>
+          <FormInputField
+            field={{
+              ...field,
+              style: { ...commonInputStyle, ...field.style },
+              disabled: field.disabled || loading,
+            }}
+            value={formData[field.name] || ""}
+            handleChange={handleChange}
+            error={fieldError}
+          />
+        );
+      case "date":
+        return (
+          <FormDateField
+            field={{
+              ...field,
+              style: { ...commonInputStyle, ...field.style },
+              disabled: field.disabled || loading,
+            }}
+            value={formData[field.name] || ""}
+            handleChange={handleChange}
+            error={fieldError}
+          />
         );
       case "select":
         return (
-          <div>
-            <SelectField
-              field={{
-                ...field,
-                style: { ...field.style, ...commonInputStyle },
-                disabled: loading,
-                className: formErrors[field.name] ? "is-invalid" : "",
-              }}
-              value={formData[field.name]}
-              handleSelectChange={(name) => (option) => {
-                handleSelectChange(name)(option);
-              }}
-            />
-            {formErrors[field.name] && (
-              <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-                {formErrors[field.name]}
-              </div>
-            )}
-          </div>
+          <FormSelectField
+            field={{
+              ...field,
+              style: { ...commonInputStyle, ...field.style },
+              isMulti: field.isMulti || false,
+              disabled: field.disabled || loading,
+            }}
+            value={formData[field.name]}
+            handleSelectChange={(name) => (option) => {
+              handleSelectChange(name)(option);
+            }}
+            error={fieldError}
+          />
         );
       default:
         return null;
@@ -150,6 +155,7 @@ ContactCardForm.propTypes = {
       disabled: PropTypes.bool,
       component: PropTypes.elementType,
       className: PropTypes.string,
+      isMulti: PropTypes.bool,
     })
   ).isRequired,
   formData: PropTypes.object.isRequired,
