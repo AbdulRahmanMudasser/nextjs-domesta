@@ -4,6 +4,7 @@ import CustomSelect from "../misc/CustomSelect";
 import { networkService } from "@/services/network.service";
 import { apiService } from "@/services/api.service";
 import { notificationService } from "@/services/notification.service";
+import ConfirmationDialog from "../forms/ConfirmationDialog";
 
 const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh, onEditExperience }) => {
   const [filters, setFilters] = useState({
@@ -15,7 +16,12 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // CONFIRMATION DIALOG STATE
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null); // { type: "single" | "bulk", ids: number[] }
 
+  // UPDATED handleDelete method with confirmation dialog
   const handleDelete = async (ids) => {
     console.log("handleDelete called with:", ids); // Debug log
     
@@ -33,12 +39,24 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
       return;
     }
 
+    // Show confirmation dialog instead of proceeding directly
+    setDeleteTarget({
+      type: validIds.length === 1 ? "single" : "bulk",
+      ids: validIds
+    });
+    setShowDeleteDialog(true);
+  };
+
+  // NEW method to handle confirmed deletion
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+
     try {
       setIsDeleting(true);
-      console.log("Sending DELETE request to /employee/experience/delete with IDs:", validIds); // Debug log
+      console.log("Sending DELETE request to /employee/experience/delete with IDs:", deleteTarget.ids); // Debug log
 
       // Use the same pattern as deleteService - direct apiService call
-      const response = await apiService.delete("/employee/experience/delete", { data: { ids: validIds } });
+      const response = await apiService.delete("/employee/experience/delete", { data: { ids: deleteTarget.ids } });
       
       // Extract data like in network service handleResponse
       const result = response.data.data || response.data || response;
@@ -48,7 +66,7 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
       const isSuccess = (result && result.status === true) || (typeof result === 'number' && result > 0) || result === 1;
       
       if (isSuccess) {
-        const deletedCount = typeof result === 'number' ? result : validIds.length;
+        const deletedCount = typeof result === 'number' ? result : deleteTarget.ids.length;
         await notificationService.showToast(
           `Successfully deleted ${deletedCount} experience(s)!`, 
           "success"
@@ -63,7 +81,7 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
         }
         
         // Reset to first page if current page becomes empty
-        const remainingItems = filteredData.length - validIds.length;
+        const remainingItems = filteredData.length - deleteTarget.ids.length;
         const maxPage = Math.ceil(remainingItems / pageSize);
         if (currentPage > maxPage && maxPage > 0) {
           setCurrentPage(maxPage);
@@ -83,7 +101,15 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
       );
     } finally {
       setIsDeleting(false);
+      setShowDeleteDialog(false);
+      setDeleteTarget(null);
     }
+  };
+
+  // NEW method to handle dialog cancellation
+  const handleCancelDelete = () => {
+    setShowDeleteDialog(false);
+    setDeleteTarget(null);
   };
 
   const filterOptions = [
@@ -823,6 +849,23 @@ const WorkExperienceTable = ({ data, title, handleBulkDelete, onDataRefresh, onE
           </div>
         </div>
       </div>
+
+      {/* CONFIRMATION DIALOG */}
+      <ConfirmationDialog
+        isOpen={showDeleteDialog}
+        title={deleteTarget?.type === "single" ? "Delete Work Experience" : "Delete Work Experiences"}
+        message={
+          deleteTarget?.type === "single" 
+            ? "Are you sure you want to delete this work experience? This action cannot be undone."
+            : `Are you sure you want to delete ${deleteTarget?.ids?.length || 0} work experiences? This action cannot be undone.`
+        }
+        confirmText={deleteTarget?.type === "single" ? "Delete Experience" : "Delete Experiences"}
+        cancelText="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        isLoading={isDeleting}
+        type="danger"
+      />
     </div>
   );
 };
