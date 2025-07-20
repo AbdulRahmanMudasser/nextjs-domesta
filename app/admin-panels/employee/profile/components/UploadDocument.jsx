@@ -246,20 +246,22 @@ const UploadDocument = () => {
       disabled: isInitialLoading || isSubmitting, 
       style: inputStyle,
       previewComponent: (
-        <FilePicker
-          fieldName="file"
-          label="Document"
-          accept=".pdf,.jpg,.png"
-          initialPreview={fileData.file.previewUrl}
-          initialFileUrl={fileData.file.fullUrl}
-          initialFileId={fileData.file.mediaId}
-          formError={formErrors.file}
-          onFileDataChange={handleFileDataChange}
-          onPreviewClick={handlePreviewClick}
-          onClearError={handleClearError}
-          isGlobalSubmitting={isSubmitting}
-          isGlobalLoading={isInitialLoading}
-        />
+        <div>
+          <FilePicker
+            fieldName="file"
+            label="Document"
+            accept=".pdf,.jpg,.png"
+            initialPreview={fileData.file.previewUrl}
+            initialFileUrl={fileData.file.fullUrl}
+            initialFileId={fileData.file.mediaId}
+            formError={formErrors.file}
+            onFileDataChange={handleFileDataChange}
+            onPreviewClick={handlePreviewClick}
+            onClearError={handleClearError}
+            isGlobalSubmitting={isSubmitting}
+            isGlobalLoading={isInitialLoading}
+          />
+        </div>
       ),
     },
   ], [
