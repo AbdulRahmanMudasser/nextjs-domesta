@@ -2,6 +2,8 @@ import React from "react";
 import PropTypes from "prop-types";
 import FormInputField from "@/templates/inputs/form-input-field";
 import FormSelectField from "@/templates/inputs/form-select-field";
+import FormDateField from "@/templates/inputs/form-date-field";
+import FormFilePickerField from "@/templates/inputs/form-file-picker-field";
 
 const UploadDocumentCardForm = ({
   fields,
@@ -54,7 +56,6 @@ const UploadDocumentCardForm = ({
     switch (field.type) {
       case "text":
       case "number":
-      case "date":
       case "email":
       case "tel":
         return (
@@ -63,6 +64,19 @@ const UploadDocumentCardForm = ({
               ...field,
               style: { ...commonInputStyle, ...field.style },
               disabled: loading,
+            }}
+            value={formData[field.name] || ""}
+            handleChange={handleChange}
+            error={fieldError}
+          />
+        );
+      case "date":
+        return (
+          <FormDateField
+            field={{
+              ...field,
+              style: { ...commonInputStyle, ...field.style },
+              disabled: field.disabled || loading,
             }}
             value={formData[field.name] || ""}
             handleChange={handleChange}
@@ -112,59 +126,16 @@ const UploadDocumentCardForm = ({
         );
       case "file":
         return (
-          <div>
-            {field.previewComponent ? (
-              <div style={{ opacity: loading ? 0.6 : 1 }}>
-                {field.previewComponent}
-              </div>
-            ) : (
-              <div
-                style={{
-                  ...commonInputStyle,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  textAlign: "center",
-                  position: "relative",
-                  minHeight: "60px",
-                  border: fieldError ? "1px solid #dc3545" : "2px dashed #8C956B",
-                }}
-                onClick={() => document.getElementById(`${field.name}Input`).click()}
-                className={fieldError ? "is-invalid" : ""}
-              >
-                {formData[field.name] ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <span className="la la-file" style={{ color: "#8C956B", fontSize: "1.5rem" }}></span>
-                    <span>{formData[field.name].name || "File selected"}</span>
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <span className="la la-upload" style={{ color: "#8C956B", fontSize: "1.5rem" }}></span>
-                    <span>Click to upload {field.label}</span>
-                  </div>
-                )}
-              </div>
-            )}
-            {!field.previewComponent && (
-              <>
-                <input
-                  type="file"
-                  id={`${field.name}Input`}
-                  name={field.name}
-                  accept={field.accept}
-                  onChange={handleFileChange(field.name)}
-                  style={{ display: "none", border: "none", outline: "none" }}
-                  disabled={loading}
-                />
-                {fieldError && (
-                  <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-                    {fieldError}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+          <FormFilePickerField
+            field={{
+              ...field,
+              style: { ...commonInputStyle, ...field.style },
+              disabled: field.disabled || loading,
+            }}
+            value={formData[field.name]}
+            handleChange={handleChange}
+            error={fieldError}
+          />
         );
       case "checkbox":
         return (
@@ -202,13 +173,6 @@ const UploadDocumentCardForm = ({
       style={{ padding: "1rem", opacity: loading ? 0.6 : 1 }}
       noValidate
     >
-      <style>
-        {`
-          .is-invalid {
-            border: none !important;
-          }
-        `}
-      </style>
       <div className="row">
         {fields.map((field, index) => (
           <div

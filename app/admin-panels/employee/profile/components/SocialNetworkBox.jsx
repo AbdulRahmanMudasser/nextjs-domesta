@@ -1,10 +1,21 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import CardForm from "@/templates/forms/card-form";
+import ProfileCardForm from "@/templates/forms/ProfileCardForm";
 import { networkService } from "@/services/network.service";
 import { notificationService } from "@/services/notification.service";
 import Loader from "@/globals/Loader";
+
+// Define inputStyle for consistency
+const inputStyle = {
+  width: "100%",
+  padding: "0.75rem",
+  borderRadius: "0.5rem",
+  backgroundColor: "#F0F5F7",
+  boxSizing: "border-box",
+  height: "60px",
+  border: "none",
+};
 
 const SocialNetworkBox = () => {
   const [formData, setFormData] = useState({
@@ -14,7 +25,26 @@ const SocialNetworkBox = () => {
     googlePlus: "",
   });
   const [formErrors, setFormErrors] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const handleSelectChange = (field) => (selectedOption) => {
+    setFormData({
+      ...formData,
+      [field]: selectedOption ? selectedOption.value : "",
+    });
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  // Handle clearing form errors
+  const handleClearError = (fieldName) => {
+    setFormErrors((prev) => ({ ...prev, [fieldName]: "" }));
+  };
 
   const fields = [
     {
@@ -54,7 +84,7 @@ const SocialNetworkBox = () => {
   useEffect(() => {
     const fetchSocialNetworkData = async () => {
       try {
-        setLoading(true);
+        setIsInitialLoading(true);
         const user = JSON.parse(localStorage.getItem("user"));
         const employeeId = user?.id;
         if (!employeeId) {
@@ -78,7 +108,7 @@ const SocialNetworkBox = () => {
         );
       } finally {
         setTimeout(() => {
-          setLoading(false);
+          setIsInitialLoading(false);
         }, 500);
       }
     };
@@ -90,11 +120,13 @@ const SocialNetworkBox = () => {
     const errors = {};
     let isValid = true;
 
+    // Create a mapping of field names to their display labels
     const fieldLabels = fields.reduce((acc, field) => ({
       ...acc,
       [field.name]: field.label,
     }), {});
 
+    // Validate required fields
     const requiredFields = fields.filter((f) => f.required).map((f) => f.name);
     requiredFields.forEach((field) => {
       if (!formData[field] || formData[field].trim() === "") {
@@ -105,11 +137,6 @@ const SocialNetworkBox = () => {
 
     setFormErrors(errors);
     return isValid;
-  };
-
-  const handleChange = (name, value) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setFormErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async (e) => {
@@ -123,7 +150,7 @@ const SocialNetworkBox = () => {
     }
 
     try {
-      setLoading(true);
+      setIsSubmitting(true);
       const user = JSON.parse(localStorage.getItem("user"));
       const employeeId = user?.id;
       if (!employeeId) {
@@ -150,13 +177,13 @@ const SocialNetworkBox = () => {
       );
     } finally {
       setTimeout(() => {
-        setLoading(false);
+        setIsSubmitting(false);
       }, 500);
     }
   };
 
   return (
-    <div className="relative">
+    <div className="relative min-h-screen">
       <style>
         {`
           .is-invalid {
@@ -170,15 +197,17 @@ const SocialNetworkBox = () => {
           }
         `}
       </style>
-      {loading && <Loader text={formData.facebook || formData.twitter || formData.linkedin || formData.googlePlus ? "Saving..." : "Loading..."} />}
-      <CardForm
+      {(isInitialLoading || isSubmitting) && (
+        <Loader text={isInitialLoading ? "Loading..." : "Saving..."} />
+      )}
+      <ProfileCardForm
         fields={fields}
         formData={formData}
         handleChange={handleChange}
-        handleSelectChange={() => {}}
-        handleFileChange={() => {}}
+        handleSelectChange={handleSelectChange}
+        handleFileChange={() => {}} // Not used in this component
         onSubmit={handleSubmit}
-        loading={loading}
+        loading={isInitialLoading || isSubmitting}
         formErrors={formErrors}
       />
     </div>

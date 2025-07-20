@@ -7,6 +7,7 @@ import { notificationService } from "@/services/notification.service";
 import Modal from "./Modal";
 import Select from "react-select";
 import Loader from "@/globals/Loader";
+import FilePicker from "@/templates/inputs/FilePicker";
 
 // Define inputStyle for file inputs and textarea
 const inputStyle = {
@@ -16,44 +17,6 @@ const inputStyle = {
   backgroundColor: "#F0F5F7",
   boxSizing: "border-box",
   height: "60px",
-};
-
-// Define preview image style
-const previewImageStyle = {
-  maxWidth: "100px",
-  maxHeight: "100px",
-  marginTop: "10px",
-  borderRadius: "0.5rem",
-  objectFit: "cover",
-};
-
-// Define preview button style for document buttons
-const previewButtonStyle = {
-  marginTop: "10px",
-  backgroundColor: "#8C956B",
-  color: "white",
-  border: "none",
-  padding: "0.5rem 1rem",
-  borderRadius: "0.5rem",
-  cursor: "pointer",
-  fontSize: "14px",
-};
-
-// Define remove button style
-const removeButtonStyle = {
-  position: "absolute",
-  top: "0px",
-  right: "-1px",
-  backgroundColor: "#8C956B",
-  color: "white",
-  borderRadius: "50%",
-  width: "28px",
-  height: "28px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  fontSize: "18px",
 };
 
 const MyProfile = () => {
@@ -66,10 +29,6 @@ const MyProfile = () => {
     age: "",
     childrenCount: "",
     no_of_days_available: "",
-    profileImage: null,
-    passportCopy: null,
-    visaCopy: null,
-    cprCopy: null,
     dob: "",
     gender: "",
     address: "",
@@ -81,12 +40,37 @@ const MyProfile = () => {
     outside_country: "",
     work_available: "",
     current_location: "",
-    profileImageUrl: "",
-    passportCopyUrl: "",
-    visaCopyUrl: "",
-    cprCopyUrl: "",
     aboutMe: "",
   });
+
+  // Separate state for file data
+  const [fileData, setFileData] = useState({
+    profileImage: {
+      file: null,
+      previewUrl: "",
+      fullUrl: "",
+      mediaId: null,
+    },
+    passportCopy: {
+      file: null,
+      previewUrl: "",
+      fullUrl: "",
+      mediaId: null,
+    },
+    visaCopy: {
+      file: null,
+      previewUrl: "",
+      fullUrl: "",
+      mediaId: null,
+    },
+    cprCopy: {
+      file: null,
+      previewUrl: "",
+      fullUrl: "",
+      mediaId: null,
+    },
+  });
+
   const [formErrors, setFormErrors] = useState({});
   const [catOptions, setCatOptions] = useState([]);
   const [genderOptions, setGenderOptions] = useState([]);
@@ -95,12 +79,6 @@ const MyProfile = () => {
   const [maritalStatusOptions, setMaritalStatusOptions] = useState([]);
   const [workAvailableOptions, setWorkAvailableOptions] = useState([]);
   const [countryOptions, setCountryOptions] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState({
-    profileImage: "",
-    passportCopy: "",
-    visaCopy: "",
-    cprCopy: "",
-  });
   const [modalContent, setModalContent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
@@ -119,57 +97,20 @@ const MyProfile = () => {
     setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  const handleFileChange = (field) => async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData({ ...formData, [field]: file });
-      setFormErrors((prev) => ({ ...prev, [field]: "" }));
-      try {
-        console.log(`Starting upload for ${field}, isSubmitting: true`);
-        setIsSubmitting(true);
-        const response = await networkService.uploadMedia(file);
-        if (response && response[0]?.base_url && response[0]?.thumb_size) {
-          const previewUrl = `${response[0].base_url}${response[0].thumb_size}`;
-          setImagePreviews((prev) => ({
-            ...prev,
-            [field]: previewUrl,
-          }));
-          setFormData((prev) => ({
-            ...prev,
-            [`${field}Url`]: `${response[0].base_url}${response[0].unique_name}`,
-            [`${field}Id`]: response[0].id,
-          }));
-        }
-      } catch (error) {
-        console.error(`Error uploading ${field}:`, error);
-        await notificationService.showToast(
-          `Failed to upload ${field}. Please try again.`,
-          "error"
-        );
-      } finally {
-        setTimeout(() => {
-          setIsSubmitting(false);
-          console.log(`Finished upload for ${field}, isSubmitting: false`);
-        }, 500);
-      }
-    }
+  // Handle file data changes from FilePicker components
+  const handleFileDataChange = (fieldName, data) => {
+    setFileData(prev => ({
+      ...prev,
+      [fieldName]: data,
+    }));
   };
 
-  const handleRemoveFile = (field) => () => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: null,
-      [`${field}Url`]: "",
-      [`${field}Id`]: null,
-    }));
-    setImagePreviews((prev) => ({
-      ...prev,
-      [field]: "",
-    }));
-    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  // Handle clearing form errors
+  const handleClearError = (fieldName) => {
+    setFormErrors((prev) => ({ ...prev, [fieldName]: "" }));
   };
 
-  const handlePreviewClick = (field, url) => () => {
+  const handlePreviewClick = (field, url) => {
     if (url) {
       if (url.endsWith(".pdf")) {
         setModalContent(
@@ -238,20 +179,20 @@ const MyProfile = () => {
     }
 
     // File fields validation
-    if (!formData.profileImage && !formData.profileImageUrl) {
-      errors.profileImage = `${fieldLabels.profileImage} is required`;
+    if (!fileData.profileImage.file && !fileData.profileImage.fullUrl) {
+      errors.profileImage = `Profile Picture is required`;
       isValid = false;
     }
-    if (!formData.passportCopy && !formData.passportCopyUrl) {
-      errors.passportCopy = `${fieldLabels.passportCopy} is required`;
+    if (!fileData.passportCopy.file && !fileData.passportCopy.fullUrl) {
+      errors.passportCopy = `Passport Copy is required`;
       isValid = false;
     }
-    if (!formData.visaCopy && !formData.visaCopyUrl) {
-      errors.visaCopy = `${fieldLabels.visaCopy} is required`;
+    if (!fileData.visaCopy.file && !fileData.visaCopy.fullUrl) {
+      errors.visaCopy = `Visa Copy is required`;
       isValid = false;
     }
-    if (!formData.cprCopy && !formData.cprCopyUrl) {
-      errors.cprCopy = `${fieldLabels.cprCopy} is required`;
+    if (!fileData.cprCopy.file && !fileData.cprCopy.fullUrl) {
+      errors.cprCopy = `CPR Copy is required`;
       isValid = false;
     }
 
@@ -271,54 +212,142 @@ const MyProfile = () => {
 
         console.log("Fetching profile data...");
         const profileResponse = await networkService.get(`/employee/profile-single/${employeeId}`);
+        console.log("📋 FULL PROFILE RESPONSE:", profileResponse);
+        
         if (profileResponse) {
+          console.log("🔍 CHECKING MEDIA IDs:");
+          console.log(`- profile_media_id: ${profileResponse.profile_media_id}`);
+          console.log(`- passport_media_id: ${profileResponse.passport_media_id}`);
+          console.log(`- visa_media_id: ${profileResponse.visa_media_id}`);
+          console.log(`- cpr_media_id: ${profileResponse.cpr_media_id}`);
+          
+          console.log("🔍 CHECKING MEDIA OBJECTS:");
+          console.log(`- profile_media:`, profileResponse.profile_media);
+          console.log(`- passport_media:`, profileResponse.passport_media);
+          console.log(`- visa_media:`, profileResponse.visa_media);
+          console.log(`- cpr_media:`, profileResponse.cpr_media);
           const getValue = (obj, fallback = "") => obj?.value || obj?.name || fallback;
           const formatDate = (dateString) => {
             if (!dateString) return "";
             return new Date(dateString).toISOString().split("T")[0];
           };
 
+          // Updated fetchMediaThumbnail function to use the media/single API
           const fetchMediaThumbnail = async (mediaId, originalUrl) => {
-            if (!mediaId) return "";
+            console.log(`=== FETCHING MEDIA THUMBNAIL ===`);
+            console.log(`Media ID: ${mediaId}`);
+            console.log(`Original URL: ${originalUrl}`);
+            
+            if (!mediaId) {
+              console.log("No media ID provided, returning empty string");
+              return "";
+            }
+            
             try {
+              console.log(`🔄 Calling API: /media/single/${mediaId}`);
               const mediaResponse = await networkService.get(`/media/single/${mediaId}`);
-              if (mediaResponse?.data?.base_url && mediaResponse?.data?.thumb_size) {
-                return `${mediaResponse.data.base_url}${mediaResponse.data.thumb_size}`;
+              console.log(`✅ Raw API Response for media ID ${mediaId}:`, mediaResponse);
+              
+              // Check if response has the expected structure
+              if (mediaResponse?.base_url && mediaResponse?.thumb_size) {
+                const thumbnailUrl = `${mediaResponse.base_url}${mediaResponse.thumb_size}`;
+                console.log(`✅ Generated thumbnail URL: ${thumbnailUrl}`);
+                return thumbnailUrl;
+              } else if (mediaResponse?.base_url && mediaResponse?.unique_name) {
+                // Fallback to full image if thumb_size is not available
+                const fullImageUrl = `${mediaResponse.base_url}${mediaResponse.unique_name}`;
+                console.log(`⚠️ No thumb_size found, using full image as thumbnail: ${fullImageUrl}`);
+                return fullImageUrl;
+              } else {
+                console.error(`❌ Invalid media response structure for ID ${mediaId}:`);
+                console.error(`- base_url: ${mediaResponse?.base_url}`);
+                console.error(`- thumb_size: ${mediaResponse?.thumb_size}`);
+                console.error(`- unique_name: ${mediaResponse?.unique_name}`);
+                console.error(`Full response:`, mediaResponse);
+                return originalUrl || "";
               }
-              return originalUrl || "";
             } catch (error) {
-              console.error(`Error fetching media ${mediaId}:`, error);
+              console.error(`❌ Error fetching media ${mediaId}:`, error);
               return originalUrl || "";
             }
           };
 
-          const [profileThumb, passportThumb, visaThumb, cprThumb] = await Promise.all([
-            fetchMediaThumbnail(
-              profileResponse.profile_media_id,
-              profileResponse.profile_media
-                ? `${profileResponse.profile_media.base_url}${profileResponse.profile_media.unique_name}`
-                : ""
-            ),
-            fetchMediaThumbnail(
-              profileResponse.passport_media_id,
-              profileResponse.passport_media
-                ? `${profileResponse.passport_media.base_url}${profileResponse.passport_media.unique_name}`
-                : ""
-            ),
-            fetchMediaThumbnail(
-              profileResponse.visa_media_id,
-              profileResponse.visa_media
-                ? `${profileResponse.visa_media.base_url}${profileResponse.visa_media.unique_name}`
-                : ""
-            ),
-            fetchMediaThumbnail(
-              profileResponse.cpr_media_id,
-              profileResponse.cpr_media
-                ? `${profileResponse.cpr_media.base_url}${profileResponse.cpr_media.unique_name}`
-                : ""
-            ),
+          // Simple and direct approach - get media IDs and fetch media
+          console.log("🔍 EXTRACTING MEDIA IDs FROM PROFILE:");
+          const mediaIds = {
+            profile: profileResponse.profile_media_id,
+            passport: profileResponse.passport_media_id,
+            visa: profileResponse.visa_media_id,
+            cpr: profileResponse.cpr_media_id
+          };
+          console.log("Media IDs found:", mediaIds);
+
+          // Initialize file data with empty state first
+          const initialFileData = {
+            profileImage: { file: null, previewUrl: "", fullUrl: "", mediaId: null },
+            passportCopy: { file: null, previewUrl: "", fullUrl: "", mediaId: null },
+            visaCopy: { file: null, previewUrl: "", fullUrl: "", mediaId: null },
+            cprCopy: { file: null, previewUrl: "", fullUrl: "", mediaId: null },
+          };
+
+          // Function to fetch and set media for each type
+          const fetchAndSetMedia = async (mediaId, fieldName, mediaType) => {
+            if (!mediaId) {
+              console.log(`No ${mediaType} media ID found`);
+              return;
+            }
+
+            try {
+              console.log(`🔄 Fetching ${mediaType} media with ID: ${mediaId}`);
+              const mediaResponse = await networkService.get(`/media/single/${mediaId}`);
+              console.log(`✅ ${mediaType} media response:`, mediaResponse);
+
+              if (mediaResponse && mediaResponse.base_url) {
+                const thumbnailUrl = mediaResponse.thumb_size 
+                  ? `${mediaResponse.base_url}${mediaResponse.thumb_size}`
+                  : `${mediaResponse.base_url}${mediaResponse.unique_name}`;
+                
+                const fullUrl = `${mediaResponse.base_url}${mediaResponse.unique_name}`;
+                
+                console.log(`🖼️ ${mediaType} URLs:`, { thumbnailUrl, fullUrl });
+
+                // Update fileData state for this specific field
+                setFileData(prev => ({
+                  ...prev,
+                  [fieldName]: {
+                    file: null,
+                    previewUrl: thumbnailUrl,
+                    fullUrl: fullUrl,
+                    mediaId: mediaId
+                  }
+                }));
+
+                console.log(`✅ Updated ${fieldName} with media`);
+              } else {
+                console.error(`❌ Invalid ${mediaType} media response:`, mediaResponse);
+              }
+            } catch (error) {
+              console.error(`❌ Error fetching ${mediaType} media:`, error);
+            }
+          };
+
+          // Set initial empty file data
+          setFileData(initialFileData);
+
+          // Fetch each media type individually
+          console.log("🚀 STARTING INDIVIDUAL MEDIA FETCHES...");
+          
+          // Execute all media fetches
+          await Promise.all([
+            fetchAndSetMedia(mediaIds.profile, 'profileImage', 'profile'),
+            fetchAndSetMedia(mediaIds.passport, 'passportCopy', 'passport'),
+            fetchAndSetMedia(mediaIds.visa, 'visaCopy', 'visa'),
+            fetchAndSetMedia(mediaIds.cpr, 'cprCopy', 'cpr')
           ]);
 
+          console.log("🎉 ALL MEDIA FETCHES COMPLETED");
+
+          console.log("📝 SETTING FORM DATA...");
           setFormData({
             firstName: profileResponse.user?.first_name || "",
             middleName: profileResponse.user?.middle_name || "",
@@ -338,34 +367,7 @@ const MyProfile = () => {
             outside_country: getValue(profileResponse.outside_country),
             work_available: getValue(profileResponse.work_available),
             current_location: getValue(profileResponse.current_location),
-            profileImageUrl: profileResponse.profile_media
-              ? `${profileResponse.profile_media.base_url}${profileResponse.profile_media.unique_name}`
-              : "",
-            passportCopyUrl: profileResponse.passport_media
-              ? `${profileResponse.passport_media.base_url}${profileResponse.passport_media.unique_name}`
-              : "",
-            visaCopyUrl: profileResponse.visa_media
-              ? `${profileResponse.visa_media.base_url}${profileResponse.visa_media.unique_name}`
-              : "",
-            cprCopyUrl: profileResponse.cpr_media
-              ? `${profileResponse.cpr_media.base_url}${profileResponse.cpr_media.unique_name}`
-              : "",
             aboutMe: profileResponse.about_me || "",
-            profileImageId: profileResponse.profile_media?.id || null,
-            passportCopyId: profileResponse.passport_media?.id || null,
-            visaCopyId: profileResponse.visa_media?.id || null,
-            cprCopyId: profileResponse.cpr_media?.id || null,
-            profileImage: null,
-            passportCopy: null,
-            visaCopy: null,
-            cprCopy: null,
-          });
-
-          setImagePreviews({
-            profileImage: profileThumb,
-            passportCopy: passportThumb,
-            visaCopy: visaThumb,
-            cprCopy: cprThumb,
           });
         }
 
@@ -693,52 +695,23 @@ const MyProfile = () => {
       label: "Profile Picture",
       accept: "image/*",
       colClass: "col-lg-6 col-md-12",
-      required: !formData.profileImageUrl,
+      required: !fileData.profileImage.fullUrl,
       style: inputStyle,
-      preview: imagePreviews.profileImage,
       previewComponent: (
-        <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
-          {imagePreviews.profileImage ? (
-            <>
-              <img
-                src={imagePreviews.profileImage}
-                alt="Profile Picture Preview"
-                style={previewImageStyle}
-                onClick={handlePreviewClick("profileImage", formData.profileImageUrl)}
-                onError={() => console.error("Error loading profile image")}
-              />
-              <button
-                onClick={handleRemoveFile("profileImage")}
-                style={removeButtonStyle}
-                title="Remove Profile Picture"
-              >
-                ×
-              </button>
-            </>
-          ) : (
-            <div
-              style={{ ...inputStyle, textAlign: "center", lineHeight: "60px" }}
-              className={formErrors.profileImage ? "is-invalid" : ""}
-              onClick={() => document.getElementById("profileImageInput").click()}
-            >
-              Choose Profile Picture
-            </div>
-          )}
-          <input
-            type="file"
-            id="profileImageInput"
-            name="profileImage"
-            accept="image/*"
-            onChange={handleFileChange("profileImage")}
-            style={{ display: "none" }}
-            disabled={isSubmitting || isInitialLoading}
-          />
-          {formErrors.profileImage && (
-            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-              {formErrors.profileImage}
-            </div>
-          )}
-        </div>
+        <FilePicker
+          fieldName="profileImage"
+          label="Profile Picture"
+          accept="image/*"
+          previewUrl={fileData.profileImage.previewUrl}
+          fileUrl={fileData.profileImage.fullUrl}
+          mediaId={fileData.profileImage.mediaId}
+          formError={formErrors.profileImage}
+          onFileDataChange={handleFileDataChange}
+          onPreviewClick={handlePreviewClick}
+          onClearError={handleClearError}
+          isGlobalSubmitting={isSubmitting}
+          isGlobalLoading={isInitialLoading}
+        />
       ),
     },
     {
@@ -747,61 +720,23 @@ const MyProfile = () => {
       label: "Passport Copy",
       accept: ".pdf,.jpg,.png",
       colClass: "col-lg-6 col-md-12",
-      required: !formData.passportCopyUrl,
+      required: !fileData.passportCopy.fullUrl,
       style: inputStyle,
-      preview: imagePreviews.passportCopy,
       previewComponent: (
-        <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
-          {imagePreviews.passportCopy ? (
-            <>
-              {formData.passportCopyUrl.endsWith(".pdf") ? (
-                <button
-                  onClick={handlePreviewClick("passportCopy", formData.passportCopyUrl)}
-                  style={previewButtonStyle}
-                >
-                  View Document
-                </button>
-              ) : (
-                <img
-                  src={imagePreviews.passportCopy}
-                  alt="Passport Copy Preview"
-                  style={previewImageStyle}
-                  onClick={handlePreviewClick("passportCopy", formData.passportCopyUrl)}
-                  onError={() => console.error("Error loading passport image")}
-                />
-              )}
-              <button
-                onClick={handleRemoveFile("passportCopy")}
-                style={removeButtonStyle}
-                title="Remove Passport Copy"
-              >
-                ×
-              </button>
-            </>
-          ) : (
-            <div
-              style={{ ...inputStyle, textAlign: "center", lineHeight: "60px" }}
-              className={formErrors.passportCopy ? "is-invalid" : ""}
-              onClick={() => document.getElementById("passportCopyInput").click()}
-            >
-              Choose Passport Copy
-            </div>
-          )}
-          <input
-            type="file"
-            id="passportCopyInput"
-            name="passportCopy"
-            accept=".pdf,.jpg,.png"
-            onChange={handleFileChange("passportCopy")}
-            style={{ display: "none" }}
-            disabled={isSubmitting || isInitialLoading}
-          />
-          {formErrors.passportCopy && (
-            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-              {formErrors.passportCopy}
-            </div>
-          )}
-        </div>
+        <FilePicker
+          fieldName="passportCopy"
+          label="Passport Copy"
+          accept=".pdf,.jpg,.png"
+          previewUrl={fileData.passportCopy.previewUrl}
+          fileUrl={fileData.passportCopy.fullUrl}
+          mediaId={fileData.passportCopy.mediaId}
+          formError={formErrors.passportCopy}
+          onFileDataChange={handleFileDataChange}
+          onPreviewClick={handlePreviewClick}
+          onClearError={handleClearError}
+          isGlobalSubmitting={isSubmitting}
+          isGlobalLoading={isInitialLoading}
+        />
       ),
     },
     {
@@ -810,61 +745,23 @@ const MyProfile = () => {
       label: "Visa Copy",
       accept: ".pdf,.jpg,.png",
       colClass: "col-lg-6 col-md-12",
-      required: !formData.visaCopyUrl,
+      required: !fileData.visaCopy.fullUrl,
       style: inputStyle,
-      preview: imagePreviews.visaCopy,
       previewComponent: (
-        <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
-          {imagePreviews.visaCopy ? (
-            <>
-              {formData.visaCopyUrl.endsWith(".pdf") ? (
-                <button
-                  onClick={handlePreviewClick("visaCopy", formData.visaCopyUrl)}
-                  style={previewButtonStyle}
-                >
-                  View Document
-                </button>
-              ) : (
-                <img
-                  src={imagePreviews.visaCopy}
-                  alt="Visa Copy Preview"
-                  style={previewImageStyle}
-                  onClick={handlePreviewClick("visaCopy", formData.visaCopyUrl)}
-                  onError={() => console.error("Error loading visa image")}
-                />
-              )}
-              <button
-                onClick={handleRemoveFile("visaCopy")}
-                style={removeButtonStyle}
-                title="Remove Visa Copy"
-              >
-                ×
-              </button>
-            </>
-          ) : (
-            <div
-              style={{ ...inputStyle, textAlign: "center", lineHeight: "60px" }}
-              className={formErrors.visaCopy ? "is-invalid" : ""}
-              onClick={() => document.getElementById("visaCopyInput").click()}
-            >
-              Choose Visa Copy
-            </div>
-          )}
-          <input
-            type="file"
-            id="visaCopyInput"
-            name="visaCopy"
-            accept=".pdf,.jpg,.png"
-            onChange={handleFileChange("visaCopy")}
-            style={{ display: "none" }}
-            disabled={isSubmitting || isInitialLoading}
-          />
-          {formErrors.visaCopy && (
-            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-              {formErrors.visaCopy}
-            </div>
-          )}
-        </div>
+        <FilePicker
+          fieldName="visaCopy"
+          label="Visa Copy"
+          accept=".pdf,.jpg,.png"
+          previewUrl={fileData.visaCopy.previewUrl}
+          fileUrl={fileData.visaCopy.fullUrl}
+          mediaId={fileData.visaCopy.mediaId}
+          formError={formErrors.visaCopy}
+          onFileDataChange={handleFileDataChange}
+          onPreviewClick={handlePreviewClick}
+          onClearError={handleClearError}
+          isGlobalSubmitting={isSubmitting}
+          isGlobalLoading={isInitialLoading}
+        />
       ),
     },
     {
@@ -873,61 +770,23 @@ const MyProfile = () => {
       label: "CPR Copy",
       accept: ".pdf,.jpg,.png",
       colClass: "col-lg-6 col-md-12",
-      required: !formData.cprCopyUrl,
+      required: !fileData.cprCopy.fullUrl,
       style: inputStyle,
-      preview: imagePreviews.cprCopy,
       previewComponent: (
-        <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
-          {imagePreviews.cprCopy ? (
-            <>
-              {formData.cprCopyUrl.endsWith(".pdf") ? (
-                <button
-                  onClick={handlePreviewClick("cprCopy", formData.cprCopyUrl)}
-                  style={previewButtonStyle}
-                >
-                  View Document
-                </button>
-              ) : (
-                <img
-                  src={imagePreviews.cprCopy}
-                  alt="CPR Copy Preview"
-                  style={previewImageStyle}
-                  onClick={handlePreviewClick("cprCopy", formData.cprCopyUrl)}
-                  onError={() => console.error("Error loading CPR image")}
-                />
-              )}
-              <button
-                onClick={handleRemoveFile("cprCopy")}
-                style={removeButtonStyle}
-                title="Remove CPR Copy"
-              >
-                ×
-              </button>
-            </>
-          ) : (
-            <div
-              style={{ ...inputStyle, textAlign: "center", lineHeight: "60px" }}
-              className={formErrors.cprCopy ? "is-invalid" : ""}
-              onClick={() => document.getElementById("cprCopyInput").click()}
-            >
-              Choose CPR Copy
-            </div>
-          )}
-          <input
-            type="file"
-            id="cprCopyInput"
-            name="cprCopy"
-            accept=".pdf,.jpg,.png"
-            onChange={handleFileChange("cprCopy")}
-            style={{ display: "none" }}
-            disabled={isSubmitting || isInitialLoading}
-          />
-          {formErrors.cprCopy && (
-            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-              {formErrors.cprCopy}
-            </div>
-          )}
-        </div>
+        <FilePicker
+          fieldName="cprCopy"
+          label="CPR Copy"
+          accept=".pdf,.jpg,.png"
+          previewUrl={fileData.cprCopy.previewUrl}
+          fileUrl={fileData.cprCopy.fullUrl}
+          mediaId={fileData.cprCopy.mediaId}
+          formError={formErrors.cprCopy}
+          onFileDataChange={handleFileDataChange}
+          onPreviewClick={handlePreviewClick}
+          onClearError={handleClearError}
+          isGlobalSubmitting={isSubmitting}
+          isGlobalLoading={isInitialLoading}
+        />
       ),
     },
   ];
@@ -976,10 +835,10 @@ const MyProfile = () => {
         work_available_id: getIdFromValue(workAvailableOptions, formData.work_available),
         available_for_work_after_days: parseInt(formData.no_of_days_available) || null,
         current_location_id: getIdFromValue(countryOptions, formData.current_location),
-        profile_media_id: formData.profileImageId,
-        passport_media_id: formData.passportCopyId,
-        visa_media_id: formData.visaCopyId,
-        cpr_media_id: formData.cprCopyId,
+        profile_media_id: fileData.profileImage.mediaId,
+        passport_media_id: fileData.passportCopy.mediaId,
+        visa_media_id: fileData.visaCopy.mediaId,
+        cpr_media_id: fileData.cprCopy.mediaId,
       };
 
       console.log("Profile data to submit:", data);
@@ -1002,7 +861,8 @@ const MyProfile = () => {
     }
   };
 
-  console.log("Rendering MyProfile, isInitialLoading:", isInitialLoading, "isSubmitting:", isSubmitting);
+  console.log("🔄 COMPONENT RENDER - Current fileData state:", fileData);
+  console.log("🔄 COMPONENT RENDER - isInitialLoading:", isInitialLoading, "isSubmitting:", isSubmitting);
 
   return (
     <div className="relative min-h-screen">
@@ -1027,7 +887,7 @@ const MyProfile = () => {
         formData={formData}
         handleChange={handleChange}
         handleSelectChange={handleSelectChange}
-        handleFileChange={handleFileChange}
+        handleFileChange={() => {}} // Not used anymore, handled by FilePicker
         onSubmit={handleSubmit}
         loading={isSubmitting || isInitialLoading}
         formErrors={formErrors}

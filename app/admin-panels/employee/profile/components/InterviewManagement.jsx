@@ -1,21 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import CardForm from "@/templates/forms/card-form";
+import ProfileCardForm from "@/templates/forms/ProfileCardForm";
 import Select from "react-select";
 import { networkService } from "@/services/network.service";
 import { notificationService } from "@/services/notification.service";
 import Loader from "@/globals/Loader";
 
-const buttonStyle = {
-  padding: "0.75rem 1.5rem",
-  border: "none",
+// Define inputStyle for consistency
+const inputStyle = {
+  width: "100%",
+  padding: "0.75rem",
   borderRadius: "0.5rem",
-  backgroundColor: "#1a73e8",
-  color: "white",
-  cursor: "pointer",
-  fontSize: "1rem",
-  fontWeight: "600",
+  backgroundColor: "#F0F5F7",
+  boxSizing: "border-box",
+  height: "60px",
+  border: "none",
 };
 
 const InterviewManagement = () => {
@@ -45,6 +45,11 @@ const InterviewManagement = () => {
   const handleSelectChange = (field) => (selectedOption) => {
     setFormData({ ...formData, [field]: selectedOption ? selectedOption.value : "" });
     setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  // Handle clearing form errors
+  const handleClearError = (fieldName) => {
+    setFormErrors((prev) => ({ ...prev, [fieldName]: "" }));
   };
 
   const validateForm = () => {
@@ -216,6 +221,7 @@ const InterviewManagement = () => {
       placeholder: "E.g., 8",
       colClass: "col-lg-3 col-md-12",
       min: "1",
+      max: "24",
       required: true,
     },
     {
@@ -227,7 +233,6 @@ const InterviewManagement = () => {
       placeholder: "Select Preference",
       required: true,
       component: Select,
-      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "select",
@@ -238,7 +243,6 @@ const InterviewManagement = () => {
       placeholder: "Select Language",
       required: true,
       component: Select,
-      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "select",
@@ -249,7 +253,6 @@ const InterviewManagement = () => {
       placeholder: "Select Option",
       required: true,
       component: Select,
-      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "select",
@@ -260,7 +263,6 @@ const InterviewManagement = () => {
       placeholder: "Select Option",
       required: true,
       component: Select,
-      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "select",
@@ -271,7 +273,6 @@ const InterviewManagement = () => {
       placeholder: "Select Option",
       required: true,
       component: Select,
-      disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "select",
@@ -282,7 +283,6 @@ const InterviewManagement = () => {
       placeholder: "Select Country",
       required: true,
       component: Select,
-      disabled: isInitialLoading || isSubmitting,
     },
   ];
 
@@ -349,19 +349,20 @@ const InterviewManagement = () => {
           .invalid-feedback {
             display: block;
             color: #dc3545;
-            fontSize: 0.875rem;
-            marginTop: 0.25rem;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
           }
         `}
       </style>
       {(isInitialLoading || isSubmitting) && (
         <Loader text={isInitialLoading ? "Loading..." : "Saving..."} />
       )}
-      <CardForm
+      <ProfileCardForm
         fields={fields}
         formData={formData}
         handleChange={handleChange}
         handleSelectChange={handleSelectChange}
+        handleFileChange={() => {}} // Not used in this component
         onSubmit={handleSubmit}
         loading={isInitialLoading || isSubmitting}
         formErrors={formErrors}

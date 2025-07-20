@@ -4,7 +4,6 @@ import Select from "react-select";
 
 const FormSelectField = ({ field, value, handleSelectChange, error }) => {
   const isMulti = field.isMulti || false;
-
   const selectedValue = isMulti
     ? field.options.filter((option) => value && value.includes(option.value))
     : field.options.find((option) => option.value === value) || null;
@@ -19,7 +18,7 @@ const FormSelectField = ({ field, value, handleSelectChange, error }) => {
   };
 
   const customStyles = {
-    control: (provided) => ({
+    control: (provided, state) => ({
       ...provided,
       ...field.style,
       border: error ? "1px solid #dc3545" : "none",
@@ -28,6 +27,18 @@ const FormSelectField = ({ field, value, handleSelectChange, error }) => {
       "&:hover": {
         border: error ? "1px solid #dc3545" : "none",
       },
+      // Override focus styles to maintain error border
+      ...(state.isFocused && error && {
+        border: "1px solid #dc3545",
+        boxShadow: "none",
+      }),
+    }),
+    indicatorSeparator: () => ({
+      display: 'none',
+    }),
+    dropdownIndicator: (provided) => ({
+      ...provided,
+      color: error ? "#dc3545" : "#8C956B",
     }),
   };
 
@@ -36,7 +47,7 @@ const FormSelectField = ({ field, value, handleSelectChange, error }) => {
       <Select
         name={field.name}
         options={field.options}
-        className={`basic-multi-select ${field.className || ""} ${error ? "is-invalid" : ""}`.trim()}
+        className={`basic-multi-select ${field.className || ""}`.trim()}
         classNamePrefix="select"
         placeholder={field.placeholder}
         value={selectedValue}

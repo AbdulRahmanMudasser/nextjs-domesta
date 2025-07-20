@@ -8,6 +8,7 @@ import { userService } from "@/services/user.service";
 import { notificationService } from "@/services/notification.service";
 import Loader from "@/globals/Loader";
 import Modal from "./Modal";
+import FilePicker from "@/templates/inputs/FilePicker";
 import { v4 as uuidv4 } from "uuid";
 
 const UploadDocument = () => {
@@ -23,9 +24,6 @@ const UploadDocument = () => {
   const [documentTypeOptions, setDocumentTypeOptions] = useState([]);
   const [countryOptions, setCountryOptions] = useState([]);
   const [statusOptions, setStatusOptions] = useState([]);
-  const [documentPreviews, setDocumentPreviews] = useState({
-    file: "",
-  });
   const [modalContent, setModalContent] = useState(null);
   const [isModalPreviewOpen, setIsModalPreviewOpen] = useState(false);
 
@@ -47,9 +45,6 @@ const UploadDocument = () => {
   const [formData, setFormData] = useState({
     id: uuidv4(),
     category: "",
-    file: null,
-    fileUrl: "",
-    fileId: null,
     expiryDate: "",
     currentStatus: "",
     issuingCountry: "",
@@ -59,6 +54,16 @@ const UploadDocument = () => {
     employee_id: employeeId,
   });
 
+  // Separate state for file data
+  const [fileData, setFileData] = useState({
+    file: {
+      file: null,
+      previewUrl: "",
+      fullUrl: "",
+      mediaId: null,
+    },
+  });
+
   const inputStyle = {
     width: "100%",
     padding: "0.75rem",
@@ -66,35 +71,6 @@ const UploadDocument = () => {
     backgroundColor: "#F0F5F7",
     boxSizing: "border-box",
     height: "60px",
-  };
-
-  // Define preview button style for document buttons
-  const previewButtonStyle = {
-    marginTop: "10px",
-    backgroundColor: "#8C956B",
-    color: "white",
-    border: "none",
-    padding: "0.5rem 1rem",
-    borderRadius: "0.5rem",
-    cursor: "pointer",
-    fontSize: "14px",
-  };
-
-  // Define remove button style
-  const removeButtonStyle = {
-    position: "absolute",
-    top: "0px",
-    right: "-1px",
-    backgroundColor: "#8C956B",
-    color: "white",
-    borderRadius: "50%",
-    width: "28px",
-    height: "28px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    fontSize: "18px",
   };
 
   const yesNoOptions = [
@@ -117,63 +93,20 @@ const UploadDocument = () => {
     setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  const handleFileChange = (field) => async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData((prev) => ({ ...prev, [field]: file }));
-      setFormErrors((prev) => ({ ...prev, [field]: "" }));
-      
-      try {
-        console.log(`Starting upload for ${field}, isSubmitting: true`);
-        setIsSubmitting(true);
-        
-        // Use the exact same approach as MyProfile
-        const response = await networkService.uploadMedia(file);
-        
-        if (response && response[0]?.base_url && response[0]?.thumb_size) {
-          const previewUrl = `${response[0].base_url}${response[0].thumb_size}`;
-          setDocumentPreviews((prev) => ({
-            ...prev,
-            [field]: previewUrl,
-          }));
-          setFormData((prev) => ({
-            ...prev,
-            [`${field}Url`]: `${response[0].base_url}${response[0].unique_name}`,
-            [`${field}Id`]: response[0].id,
-            employee_id: employeeId,
-          }));
-        }
-      } catch (error) {
-        console.error(`Error uploading ${field}:`, error);
-        await notificationService.showToast(
-          `Failed to upload ${field}. Please try again.`,
-          "error"
-        );
-      } finally {
-        setTimeout(() => {
-          setIsSubmitting(false);
-          console.log(`Finished upload for ${field}, isSubmitting: false`);
-        }, 500);
-      }
-    }
+  // Handle file data changes from FilePicker component
+  const handleFileDataChange = (fieldName, data) => {
+    setFileData(prev => ({
+      ...prev,
+      [fieldName]: data,
+    }));
   };
 
-  const handleRemoveFile = (field) => () => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: null,
-      [`${field}Url`]: "",
-      [`${field}Id`]: null,
-      employee_id: employeeId,
-    }));
-    setDocumentPreviews((prev) => ({
-      ...prev,
-      [field]: "",
-    }));
-    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  // Handle clearing form errors
+  const handleClearError = (fieldName) => {
+    setFormErrors((prev) => ({ ...prev, [fieldName]: "" }));
   };
 
-  const handlePreviewClick = (field, url) => () => {
+  const handlePreviewClick = (field, url) => {
     if (url) {
       if (url.endsWith(".pdf")) {
         setModalContent(
@@ -223,113 +156,128 @@ const UploadDocument = () => {
       current_location_id: getDropdownId(countryOptions, formData.currentLocation),
       work_available_immediately: formData.workAvailableImmediately === "Yes" ? true : formData.workAvailableImmediately === "No" ? false : null,
       number_of_days: formData.workAvailableImmediately === "No" && formData.numberOfDays ? parseInt(formData.numberOfDays) : null,
-      media_id: formData.fileId || null,
+      media_id: fileData.file.mediaId || null,
       employee_id: userId,
     };
 
     console.log("Form data:", formData);
+    console.log("File data:", fileData);
     console.log("Mapped API data:", apiData);
     return apiData;
   };
 
   const formFields = useMemo(() => [
     {
-      type: "select", name: "category", label: "Document Type", options: documentTypeOptions, placeholder: "Select Category", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
+      type: "select", 
+      name: "category", 
+      label: "Document Type", 
+      options: documentTypeOptions, 
+      placeholder: "Select Category", 
+      colClass: "col-lg-6 col-md-12", 
+      required: true, 
+      disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "date", name: "expiryDate", label: "Expiry Date", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting, style: inputStyle,
+      type: "date", 
+      name: "expiryDate", 
+      label: "Expiry Date", 
+      colClass: "col-lg-6 col-md-12", 
+      required: true, 
+      disabled: isInitialLoading || isSubmitting, 
+      style: inputStyle,
     },
     {
-      type: "select", name: "currentStatus", label: "Current Status", options: statusOptions, placeholder: "Select Status", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
+      type: "select", 
+      name: "currentStatus", 
+      label: "Current Status", 
+      options: statusOptions, 
+      placeholder: "Select Status", 
+      colClass: "col-lg-6 col-md-12", 
+      required: true, 
+      disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "select", name: "issuingCountry", label: "Issuing Country", options: countryOptions, placeholder: "Select Country", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
+      type: "select", 
+      name: "issuingCountry", 
+      label: "Issuing Country", 
+      options: countryOptions, 
+      placeholder: "Select Country", 
+      colClass: "col-lg-6 col-md-12", 
+      required: true, 
+      disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "select", name: "currentLocation", label: "Current Location", options: countryOptions, placeholder: "Select Location", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
+      type: "select", 
+      name: "currentLocation", 
+      label: "Current Location", 
+      options: countryOptions, 
+      placeholder: "Select Location", 
+      colClass: "col-lg-6 col-md-12", 
+      required: true, 
+      disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "select", name: "workAvailableImmediately", label: "Work Available Immediately", options: yesNoOptions, placeholder: "Select Option", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
+      type: "select", 
+      name: "workAvailableImmediately", 
+      label: "Work Available Immediately", 
+      options: yesNoOptions, 
+      placeholder: "Select Option", 
+      colClass: "col-lg-6 col-md-12", 
+      required: true, 
+      disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "number", name: "numberOfDays", label: "Number of Days (if not immediate)", placeholder: "Enter days", colClass: "col-lg-6 col-md-12", min: "0", required: formData.workAvailableImmediately === "No", disabled: isInitialLoading || isSubmitting,
+      type: "number", 
+      name: "numberOfDays", 
+      label: "Number of Days (if not immediate)", 
+      placeholder: "Enter days", 
+      colClass: "col-lg-6 col-md-12", 
+      min: "0", 
+      required: formData.workAvailableImmediately === "No", 
+      disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "file", name: "file", label: "Upload Document", colClass: "col-lg-6 col-md-12", accept: ".pdf,.jpg,.png", required: !formData.fileUrl, disabled: isInitialLoading || isSubmitting, style: inputStyle,
-      preview: documentPreviews.file,
+      type: "file", 
+      name: "file", 
+      label: "Upload Document", 
+      colClass: "col-lg-6 col-md-12", 
+      accept: ".pdf,.jpg,.png", 
+      required: !fileData.file.fullUrl, 
+      disabled: isInitialLoading || isSubmitting, 
+      style: inputStyle,
       previewComponent: (
-        <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
-          {documentPreviews.file ? (
-            <>
-              {formData.fileUrl && formData.fileUrl.endsWith(".pdf") ? (
-                <button
-                  onClick={handlePreviewClick("file", formData.fileUrl)}
-                  style={previewButtonStyle}
-                >
-                  View Document
-                </button>
-              ) : (
-                <img
-                  src={documentPreviews.file}
-                  alt="Document Preview"
-                  style={{
-                    maxWidth: "100px",
-                    maxHeight: "100px",
-                    marginTop: "10px",
-                    borderRadius: "0.5rem",
-                    objectFit: "cover",
-                  }}
-                  onClick={handlePreviewClick("file", formData.fileUrl)}
-                  onError={() => console.error("Error loading document preview")}
-                />
-              )}
-              <button
-                onClick={handleRemoveFile("file")}
-                style={removeButtonStyle}
-                title="Remove Document"
-              >
-                ×
-              </button>
-            </>
-          ) : (
-            <div
-              style={{ 
-                width: "100%",
-                borderRadius: "0.5rem",
-                backgroundColor: "#F0F5F7",
-                boxSizing: "border-box",
-                height: "60px",
-                border: formErrors.file ? "1px solid #dc3545" : "1px solid transparent",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-                cursor: "pointer"
-              }}
-              className={formErrors.file ? "is-invalid" : ""}
-              onClick={() => document.getElementById("fileInput").click()}
-            >
-              Choose Document
-            </div>
-          )}
-          <input
-            type ="file"
-            id ="fileInput"
-            name ="file"
+        <div>
+          <FilePicker
+            fieldName="file"
+            label="Document"
             accept=".pdf,.jpg,.png"
-            onChange={handleFileChange("file")}
-            style={{ display: "none" }}
-            disabled={isSubmitting || isInitialLoading}
+            initialPreview={fileData.file.previewUrl}
+            initialFileUrl={fileData.file.fullUrl}
+            initialFileId={fileData.file.mediaId}
+            formError={formErrors.file}
+            onFileDataChange={handleFileDataChange}
+            onPreviewClick={handlePreviewClick}
+            onClearError={handleClearError}
+            isGlobalSubmitting={isSubmitting}
+            isGlobalLoading={isInitialLoading}
           />
-          {formErrors.file && (
-            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem", marginTop: "0.25rem" }}>
-              {formErrors.file}
-            </div>
-          )}
         </div>
       ),
     },
-  ], [documentTypeOptions, statusOptions, countryOptions, yesNoOptions, formData.workAvailableImmediately, formData.fileUrl, documentPreviews.file, formErrors.file, isInitialLoading, isSubmitting, inputStyle]);
+  ], [
+    documentTypeOptions, 
+    statusOptions, 
+    countryOptions, 
+    yesNoOptions, 
+    formData.workAvailableImmediately, 
+    fileData.file.fullUrl,
+    fileData.file.previewUrl,
+    fileData.file.mediaId,
+    formErrors.file, 
+    isInitialLoading, 
+    isSubmitting, 
+    inputStyle
+  ]);
 
   const fetchSingleDocument = async (documentId) => {
     if (!documentId) {
@@ -351,9 +299,6 @@ const UploadDocument = () => {
         const formattedData = {
           id: document.id,
           category: document.document_type?.value || document.category || "",
-          file: null,
-          fileUrl: document.media ? `${document.media.base_url}${document.media.unique_name}` : document.fileUrl || "",
-          fileId: document.media_id || document.fileId || null,
           expiryDate: document.expiry_date ? document.expiry_date.split('T')[0] : document.expiryDate || "",
           currentStatus: document.document_status?.value || document.currentStatus || "",
           issuingCountry: document.issuing_country?.name || document.issuingCountry || "",
@@ -363,13 +308,16 @@ const UploadDocument = () => {
           employee_id: employeeId,
         };
 
-        // Set document preview if exists
-        if (formattedData.fileUrl) {
-          setDocumentPreviews(prev => ({
-            ...prev,
-            file: formattedData.fileUrl.includes('thumb') ? formattedData.fileUrl : formattedData.fileUrl,
-          }));
-        }
+        // Set file data separately
+        const documentUrl = document.media ? `${document.media.base_url}${document.media.unique_name}` : document.fileUrl || "";
+        setFileData({
+          file: {
+            file: null,
+            previewUrl: documentUrl,
+            fullUrl: documentUrl,
+            mediaId: document.media_id || document.fileId || null,
+          },
+        });
 
         console.log("Formatted form data:", formattedData); // Debug log
         setFormData(formattedData);
@@ -405,9 +353,6 @@ const UploadDocument = () => {
     setFormData({
       id: uuidv4(),
       category: "",
-      file: null,
-      fileUrl: "",
-      fileId: null,
       expiryDate: "",
       currentStatus: "",
       issuingCountry: "",
@@ -417,8 +362,14 @@ const UploadDocument = () => {
       employee_id: employeeId,
     });
 
-    setDocumentPreviews({
-      file: "",
+    // Reset file data
+    setFileData({
+      file: {
+        file: null,
+        previewUrl: "",
+        fullUrl: "",
+        mediaId: null,
+      },
     });
     
     setFormErrors({});
@@ -456,8 +407,8 @@ const UploadDocument = () => {
     }
 
     // File field validation
-    if (!formData.file && !formData.fileUrl && !isEditMode) {
-      errors.file = `${fieldLabels.file} is required`;
+    if (!fileData.file.file && !fileData.file.fullUrl && !isEditMode) {
+      errors.file = `Upload Document is required`;
       isValid = false;
     }
 
@@ -598,6 +549,7 @@ const UploadDocument = () => {
     setFormErrors({});
     
     console.log("Form submitted with data:", formData);
+    console.log("File data:", fileData);
     console.log("Is edit mode:", isEditMode, "Editing ID:", editingDocumentId);
     
     if (!validateForm()) {
@@ -664,10 +616,10 @@ const UploadDocument = () => {
                     current_location: { name: response.current_location?.name || formData.currentLocation },
                     work_available_immediately: response.work_available_immediately,
                     number_of_days: response.number_of_days || formData.numberOfDays,
-                    media: response.media || { base_url: formData.fileUrl, unique_name: response.media?.unique_name || formData.file?.name },
-                    media_id: response.media_id || formData.fileId,
-                    fileUrl: response.media ? `${response.media.base_url}${response.media.unique_name}` : formData.fileUrl,
-                    fileId: response.media_id || formData.fileId,
+                    media: response.media || { base_url: fileData.file.fullUrl, unique_name: response.media?.unique_name || fileData.file.file?.name },
+                    media_id: response.media_id || fileData.file.mediaId,
+                    fileUrl: response.media ? `${response.media.base_url}${response.media.unique_name}` : fileData.file.fullUrl,
+                    fileId: response.media_id || fileData.file.mediaId,
                   }
                 : doc
             )
@@ -689,11 +641,11 @@ const UploadDocument = () => {
             current_location: { name: response.current_location?.name || formData.currentLocation },
             work_available_immediately: response.work_available_immediately,
             number_of_days: response.number_of_days || formData.numberOfDays,
-            media: response.media || { base_url: formData.fileUrl, unique_name: response.media?.unique_name || formData.file?.name },
-            media_id: response.media_id || formData.fileId,
+            media: response.media || { base_url: fileData.file.fullUrl, unique_name: response.media?.unique_name || fileData.file.file?.name },
+            media_id: response.media_id || fileData.file.mediaId,
             file: { name: response.media?.unique_name || "Document" },
-            fileUrl: response.media ? `${response.media.base_url}${response.media.unique_name}` : formData.fileUrl,
-            fileId: response.media_id || formData.fileId,
+            fileUrl: response.media ? `${response.media.base_url}${response.media.unique_name}` : fileData.file.fullUrl,
+            fileId: response.media_id || fileData.file.mediaId,
           };
           setSavedDocuments(prevDocs => [...prevDocs, newDocument]);
         }
@@ -707,9 +659,6 @@ const UploadDocument = () => {
       setFormData({
         id: uuidv4(),
         category: "",
-        file: null,
-        fileUrl: "",
-        fileId: null,
         expiryDate: "",
         currentStatus: "",
         issuingCountry: "",
@@ -719,8 +668,14 @@ const UploadDocument = () => {
         employee_id: employeeId,
       });
 
-      setDocumentPreviews({
-        file: "",
+      // Reset file data
+      setFileData({
+        file: {
+          file: null,
+          previewUrl: "",
+          fullUrl: "",
+          mediaId: null,
+        },
       });
       
     } catch (err) {
@@ -856,7 +811,7 @@ const UploadDocument = () => {
               formData={formData}
               handleChange={handleChange}
               handleSelectChange={handleSelectChange}
-              handleFileChange={handleFileChange}
+              handleFileChange={() => {}} // Not used anymore, handled by FilePicker
               onSubmit={handleSubmit}
               loading={isSubmitting || isLoadingSingle}
               formErrors={formErrors}
