@@ -6,7 +6,6 @@ import WorkExperienceTable from "@/templates/tables/WorkExperienceTable";
 import { networkService } from "@/services/network.service";
 import { notificationService } from "@/services/notification.service";
 import Loader from "@/globals/Loader";
-import Select from "react-select";
 
 const JobExperienceCard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -83,7 +82,7 @@ const JobExperienceCard = () => {
       type: "date", name: "start_date", label: "Start Date", placeholder: "Start date", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "date", name: "end_date", label: "End Date", placeholder: "End date", colClass: "col-lg-6 col-md-12", required: false, disabled: isInitialLoading || isSubmitting,
+      type: "date", name: "end_date", label: "End Date", placeholder: "End date", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "text", name: "designation", label: "Designation", placeholder: "Enter designation", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
@@ -92,19 +91,19 @@ const JobExperienceCard = () => {
       type: "number", name: "previous_salary", label: "Previous Salary", placeholder: "Enter salary", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "text", name: "benefits", label: "Benefits", placeholder: "Enter benefits", colClass: "col-lg-6 col-md-12", required: false, disabled: isInitialLoading || isSubmitting,
+      type: "text", name: "benefits", label: "Benefits", placeholder: "Enter benefits", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
       type: "number", name: "rating", label: "Rating", placeholder: "1–5", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "text", name: "employer_review", label: "Employer Review", placeholder: "Enter review", colClass: "col-lg-6 col-md-12", required: false, disabled: isInitialLoading || isSubmitting,
+      type: "text", name: "employer_review", label: "Employer Review", placeholder: "Enter review", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "text", name: "pets_experience", label: "Pets Experience", placeholder: "Enter experience", colClass: "col-lg-6 col-md-12", required: false, disabled: isInitialLoading || isSubmitting,
+      type: "text", name: "pets_experience", label: "Pets Experience", placeholder: "Enter experience", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
     {
-      type: "select", name: "comfortable_with_pets", label: "Comfortable with Pets", options: petComfortOptions, placeholder: "Select", colClass: "col-lg-6 col-md-12", required: false, disabled: isInitialLoading || isSubmitting,
+      type: "select", name: "comfortable_with_pets", label: "Comfortable with Pets", options: petComfortOptions, placeholder: "Select", colClass: "col-lg-6 col-md-12", required: true, disabled: isInitialLoading || isSubmitting,
     },
   ], [countryOptions, petComfortOptions, isInitialLoading, isSubmitting]);
 
@@ -242,18 +241,40 @@ const JobExperienceCard = () => {
   const validateForm = () => {
     const errors = {};
     let valid = true;
-    if (!formData.employer_name) errors.employer_name = "Required", valid = false;
-    if (!formData.employment_location) errors.employment_location = "Required", valid = false;
-    if (!formData.employer_dial_code) errors.employer_dial_code = "Required", valid = false;
-    if (!formData.employer_phone) errors.employer_phone = "Required", valid = false;
-    if (!formData.employer_email || !/\S+@\S+\.\S+/.test(formData.employer_email)) {
-      errors.employer_email = "Invalid email", valid = false;
+
+    // Create a mapping of field names to their display labels
+    const fieldLabels = formFields.reduce((acc, field) => ({
+      ...acc,
+      [field.name]: field.label,
+    }), {});
+
+    // Validate required fields
+    const requiredFields = formFields.filter((f) => f.required).map((f) => f.name);
+    requiredFields.forEach((field) => {
+      if (!formData[field] || formData[field] === "") {
+        errors[field] = `${fieldLabels[field]} is required`;
+        valid = false;
+      }
+    });
+
+    // Email validation
+    if (formData.employer_email && !/\S+@\S+\.\S+/.test(formData.employer_email)) {
+      errors.employer_email = "Invalid email format";
+      valid = false;
     }
-    if (!formData.country) errors.country = "Required", valid = false;
-    if (!formData.start_date) errors.start_date = "Required", valid = false;
-    if (!formData.designation) errors.designation = "Required", valid = false;
-    if (!formData.previous_salary) errors.previous_salary = "Required", valid = false;
-    if (!formData.rating) errors.rating = "Required", valid = false;
+
+    // Rating validation (1-5)
+    if (formData.rating && (isNaN(formData.rating) || formData.rating < 1 || formData.rating > 5)) {
+      errors.rating = "Rating must be between 1 and 5";
+      valid = false;
+    }
+
+    // Salary validation (positive number)
+    if (formData.previous_salary && (isNaN(formData.previous_salary) || formData.previous_salary < 0)) {
+      errors.previous_salary = "Salary must be a positive number";
+      valid = false;
+    }
+
     setFormErrors(errors);
     return valid;
   };
