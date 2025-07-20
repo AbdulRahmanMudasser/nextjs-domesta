@@ -212,54 +212,142 @@ const MyProfile = () => {
 
         console.log("Fetching profile data...");
         const profileResponse = await networkService.get(`/employee/profile-single/${employeeId}`);
+        console.log("📋 FULL PROFILE RESPONSE:", profileResponse);
+        
         if (profileResponse) {
+          console.log("🔍 CHECKING MEDIA IDs:");
+          console.log(`- profile_media_id: ${profileResponse.profile_media_id}`);
+          console.log(`- passport_media_id: ${profileResponse.passport_media_id}`);
+          console.log(`- visa_media_id: ${profileResponse.visa_media_id}`);
+          console.log(`- cpr_media_id: ${profileResponse.cpr_media_id}`);
+          
+          console.log("🔍 CHECKING MEDIA OBJECTS:");
+          console.log(`- profile_media:`, profileResponse.profile_media);
+          console.log(`- passport_media:`, profileResponse.passport_media);
+          console.log(`- visa_media:`, profileResponse.visa_media);
+          console.log(`- cpr_media:`, profileResponse.cpr_media);
           const getValue = (obj, fallback = "") => obj?.value || obj?.name || fallback;
           const formatDate = (dateString) => {
             if (!dateString) return "";
             return new Date(dateString).toISOString().split("T")[0];
           };
 
+          // Updated fetchMediaThumbnail function to use the media/single API
           const fetchMediaThumbnail = async (mediaId, originalUrl) => {
-            if (!mediaId) return "";
+            console.log(`=== FETCHING MEDIA THUMBNAIL ===`);
+            console.log(`Media ID: ${mediaId}`);
+            console.log(`Original URL: ${originalUrl}`);
+            
+            if (!mediaId) {
+              console.log("No media ID provided, returning empty string");
+              return "";
+            }
+            
             try {
+              console.log(`🔄 Calling API: /media/single/${mediaId}`);
               const mediaResponse = await networkService.get(`/media/single/${mediaId}`);
-              if (mediaResponse?.data?.base_url && mediaResponse?.data?.thumb_size) {
-                return `${mediaResponse.data.base_url}${mediaResponse.data.thumb_size}`;
+              console.log(`✅ Raw API Response for media ID ${mediaId}:`, mediaResponse);
+              
+              // Check if response has the expected structure
+              if (mediaResponse?.base_url && mediaResponse?.thumb_size) {
+                const thumbnailUrl = `${mediaResponse.base_url}${mediaResponse.thumb_size}`;
+                console.log(`✅ Generated thumbnail URL: ${thumbnailUrl}`);
+                return thumbnailUrl;
+              } else if (mediaResponse?.base_url && mediaResponse?.unique_name) {
+                // Fallback to full image if thumb_size is not available
+                const fullImageUrl = `${mediaResponse.base_url}${mediaResponse.unique_name}`;
+                console.log(`⚠️ No thumb_size found, using full image as thumbnail: ${fullImageUrl}`);
+                return fullImageUrl;
+              } else {
+                console.error(`❌ Invalid media response structure for ID ${mediaId}:`);
+                console.error(`- base_url: ${mediaResponse?.base_url}`);
+                console.error(`- thumb_size: ${mediaResponse?.thumb_size}`);
+                console.error(`- unique_name: ${mediaResponse?.unique_name}`);
+                console.error(`Full response:`, mediaResponse);
+                return originalUrl || "";
               }
-              return originalUrl || "";
             } catch (error) {
-              console.error(`Error fetching media ${mediaId}:`, error);
+              console.error(`❌ Error fetching media ${mediaId}:`, error);
               return originalUrl || "";
             }
           };
 
-          const [profileThumb, passportThumb, visaThumb, cprThumb] = await Promise.all([
-            fetchMediaThumbnail(
-              profileResponse.profile_media_id,
-              profileResponse.profile_media
-                ? `${profileResponse.profile_media.base_url}${profileResponse.profile_media.unique_name}`
-                : ""
-            ),
-            fetchMediaThumbnail(
-              profileResponse.passport_media_id,
-              profileResponse.passport_media
-                ? `${profileResponse.passport_media.base_url}${profileResponse.passport_media.unique_name}`
-                : ""
-            ),
-            fetchMediaThumbnail(
-              profileResponse.visa_media_id,
-              profileResponse.visa_media
-                ? `${profileResponse.visa_media.base_url}${profileResponse.visa_media.unique_name}`
-                : ""
-            ),
-            fetchMediaThumbnail(
-              profileResponse.cpr_media_id,
-              profileResponse.cpr_media
-                ? `${profileResponse.cpr_media.base_url}${profileResponse.cpr_media.unique_name}`
-                : ""
-            ),
+          // Simple and direct approach - get media IDs and fetch media
+          console.log("🔍 EXTRACTING MEDIA IDs FROM PROFILE:");
+          const mediaIds = {
+            profile: profileResponse.profile_media_id,
+            passport: profileResponse.passport_media_id,
+            visa: profileResponse.visa_media_id,
+            cpr: profileResponse.cpr_media_id
+          };
+          console.log("Media IDs found:", mediaIds);
+
+          // Initialize file data with empty state first
+          const initialFileData = {
+            profileImage: { file: null, previewUrl: "", fullUrl: "", mediaId: null },
+            passportCopy: { file: null, previewUrl: "", fullUrl: "", mediaId: null },
+            visaCopy: { file: null, previewUrl: "", fullUrl: "", mediaId: null },
+            cprCopy: { file: null, previewUrl: "", fullUrl: "", mediaId: null },
+          };
+
+          // Function to fetch and set media for each type
+          const fetchAndSetMedia = async (mediaId, fieldName, mediaType) => {
+            if (!mediaId) {
+              console.log(`No ${mediaType} media ID found`);
+              return;
+            }
+
+            try {
+              console.log(`🔄 Fetching ${mediaType} media with ID: ${mediaId}`);
+              const mediaResponse = await networkService.get(`/media/single/${mediaId}`);
+              console.log(`✅ ${mediaType} media response:`, mediaResponse);
+
+              if (mediaResponse && mediaResponse.base_url) {
+                const thumbnailUrl = mediaResponse.thumb_size 
+                  ? `${mediaResponse.base_url}${mediaResponse.thumb_size}`
+                  : `${mediaResponse.base_url}${mediaResponse.unique_name}`;
+                
+                const fullUrl = `${mediaResponse.base_url}${mediaResponse.unique_name}`;
+                
+                console.log(`🖼️ ${mediaType} URLs:`, { thumbnailUrl, fullUrl });
+
+                // Update fileData state for this specific field
+                setFileData(prev => ({
+                  ...prev,
+                  [fieldName]: {
+                    file: null,
+                    previewUrl: thumbnailUrl,
+                    fullUrl: fullUrl,
+                    mediaId: mediaId
+                  }
+                }));
+
+                console.log(`✅ Updated ${fieldName} with media`);
+              } else {
+                console.error(`❌ Invalid ${mediaType} media response:`, mediaResponse);
+              }
+            } catch (error) {
+              console.error(`❌ Error fetching ${mediaType} media:`, error);
+            }
+          };
+
+          // Set initial empty file data
+          setFileData(initialFileData);
+
+          // Fetch each media type individually
+          console.log("🚀 STARTING INDIVIDUAL MEDIA FETCHES...");
+          
+          // Execute all media fetches
+          await Promise.all([
+            fetchAndSetMedia(mediaIds.profile, 'profileImage', 'profile'),
+            fetchAndSetMedia(mediaIds.passport, 'passportCopy', 'passport'),
+            fetchAndSetMedia(mediaIds.visa, 'visaCopy', 'visa'),
+            fetchAndSetMedia(mediaIds.cpr, 'cprCopy', 'cpr')
           ]);
 
+          console.log("🎉 ALL MEDIA FETCHES COMPLETED");
+
+          console.log("📝 SETTING FORM DATA...");
           setFormData({
             firstName: profileResponse.user?.first_name || "",
             middleName: profileResponse.user?.middle_name || "",
@@ -280,42 +368,6 @@ const MyProfile = () => {
             work_available: getValue(profileResponse.work_available),
             current_location: getValue(profileResponse.current_location),
             aboutMe: profileResponse.about_me || "",
-          });
-
-          // Set file data separately
-          setFileData({
-            profileImage: {
-              file: null,
-              previewUrl: profileThumb,
-              fullUrl: profileResponse.profile_media
-                ? `${profileResponse.profile_media.base_url}${profileResponse.profile_media.unique_name}`
-                : "",
-              mediaId: profileResponse.profile_media?.id || null,
-            },
-            passportCopy: {
-              file: null,
-              previewUrl: passportThumb,
-              fullUrl: profileResponse.passport_media
-                ? `${profileResponse.passport_media.base_url}${profileResponse.passport_media.unique_name}`
-                : "",
-              mediaId: profileResponse.passport_media?.id || null,
-            },
-            visaCopy: {
-              file: null,
-              previewUrl: visaThumb,
-              fullUrl: profileResponse.visa_media
-                ? `${profileResponse.visa_media.base_url}${profileResponse.visa_media.unique_name}`
-                : "",
-              mediaId: profileResponse.visa_media?.id || null,
-            },
-            cprCopy: {
-              file: null,
-              previewUrl: cprThumb,
-              fullUrl: profileResponse.cpr_media
-                ? `${profileResponse.cpr_media.base_url}${profileResponse.cpr_media.unique_name}`
-                : "",
-              mediaId: profileResponse.cpr_media?.id || null,
-            },
           });
         }
 
@@ -650,9 +702,9 @@ const MyProfile = () => {
           fieldName="profileImage"
           label="Profile Picture"
           accept="image/*"
-          initialPreview={fileData.profileImage.previewUrl}
-          initialFileUrl={fileData.profileImage.fullUrl}
-          initialFileId={fileData.profileImage.mediaId}
+          previewUrl={fileData.profileImage.previewUrl}
+          fileUrl={fileData.profileImage.fullUrl}
+          mediaId={fileData.profileImage.mediaId}
           formError={formErrors.profileImage}
           onFileDataChange={handleFileDataChange}
           onPreviewClick={handlePreviewClick}
@@ -675,9 +727,9 @@ const MyProfile = () => {
           fieldName="passportCopy"
           label="Passport Copy"
           accept=".pdf,.jpg,.png"
-          initialPreview={fileData.passportCopy.previewUrl}
-          initialFileUrl={fileData.passportCopy.fullUrl}
-          initialFileId={fileData.passportCopy.mediaId}
+          previewUrl={fileData.passportCopy.previewUrl}
+          fileUrl={fileData.passportCopy.fullUrl}
+          mediaId={fileData.passportCopy.mediaId}
           formError={formErrors.passportCopy}
           onFileDataChange={handleFileDataChange}
           onPreviewClick={handlePreviewClick}
@@ -700,9 +752,9 @@ const MyProfile = () => {
           fieldName="visaCopy"
           label="Visa Copy"
           accept=".pdf,.jpg,.png"
-          initialPreview={fileData.visaCopy.previewUrl}
-          initialFileUrl={fileData.visaCopy.fullUrl}
-          initialFileId={fileData.visaCopy.mediaId}
+          previewUrl={fileData.visaCopy.previewUrl}
+          fileUrl={fileData.visaCopy.fullUrl}
+          mediaId={fileData.visaCopy.mediaId}
           formError={formErrors.visaCopy}
           onFileDataChange={handleFileDataChange}
           onPreviewClick={handlePreviewClick}
@@ -725,9 +777,9 @@ const MyProfile = () => {
           fieldName="cprCopy"
           label="CPR Copy"
           accept=".pdf,.jpg,.png"
-          initialPreview={fileData.cprCopy.previewUrl}
-          initialFileUrl={fileData.cprCopy.fullUrl}
-          initialFileId={fileData.cprCopy.mediaId}
+          previewUrl={fileData.cprCopy.previewUrl}
+          fileUrl={fileData.cprCopy.fullUrl}
+          mediaId={fileData.cprCopy.mediaId}
           formError={formErrors.cprCopy}
           onFileDataChange={handleFileDataChange}
           onPreviewClick={handlePreviewClick}
@@ -809,7 +861,8 @@ const MyProfile = () => {
     }
   };
 
-  console.log("Rendering MyProfile, isInitialLoading:", isInitialLoading, "isSubmitting:", isSubmitting);
+  console.log("🔄 COMPONENT RENDER - Current fileData state:", fileData);
+  console.log("🔄 COMPONENT RENDER - isInitialLoading:", isInitialLoading, "isSubmitting:", isSubmitting);
 
   return (
     <div className="relative min-h-screen">
