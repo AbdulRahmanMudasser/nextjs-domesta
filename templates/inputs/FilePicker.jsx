@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { networkService } from "@/services/network.service";
 import { notificationService } from "@/services/notification.service";
 
@@ -54,6 +54,11 @@ const FilePicker = ({
   fieldName,
   label,
   accept,
+  // New props for external state management
+  previewUrl,
+  fileUrl,
+  mediaId,
+  // Legacy props for backward compatibility
   initialPreview = "",
   initialFileUrl = "",
   initialFileId = null,
@@ -64,18 +69,38 @@ const FilePicker = ({
   isGlobalSubmitting = false,
   isGlobalLoading = false,
 }) => {
+  // Internal state (for backward compatibility)
   const [file, setFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(initialPreview);
-  const [fileUrl, setFileUrl] = useState(initialFileUrl);
+  const [internalFileUrl, setInternalFileUrl] = useState(initialFileUrl);
   const [fileId, setFileId] = useState(initialFileId);
   const [isUploading, setIsUploading] = useState(false);
 
   const inputId = `${fieldName}Input`;
 
+  // Determine if we're using external state management or internal state
+  const useExternalState = previewUrl !== undefined || fileUrl !== undefined || mediaId !== undefined;
+
+  // Update internal state when initial props change (for backward compatibility)
+  useEffect(() => {
+    if (!useExternalState) {
+      setImagePreview(initialPreview);
+      setInternalFileUrl(initialFileUrl);
+      setFileId(initialFileId);
+    }
+  }, [initialPreview, initialFileUrl, initialFileId, useExternalState]);
+
+  // Get current values based on state management mode
+  const currentPreviewUrl = useExternalState ? previewUrl : imagePreview;
+  const currentFileUrl = useExternalState ? fileUrl : internalFileUrl;
+  const currentMediaId = useExternalState ? mediaId : fileId;
+
   const handleFileChange = async (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
-      setFile(selectedFile);
+      if (!useExternalState) {
+        setFile(selectedFile);
+      }
       
       // Clear any existing error
       if (onClearError) {
@@ -88,23 +113,35 @@ const FilePicker = ({
         
         const response = await networkService.uploadMedia(selectedFile);
         if (response && response[0]?.base_url && response[0]?.thumb_size) {
-          const previewUrl = `${response[0].base_url}${response[0].thumb_size}`;
-          const fullUrl = `${response[0].base_url}${response[0].unique_name}`;
-          const mediaId = response[0].id;
+          const newPreviewUrl = `${response[0].base_url}${response[0].thumb_size}`;
+          const newFullUrl = `${response[0].base_url}${response[0].unique_name}`;
+          const newMediaId = response[0].id;
 
-          // Update local state
-          setImagePreview(previewUrl);
-          setFileUrl(fullUrl);
-          setFileId(mediaId);
+          if (useExternalState) {
+            // Notify parent component for external state management
+            if (onFileDataChange) {
+              onFileDataChange(fieldName, {
+                file: selectedFile,
+                previewUrl: newPreviewUrl,
+                fullUrl: newFullUrl,
+                mediaId: newMediaId,
+              });
+            }
+          } else {
+            // Update internal state for backward compatibility
+            setImagePreview(newPreviewUrl);
+            setInternalFileUrl(newFullUrl);
+            setFileId(newMediaId);
 
-          // Notify parent component
-          if (onFileDataChange) {
-            onFileDataChange(fieldName, {
-              file: selectedFile,
-              previewUrl,
-              fullUrl,
-              mediaId,
-            });
+            // Still notify parent if callback exists
+            if (onFileDataChange) {
+              onFileDataChange(fieldName, {
+                file: selectedFile,
+                previewUrl: newPreviewUrl,
+                fullUrl: newFullUrl,
+                mediaId: newMediaId,
+              });
+            }
           }
         }
       } catch (error) {
@@ -123,41 +160,62 @@ const FilePicker = ({
   };
 
   const handleRemove = () => {
-    // Clear local state
-    setFile(null);
-    setImagePreview("");
-    setFileUrl("");
-    setFileId(null);
+    if (useExternalState) {
+      // Notify parent component for external state management
+      if (onFileDataChange) {
+        onFileDataChange(fieldName, {
+          file: null,
+          previewUrl: "",
+          fullUrl: "",
+          mediaId: null,
+        });
+      }
+    } else {
+      // Clear internal state for backward compatibility
+      setFile(null);
+      setImagePreview("");
+      setInternalFileUrl("");
+      setFileId(null);
+
+      // Still notify parent if callback exists
+      if (onFileDataChange) {
+        onFileDataChange(fieldName, {
+          file: null,
+          previewUrl: "",
+          fullUrl: "",
+          mediaId: null,
+        });
+      }
+    }
 
     // Clear any existing error
     if (onClearError) {
       onClearError(fieldName);
     }
-
-    // Notify parent component
-    if (onFileDataChange) {
-      onFileDataChange(fieldName, {
-        file: null,
-        previewUrl: "",
-        fullUrl: "",
-        mediaId: null,
-      });
-    }
   };
 
   const handlePreviewClick = () => {
-    if (onPreviewClick && fileUrl) {
-      onPreviewClick(fieldName, fileUrl);
+    if (onPreviewClick && currentFileUrl) {
+      onPreviewClick(fieldName, currentFileUrl);
     }
   };
 
   const isDisabled = isUploading || isGlobalSubmitting || isGlobalLoading;
 
+  // Debug log
+  console.log(`📸 FilePicker ${fieldName}:`, {
+    useExternalState,
+    currentPreviewUrl,
+    currentFileUrl,
+    currentMediaId,
+    hasImage: !!currentPreviewUrl
+  });
+
   return (
     <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
-      {imagePreview ? (
+      {currentPreviewUrl ? (
         <>
-          {fileUrl && fileUrl.endsWith(".pdf") ? (
+          {currentFileUrl && currentFileUrl.endsWith(".pdf") ? (
             <button
               onClick={handlePreviewClick}
               style={previewButtonStyle}
@@ -167,7 +225,7 @@ const FilePicker = ({
             </button>
           ) : (
             <img
-              src={imagePreview}
+              src={currentPreviewUrl}
               alt={`${label} Preview`}
               style={previewImageStyle}
               onClick={handlePreviewClick}
@@ -193,6 +251,8 @@ const FilePicker = ({
             alignItems: "center",
             justifyContent: "center",
             opacity: isDisabled ? 0.6 : 1,
+            border: formError ? "1px solid #dc3545" : "1px solid transparent",
+            backgroundColor: "#F0F5F7",
           }}
           className={formError ? "is-invalid" : ""}
           onClick={() => !isDisabled && document.getElementById(inputId).click()}
