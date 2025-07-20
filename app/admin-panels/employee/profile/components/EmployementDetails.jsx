@@ -1,6 +1,6 @@
 "use client";
 
-import EmploymentDetailsCardForm from "@/templates/forms/EmploymentDetailsCardForm";
+import ProfileCardForm from "@/templates/forms/ProfileCardForm";
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import { networkService } from "@/services/network.service";
@@ -8,6 +8,7 @@ import { userService } from "@/services/user.service";
 import { notificationService } from "@/services/notification.service";
 import Modal from "./Modal";
 import Loader from "@/globals/Loader";
+import FilePicker from "@/templates/inputs/FilePicker";
 
 // Define inputStyle for file inputs and date fields
 const inputStyle = {
@@ -18,35 +19,6 @@ const inputStyle = {
   boxSizing: "border-box",
   height: "60px",
   border: "none",
-};
-
-// Define preview button style for document buttons
-const previewButtonStyle = {
-  marginTop: "10px",
-  backgroundColor: "#8C956B",
-  color: "white",
-  border: "none",
-  padding: "0.5rem 1rem",
-  borderRadius: "0.5rem",
-  cursor: "pointer",
-  fontSize: "14px",
-};
-
-// Define remove button style
-const removeButtonStyle = {
-  position: "absolute",
-  top: "0px",
-  right: "-1px",
-  backgroundColor: "#8C956B",
-  color: "white",
-  borderRadius: "50%",
-  width: "28px",
-  height: "28px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  fontSize: "18px",
 };
 
 const EmploymentDetails = () => {
@@ -70,7 +42,13 @@ const EmploymentDetails = () => {
     maxWorkHours: "",
     flexibleWeekends: "",
     otherBenefits: "",
-    supportingDocs: null,
+    supportingDocsUrl: "",
+    supportingDocsId: null,
+  });
+
+  // State for initial file data (for FilePicker backward compatibility)
+  const [initialFileData, setInitialFileData] = useState({
+    supportingDocsPreview: "",
     supportingDocsUrl: "",
     supportingDocsId: null,
   });
@@ -83,9 +61,6 @@ const EmploymentDetails = () => {
   const [willingToLiveInOptions, setWillingToLiveInOptions] = useState([]);
   const [serviceOptions, setServiceOptions] = useState([]);
   const [visaStatusOptions, setVisaStatusOptions] = useState([]);
-  const [documentPreviews, setDocumentPreviews] = useState({
-    supportingDocs: "",
-  });
   const [modalContent, setModalContent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
@@ -104,61 +79,30 @@ const EmploymentDetails = () => {
     setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  const handleFileChange = (field) => async (e) => {
-    const file = e.target.files[0]; // Take only the first file, like MyProfile
-    if (file) {
-      setFormData({ ...formData, [field]: file });
-      setFormErrors((prev) => ({ ...prev, [field]: "" }));
-      
-      try {
-        console.log(`Starting upload for ${field}, isSubmitting: true`);
-        setIsSubmitting(true);
-        
-        // Use the exact same approach as MyProfile
-        const response = await networkService.uploadMedia(file);
-        
-        if (response && response[0]?.base_url && response[0]?.thumb_size) {
-          const previewUrl = `${response[0].base_url}${response[0].thumb_size}`;
-          setDocumentPreviews((prev) => ({
-            ...prev,
-            [field]: previewUrl,
-          }));
-          setFormData((prev) => ({
-            ...prev,
-            [`${field}Url`]: `${response[0].base_url}${response[0].unique_name}`,
-            [`${field}Id`]: response[0].id,
-          }));
-        }
-      } catch (error) {
-        console.error(`Error uploading ${field}:`, error);
-        await notificationService.showToast(
-          `Failed to upload ${field}. Please try again.`,
-          "error"
-        );
-      } finally {
-        setTimeout(() => {
-          setIsSubmitting(false);
-          console.log(`Finished upload for ${field}, isSubmitting: false`);
-        }, 500);
-      }
-    }
+  // Handle file data changes from FilePicker components (backward compatibility mode)
+  const handleFileDataChange = (fieldName, data) => {
+    // Update formData for API submission
+    setFormData(prev => ({
+      ...prev,
+      [`${fieldName}Url`]: data.fullUrl,
+      [`${fieldName}Id`]: data.mediaId,
+    }));
+    
+    // Also update initial file data for tracking
+    setInitialFileData(prev => ({
+      ...prev,
+      [`${fieldName}Preview`]: data.previewUrl,
+      [`${fieldName}Url`]: data.fullUrl,
+      [`${fieldName}Id`]: data.mediaId,
+    }));
   };
 
-  const handleRemoveFile = (field) => () => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: null,
-      [`${field}Url`]: "",
-      [`${field}Id`]: null,
-    }));
-    setDocumentPreviews((prev) => ({
-      ...prev,
-      [field]: "",
-    }));
-    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  // Handle clearing form errors (same as MyProfile)
+  const handleClearError = (fieldName) => {
+    setFormErrors((prev) => ({ ...prev, [fieldName]: "" }));
   };
 
-  const handlePreviewClick = (field, url) => () => {
+  const handlePreviewClick = (field, url) => {
     if (url) {
       if (url.endsWith(".pdf")) {
         setModalContent(
@@ -205,21 +149,6 @@ const EmploymentDetails = () => {
     return new Date(dateString).toISOString().split("T")[0];
   };
 
-  // Helper function to fetch media thumbnail (similar to MyProfile.jsx)
-  const fetchMediaThumbnail = async (mediaId, originalUrl) => {
-    if (!mediaId) return "";
-    try {
-      const mediaResponse = await networkService.get(`/media/single/${mediaId}`);
-      if (mediaResponse?.data?.base_url && mediaResponse?.data?.thumb_size) {
-        return `${mediaResponse.data.base_url}${mediaResponse.data.thumb_size}`;
-      }
-      return originalUrl || "";
-    } catch (error) {
-      console.error(`Error fetching media ${mediaId}:`, error);
-      return originalUrl || "";
-    }
-  };
-
   // Map API response to form data
   const mapApiToFormData = async (apiData) => {
     if (!apiData) return;
@@ -251,26 +180,39 @@ const EmploymentDetails = () => {
 
     console.log("Mapped form data:", mappedData);
 
-    // Handle media preview if exists
-    if (apiData.media && apiData.media.base_url && apiData.media.unique_name) {
-      const originalUrl = `${apiData.media.base_url}${apiData.media.unique_name}`;
-      mappedData.supportingDocsUrl = originalUrl;
-      
-      // Fetch thumbnail for preview
+    // Function to fetch media and return the URL (same approach as MyProfile)
+    const fetchMediaUrl = async (mediaId) => {
+      if (!mediaId) return "";
       try {
-        const thumbnailUrl = await fetchMediaThumbnail(apiData.media_id, originalUrl);
-        setDocumentPreviews(prev => ({
-          ...prev,
-          supportingDocs: thumbnailUrl,
-        }));
+        console.log(`Fetching media for ID: ${mediaId}`);
+        const mediaResponse = await networkService.get(`/media/single/${mediaId}`);
+        if (mediaResponse && mediaResponse.base_url) {
+          const imageUrl = mediaResponse.thumb_size 
+            ? `${mediaResponse.base_url}${mediaResponse.thumb_size}`
+            : `${mediaResponse.base_url}${mediaResponse.unique_name}`;
+          console.log(`Got media URL: ${imageUrl}`);
+          return imageUrl;
+        }
       } catch (error) {
-        console.error("Error fetching media thumbnail:", error);
-        // Fallback to original URL for preview if thumbnail fails
-        setDocumentPreviews(prev => ({
-          ...prev,
-          supportingDocs: originalUrl,
-        }));
+        console.error(`Error fetching media ${mediaId}:`, error);
       }
+      return "";
+    };
+
+    // Handle media if exists
+    if (apiData.media_id) {
+      const supportingDocsUrl = await fetchMediaUrl(apiData.media_id);
+      
+      // Set initial file data for FilePicker
+      setInitialFileData({
+        supportingDocsPreview: supportingDocsUrl,
+        supportingDocsUrl: supportingDocsUrl,
+        supportingDocsId: apiData.media_id,
+      });
+
+      // Also set in formData for backward compatibility
+      mappedData.supportingDocsUrl = supportingDocsUrl;
+      mappedData.supportingDocsId = apiData.media_id;
     }
 
     setFormData(prev => ({ ...prev, ...mappedData }));
@@ -306,12 +248,66 @@ const EmploymentDetails = () => {
       flexible_with_weekends: formData.flexibleWeekends === "Yes" ? true : formData.flexibleWeekends === "No" ? false : null,
       other_benefits_requirements: formData.otherBenefits || null,
       employee_service_id: getDropdownId(serviceOptions, formData.employeeCategory),
-      media_id: formData.supportingDocsId || null,
+      media_id: formData.supportingDocsId || null, // Use formData instead of fileData
     };
 
     console.log("Form data:", formData);
+    console.log("File data:", fileData);
     console.log("Mapped API data:", apiData);
     return apiData;
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    let isValid = true;
+
+    // Create a mapping of field names to their display labels
+    const fieldLabels = fields.reduce((acc, field) => ({
+      ...acc,
+      [field.name]: field.label,
+    }), {});
+
+    // Validate required fields
+    const requiredFields = fields.filter((f) => f.required).map((f) => f.name);
+    requiredFields.forEach((field) => {
+      if (field === "supportingDocs") {
+        // Special validation for file field - check if there's an uploaded file or existing file
+        if (!formData.supportingDocsId && !initialFileData.supportingDocsId) {
+          errors[field] = `${fieldLabels[field]} is required`;
+          isValid = false;
+        }
+      } else {
+        // Regular validation for other fields
+        if (!formData[field] || formData[field] === "") {
+          errors[field] = `${fieldLabels[field]} is required`;
+          isValid = false;
+        }
+      }
+    });
+
+    // Specific validations
+    if (formData.experience && (isNaN(formData.experience) || formData.experience < 0)) {
+      errors.experience = "Experience must be a non-negative number";
+      isValid = false;
+    }
+
+    if (formData.salary && (isNaN(formData.salary) || formData.salary < 0)) {
+      errors.salary = "Salary must be a positive number";
+      isValid = false;
+    }
+
+    if (formData.maxWorkHours && (isNaN(formData.maxWorkHours) || formData.maxWorkHours < 1 || formData.maxWorkHours > 24)) {
+      errors.maxWorkHours = "Work hours must be between 1 and 24";
+      isValid = false;
+    }
+
+    if (formData.visaExpiryDate && !/^\d{4}-\d{2}-\d{2}$/.test(formData.visaExpiryDate)) {
+      errors.visaExpiryDate = "Please enter a valid date (YYYY-MM-DD)";
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    return isValid;
   };
 
   useEffect(() => {
@@ -452,6 +448,7 @@ const EmploymentDetails = () => {
       label: "Previous Employers (optional)",
       placeholder: "Company A, Company B",
       colClass: "col-lg-4 col-md-12",
+      required: false, // explicitly set as optional
     },
     {
       type: "text",
@@ -469,6 +466,7 @@ const EmploymentDetails = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Hours",
       required: true,
+      component: Select,
     },
     {
       type: "number",
@@ -496,6 +494,7 @@ const EmploymentDetails = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Option",
       required: true,
+      component: Select,
     },
     {
       type: "select",
@@ -505,6 +504,7 @@ const EmploymentDetails = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Preference",
       required: true,
+      component: Select,
     },
     {
       type: "select",
@@ -514,6 +514,7 @@ const EmploymentDetails = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Availability",
       required: true,
+      component: Select,
     },
     {
       type: "text",
@@ -531,6 +532,7 @@ const EmploymentDetails = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Status",
       required: true,
+      component: Select,
     },
     {
       type: "select",
@@ -540,6 +542,7 @@ const EmploymentDetails = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Type",
       required: true,
+      component: Select,
     },
     {
       type: "select",
@@ -549,6 +552,7 @@ const EmploymentDetails = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Category",
       required: true,
+      component: Select,
     },
     {
       type: "select",
@@ -558,6 +562,7 @@ const EmploymentDetails = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Status",
       required: true,
+      component: Select,
     },
     {
       type: "date",
@@ -575,6 +580,7 @@ const EmploymentDetails = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Option",
       required: true,
+      component: Select,
     },
     {
       type: "number",
@@ -594,6 +600,7 @@ const EmploymentDetails = () => {
       colClass: "col-lg-4 col-md-12",
       placeholder: "Select Option",
       required: true,
+      component: Select,
     },
     {
       type: "file",
@@ -601,79 +608,23 @@ const EmploymentDetails = () => {
       label: "Supporting Documents",
       accept: ".pdf,.jpg,.png",
       colClass: "col-lg-4 col-md-12",
-      required: false,
+      required: true, // Changed to required
       style: inputStyle,
-      preview: documentPreviews.supportingDocs,
       previewComponent: (
-        <div className="file-placeholder" style={{ position: "relative", cursor: "pointer" }}>
-          {documentPreviews.supportingDocs ? (
-            <>
-              {formData.supportingDocsUrl && formData.supportingDocsUrl.endsWith(".pdf") ? (
-                <button
-                  onClick={handlePreviewClick("supportingDocs", formData.supportingDocsUrl)}
-                  style={previewButtonStyle}
-                >
-                  View Document
-                </button>
-              ) : (
-                <img
-                  src={documentPreviews.supportingDocs}
-                  alt="Supporting Documents Preview"
-                  style={{
-                    maxWidth: "100px",
-                    maxHeight: "100px",
-                    marginTop: "10px",
-                    borderRadius: "0.5rem",
-                    objectFit: "cover",
-                  }}
-                  onClick={handlePreviewClick("supportingDocs", formData.supportingDocsUrl)}
-                  onError={() => console.error("Error loading document preview")}
-                />
-              )}
-              <button
-                onClick={handleRemoveFile("supportingDocs")}
-                style={removeButtonStyle}
-                title="Remove Supporting Documents"
-              >
-                ×
-              </button>
-            </>
-          ) : (
-            <div
-              style={{ 
-                width: "100%",
-                borderRadius: "0.5rem",
-                backgroundColor: "#F0F5F7",
-                boxSizing: "border-box",
-                height: "60px",
-                border: "none",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-                cursor: "pointer"
-              }}
-              className={formErrors.supportingDocs ? "is-invalid" : ""}
-              onClick={() => document.getElementById("supportingDocsInput").click()}
-            >
-              Choose Supporting Documents
-            </div>
-          )}
-          <input
-            type="file"
-            id="supportingDocsInput"
-            name="supportingDocs"
-            accept=".pdf,.jpg,.png"
-            onChange={handleFileChange("supportingDocs")}
-            style={{ display: "none" }}
-            disabled={isSubmitting || isInitialLoading}
-          />
-          {formErrors.supportingDocs && (
-            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545", fontSize: "0.875rem" }}>
-              {formErrors.supportingDocs}
-            </div>
-          )}
-        </div>
+        <FilePicker
+          fieldName="supportingDocs"
+          label="Supporting Documents"
+          accept=".pdf,.jpg,.png"
+          initialPreview={initialFileData.supportingDocsPreview}
+          initialFileUrl={initialFileData.supportingDocsUrl}
+          initialFileId={initialFileData.supportingDocsId}
+          formError={formErrors.supportingDocs}
+          onFileDataChange={handleFileDataChange}
+          onPreviewClick={handlePreviewClick}
+          onClearError={handleClearError}
+          isGlobalSubmitting={isSubmitting}
+          isGlobalLoading={isInitialLoading}
+        />
       ),
     },
     {
@@ -681,8 +632,9 @@ const EmploymentDetails = () => {
       name: "otherBenefits",
       label: "Other Benefits Requirements",
       placeholder: "List any other benefits you require",
-      colClass: "col-lg-12 col-md-6",
+      colClass: "col-lg-12 col-md-12",
       required: true,
+      style: { ...inputStyle, height: "120px" },
     },
   ];
 
@@ -691,6 +643,13 @@ const EmploymentDetails = () => {
     setFormErrors({});
     
     console.log("Form submitted with data:", formData);
+    console.log("Initial file data:", initialFileData);
+    
+    if (!validateForm()) {
+      const firstError = Object.values(formErrors)[0] || "Please fill in all required fields";
+      await notificationService.showToast(firstError, "error");
+      return;
+    }
     
     try {
       setIsSubmitting(true);
@@ -741,16 +700,15 @@ const EmploymentDetails = () => {
       {(isInitialLoading || isSubmitting) && (
         <Loader text={isInitialLoading ? "Loading..." : "Saving..."} />
       )}
-      <EmploymentDetailsCardForm
+      <ProfileCardForm
         fields={fields}
         formData={formData}
         handleChange={handleChange}
         handleSelectChange={handleSelectChange}
-        handleFileChange={handleFileChange}
+        handleFileChange={() => {}} // Not used anymore, handled by FilePicker
         onSubmit={handleSubmit}
         loading={isSubmitting || isInitialLoading}
         formErrors={formErrors}
-        buttonText="Save Employment Details"
       />
       <Modal isOpen={isModalOpen} onClose={closeModal} isWide={modalContent?.type === "iframe"}>
         {modalContent}
